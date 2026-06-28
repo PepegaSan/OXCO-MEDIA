@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="HailMary.Views.Controls.SceneCutterVideoPreviewHost"
+    x:Name="RootHost"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:drop="using:HailMary.Views.Helpers"
+    xmlns:controls="using:HailMary.Views.Controls"
+    HorizontalAlignment="Left"
+    VerticalAlignment="Top"
+    mc:Ignorable="d"
+    KeyDown="RootHost_KeyDown" xmlns:loc="using:HailMary.Services">
+
+    <StackPanel HorizontalAlignment="Left" Spacing="8" drop:VideoDrop.IsEnabled="True">
+        <controls:AspectFitVideoPresenter
+            x:Name="VideoSurface"
+            MaxPreviewHeight="480"
+            MinPreviewHeight="120" />
+
+        <StackPanel Spacing="6">
+            <Slider
+                x:Name="TimelineSlider"
+                IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
+                Maximum="{x:Bind ViewModel.SliderMaximum, Mode=OneWay}"
+                Value="{x:Bind ViewModel.SliderValue, Mode=TwoWay}" />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" FontFamily="Consolas" Text="{x:Bind ViewModel.PositionDisplay, Mode=OneWay}" />
+                <TextBlock
+                    Grid.Column="1"
+                    HorizontalAlignment="Center"
+                    Style="{StaticResource CaptionTextBlockStyle}"
+                    Text="{x:Bind ViewModel.PendingMarks, Mode=OneWay}" />
+                <TextBlock
+                    Grid.Column="2"
+                    HorizontalAlignment="Right"
+                    FontFamily="Consolas"
+                    Text="{x:Bind ViewModel.DurationDisplay, Mode=OneWay}" />
+            </Grid>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Click="BtnPlay_Click" loc:Loc.Key="common.play" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
+            <Button Click="BtnPause_Click" loc:Loc.Key="common.pause" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
+            <Button Click="BtnStop_Click" loc:Loc.Key="common.stopButton" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
+            <Button Click="BtnMarkIn_Click" Content="Mark In (I)" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
+            <Button Click="BtnMarkOut_Click" Content="Mark Out (O)" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
+            <Button Command="{x:Bind ViewModel.AddSceneCommand}" loc:Loc.Key="cutter.addScene" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
+            <Button Command="{x:Bind ViewModel.AddFullVideoSceneCommand}" loc:Loc.Key="cutter.addFullVideo" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
+        </StackPanel>
+    </StackPanel>
+</UserControl>

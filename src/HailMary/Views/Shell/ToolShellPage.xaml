@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="HailMary.Views.Shell.ToolShellPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:shell="using:HailMary.Views.Shell"
+    mc:Ignorable="d">
+
+    <Grid RowSpacing="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TabView
+            x:Name="GroupTabView"
+            Grid.Row="0"
+            CanDragTabs="False"
+            CanReorderTabs="False"
+            IsAddTabButtonVisible="False"
+            TabWidthMode="SizeToContent"
+            SelectionChanged="GroupTabView_OnSelectionChanged" />
+
+        <Grid Grid.Row="1" ColumnSpacing="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="{StaticResource ToolShellNavWidth}" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border
+                Grid.Column="0"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="0,0,1,0">
+                <ListView
+                    x:Name="ToolNavList"
+                    SelectionMode="Single"
+                    SelectionChanged="ToolNavList_OnSelectionChanged">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="viewModels:ToolNavItemViewModel" xmlns:viewModels="using:HailMary.ViewModels">
+                            <TextBlock Padding="8,10" Text="{x:Bind Label}" />
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Border>
+
+            <Grid Grid.Column="1" RowSpacing="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Border
+                    x:Name="PreviewHostBorder"
+                    Grid.Row="0"
+                    Padding="16,16,16,0"
+                    HorizontalAlignment="Left"
+                    Visibility="Collapsed">
+                    <ContentControl
+                        x:Name="PreviewHost"
+                        HorizontalAlignment="Left"
+                        HorizontalContentAlignment="Left" />
+                </Border>
+
+                <ScrollViewer
+                    x:Name="ToolContentScroll"
+                    Grid.Row="1"
+                    HorizontalContentAlignment="Left"
+                    HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Auto">
+                    <ContentPresenter
+                        x:Name="ToolContentHost"
+                        HorizontalAlignment="Left"
+                        HorizontalContentAlignment="Left"
+                        VerticalAlignment="Top"
+                        VerticalContentAlignment="Top" />
+                </ScrollViewer>
+
+                <ContentPresenter
+                    x:Name="ToolContentSplitHost"
+                    Grid.Row="1"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    Visibility="Collapsed" />
+
+                <Border
+                    Grid.Row="2"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="0,1,0,0">
+                    <shell:ToolActionBar x:Name="ActionBar" />
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

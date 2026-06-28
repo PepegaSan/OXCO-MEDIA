@@ -1,0 +1,363 @@
+using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using HailMary.Services;
+
+namespace HailMary.ViewModels;
+
+public sealed partial class MarkerBatchSceneRowViewModel : ObservableObject
+{
+    public string SceneId { get; init; } = string.Empty;
+
+    public string Title { get; init; } = string.Empty;
+
+    public string Path { get; init; } = string.Empty;
+
+    public IReadOnlyList<StashTagItem> Tags { get; init; } = [];
+
+    public string Display => $"{SceneId} | {Title} | {Path}";
+}
+
+public partial class MarkerUpdaterViewModel
+{
+    public ObservableCollection<MarkerBatchSceneRowViewModel> BatchMatches { get; } = [];
+
+    public Func<string, string, Task<bool>>? ConfirmAsync { get; set; }
+
+    [ObservableProperty] private string _batchSearchText = string.Empty;
+
+    [ObservableProperty] private string _batchSearchTagName = string.Empty;
+
+    [ObservableProperty] private bool _batchSearchByTag;
+
+    public bool BatchSearchByPath => !BatchSearchByTag;
+
+    partial void OnBatchSearchByTagChanged(bool value) => OnPropertyChanged(nameof(BatchSearchByPath));
+
+    [ObservableProperty] private string _batchAddTagName = string.Empty;
+
+    [ObservableProperty] private string _batchRemoveTagName = string.Empty;
+
+    [ObservableProperty] private string _batchDeleteGlobalTagName = string.Empty;
+
+    [ObservableProperty] private bool _batchScopeSelectedOnly = true;
+
+    [ObservableProperty] private bool _batchRemoveAlsoDeleteFromStash;
+
+    [ObservableProperty] private string _batchResultsSummary = "Treffer: 0";
+
+    [ObservableProperty] private MarkerBatchSceneRowViewModel? _selectedBatchMatch;
+
+    [RelayCommand]
+    private void SetBatchSearchModePath()
+    {
+        BatchSearchByTag = false;
+    }
+
+    [RelayCommand]
+    private void SetBatchSearchModeTag()
+    {
+        BatchSearchByTag = true;
+    }
+
+    [RelayCommand]
+    private async Task BatchSearchAsync()
+    {
+        SyncSettings();
+        IsBusy = true;
+        Status = Loc.T("markerupdater.batchSearchRunning");
+        BatchMatches.Clear();
+        BatchResultsSummary = "Treffer: 0";
+        try
+        {
+            await EnsureStashReachableAsync();
+            await RefreshAllTagsAsync();
+
+            IReadOnlyList<StashBatchSceneItem> scenes;
+            if (BatchSearchByTag)
+            {
+                var tagName = ResolveExistingTagName(BatchSearchTagName);
+                if (tagName is null)
+                {
+                    Status = "Tag nicht in Stash gefunden — Dropdown oder exakten Namen verwenden.";
+                    return;
+                }
+
+                scenes = await _client.FindScenesByTagNameAsync(tagName);
+                Status = scenes.Count == 0
+                    ? "Keine Treffer — Tag prüfen oder anderen Suchmodus wählen."
+                    : $"{scenes.Count} Treffer (Filter: Tag: {tagName}).";
+            }
+            else
+            {
+                scenes = await _client.FindScenesWithTagsAsync(BatchSearchText);
+                var terms = string.IsNullOrWhiteSpace(BatchSearchText) ? "alle Dateien" : BatchSearchText.Trim();
+                Status = scenes.Count == 0
+                    ? "Keine Treffer — Suchbegriffe ändern oder ohne Filter alle Szenen laden."
+                    : $"{scenes.Count} Treffer (Filter: {terms}).";
+            }
+
+            foreach (var scene in scenes)
+            {
+                BatchMatches.Add(ToBatchRow(scene));
+            }
+
+            BatchResultsSummary = $"Treffer: {scenes.Count}";
+        }
+        catch (Exception ex)
+        {
+            Status = ex.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task BatchAddTagAsync()
+    {
+        var tagName = ResolveBatchTagInput(BatchAddTagName);
+        if (tagName is null)
+        {
+            Status = Loc.T("markerupdater.tagNameRequired");
+            return;
+        }
+
+        var targets = GetBatchTargetScenes();
+        if (targets.Count == 0)
+        {
+            Status = BatchScopeSelectedOnly ? "Keine Zeilen ausgewählt." : "Keine Treffer.";
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            await EnsureStashReachableAsync();
+            await RefreshAllTagsAsync();
+            if (!_tagNameToId.TryGetValue(tagName, out var tagId))
+            {
+                tagId = await _client.CreateTagAsync(tagName);
+                _tagNameToId[tagName] = tagId;
+                if (!AllTagNames.Contains(tagName, StringComparer.OrdinalIgnoreCase))
+                {
+                    AllTagNames.Add(tagName);
+                }
+            }
+
+            var updated = 0;
+            foreach (var scene in targets)
+            {
+                if (scene.Tags.Any(t => t.Name.Equals(tagName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                var tagIds = scene.Tags.Select(t => t.Id).ToList();
+                tagIds.Add(tagId);
+                await _client.UpdateSceneAsync(scene.SceneId, tagIds: tagIds);
+                updated++;
+            }
+
+            Status = $"Tag „{tagName}“ bei {updated} Szenen hinzugefügt.";
+            await BatchSearchAsync();
+        }
+        catch (Exception ex)
+        {
+            Status = ex.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task BatchRemoveTagAsync()
+    {
+        var tagName = ResolveExistingTagName(BatchRemoveTagName);
+        if (tagName is null)
+        {
+            Status = "Tag nicht in Stash gefunden — Dropdown oder exakten Namen verwenden.";
+            return;
+        }
+
+        var targets = GetBatchTargetScenes();
+        if (targets.Count == 0)
+        {
+            Status = BatchScopeSelectedOnly ? "Keine Zeilen ausgewählt." : "Keine Treffer.";
+            return;
+        }
+
+        var affected = targets.Count(scene =>
+            scene.Tags.Any(t => t.Name.Equals(tagName, StringComparison.OrdinalIgnoreCase)));
+        if (affected == 0)
+        {
+            Status = Loc.T("markerupdater.status.tagNotOnScene");
+            return;
+        }
+
+        var confirmMessage = BatchRemoveAlsoDeleteFromStash
+            ? $"Tag „{tagName}“ wird bei {affected} Szenen abgenommen UND danach endgültig aus Stash gelöscht! Fortfahren?"
+            : $"Tag „{tagName}“ wirklich bei {affected} Treffer-Szenen abnehmen (nur Szene-Listen, Tag bleibt in Stash)?";
+        if (ConfirmAsync is not null && !await ConfirmAsync("Batch", confirmMessage))
+        {
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            await EnsureStashReachableAsync();
+            await RefreshAllTagsAsync();
+            var updated = 0;
+            foreach (var scene in targets)
+            {
+                if (!scene.Tags.Any(t => t.Name.Equals(tagName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                var tagIds = scene.Tags
+                    .Where(t => !t.Name.Equals(tagName, StringComparison.OrdinalIgnoreCase))
+                    .Select(t => t.Id)
+                    .ToList();
+                await _client.UpdateSceneAsync(scene.SceneId, tagIds: tagIds);
+                updated++;
+            }
+
+            Status = $"Tag bei {updated} Treffer-Szenen abgenommen (Szene-Tags).";
+
+            if (BatchRemoveAlsoDeleteFromStash
+                && _tagNameToId.TryGetValue(tagName, out var tagId))
+            {
+                await _client.DeleteTagAsync(tagId);
+                _tagNameToId.Remove(tagName);
+                var existing = AllTagNames.FirstOrDefault(t => t.Equals(tagName, StringComparison.OrdinalIgnoreCase));
+                if (existing is not null)
+                {
+                    AllTagNames.Remove(existing);
+                }
+
+                Status = $"Tag „{tagName}“ wurde aus Stash gelöscht.";
+            }
+
+            await BatchSearchAsync();
+        }
+        catch (Exception ex)
+        {
+            Status = ex.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task BatchDeleteGlobalTagAsync()
+    {
+        var tagName = ResolveExistingTagName(BatchDeleteGlobalTagName);
+        if (tagName is null)
+        {
+            Status = Loc.T("markerupdater.status.pickTagToDelete");
+            return;
+        }
+
+        if (!_tagNameToId.TryGetValue(tagName, out var tagId))
+        {
+            Status = "Tag-ID konnte nicht ermittelt werden.";
+            return;
+        }
+
+        if (ConfirmAsync is not null
+            && !await ConfirmAsync("Tag in Stash löschen", $"Globalen Tag „{tagName}“ wirklich aus Stash löschen?"))
+        {
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            await EnsureStashReachableAsync();
+            await _client.DeleteTagAsync(tagId);
+            _tagNameToId.Remove(tagName);
+            var existing = AllTagNames.FirstOrDefault(t => t.Equals(tagName, StringComparison.OrdinalIgnoreCase));
+            if (existing is not null)
+            {
+                AllTagNames.Remove(existing);
+            }
+
+            BatchDeleteGlobalTagName = string.Empty;
+            Status = $"Globaler Tag gelöscht: {tagName}";
+        }
+        catch (Exception ex)
+        {
+            Status = ex.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    internal List<MarkerBatchSceneRowViewModel> GetBatchTargetScenes()
+    {
+        if (BatchScopeSelectedOnly && _batchSelectedMatches.Count > 0)
+        {
+            return _batchSelectedMatches;
+        }
+
+        return BatchMatches.ToList();
+    }
+
+    private readonly List<MarkerBatchSceneRowViewModel> _batchSelectedMatches = [];
+
+    internal void SetBatchSelection(IEnumerable<MarkerBatchSceneRowViewModel> selected)
+    {
+        _batchSelectedMatches.Clear();
+        _batchSelectedMatches.AddRange(selected);
+    }
+
+    internal void BatchSelectAllRows()
+    {
+        _batchSelectedMatches.Clear();
+        _batchSelectedMatches.AddRange(BatchMatches);
+    }
+
+    internal void BatchClearSelection()
+    {
+        _batchSelectedMatches.Clear();
+    }
+
+    private static MarkerBatchSceneRowViewModel ToBatchRow(StashBatchSceneItem scene) => new()
+    {
+        SceneId = scene.SceneId,
+        Title = scene.Title,
+        Path = scene.Path,
+        Tags = scene.Tags,
+    };
+
+    private static string? ResolveBatchTagInput(string? text)
+    {
+        var value = (text ?? string.Empty).Trim();
+        return string.IsNullOrEmpty(value) ? null : value;
+    }
+
+    private string? ResolveExistingTagName(string? text)
+    {
+        var value = (text ?? string.Empty).Trim();
+        if (string.IsNullOrEmpty(value))
+        {
+            return null;
+        }
+
+        if (_tagNameToId.ContainsKey(value))
+        {
+            return value;
+        }
+
+        return _tagNameToId.Keys.FirstOrDefault(k => k.Equals(value, StringComparison.OrdinalIgnoreCase));
+    }
+}

@@ -1,0 +1,166 @@
+[
+  {
+    "id": "cutter",
+    "label": "Szenecutter",
+    "type": "hybrid",
+    "group": "video",
+    "bridge": "scene_cutter_export_job.py",
+    "folder": "Cutter",
+    "script": "cutter.py",
+    "description": "Vorschau, Szenen markieren/auswählen, Reihenfolge, FFmpeg- und DaVinci-Export — alles in Hail Mary.",
+    "enabled": true
+  },
+  {
+    "id": "intro_cutter",
+    "label": "Intro Cutter",
+    "type": "hybrid",
+    "group": "video",
+    "bridge": "intro_cutter_job.py",
+    "folder": "Intro cuter",
+    "script": "intro_cut_gui.py",
+    "description": "Intro/Outro entfernen — direkt in Hail Mary (FFmpeg oder Resolve).",
+    "enabled": true
+  },
+  {
+    "id": "text_to_video",
+    "label": "Text to Video",
+    "type": "hybrid",
+    "group": "video",
+    "bridge": "text_to_video_export_job.py",
+    "folder": "Sub",
+    "script": "app.py",
+    "description": "Text und Untertitel ins Video — Vorschau, Abschnitte, SRT, FFmpeg-Export in Hail Mary.",
+    "enabled": true
+  },
+  {
+    "id": "bitratechanger",
+    "label": "Bitratechanger",
+    "type": "hybrid",
+    "group": "video",
+    "bridge": "bitrate_convert_job.py",
+    "folder": "Videobitratechanger",
+    "script": "mass_bitrate_gui.py",
+    "description": "Ordner scannen, Bitrate-Regeln anwenden, FFmpeg-Batch — wie mass_bitrate_gui.",
+    "enabled": true
+  },
+  {
+    "id": "audiocleaner",
+    "label": "Audiocleaner",
+    "type": "hybrid",
+    "group": "video",
+    "bridge": "audio_clean_export_job.py",
+    "folder": "ffmpeg_utility_calm",
+    "script": "audio_clean_minimal.py",
+    "description": "Audio aus Videos säubern (FFmpeg-Presets) — Minimal-Variante in Hail Mary.",
+    "enabled": true
+  },
+  {
+    "id": "clip_joiner",
+    "label": "Clip Joiner",
+    "type": "hybrid",
+    "group": "video",
+    "bridge": "clip_joiner_job.py",
+    "folder": "clip-joiner",
+    "script": "app.py",
+    "description": "Clips per Drag & Drop laden, Reihenfolge festlegen, FFmpeg- oder DaVinci-Concat.",
+    "enabled": true
+  },
+  {
+    "id": "davinci_batch_render",
+    "label": "Davinci Batch Render",
+    "type": "hybrid",
+    "group": "video",
+    "bridge": "batch_render_job.py",
+    "folder": "Davinci Batch Render",
+    "script": "batch_render.py",
+    "description": "Videos in Warteschlange legen und nacheinander in DaVinci Resolve rendern.",
+    "enabled": true
+  },
+  {
+    "id": "marker_autocut",
+    "label": "Marker Autocut",
+    "type": "hybrid",
+    "group": "stash",
+    "bridge": "marker_autocut_export_job.py",
+    "folder": "Marker autocut",
+    "script": "app.py",
+    "description": "Lädt Marker aus Stash und baut Schnitt-Timelines in DaVinci Resolve.",
+    "enabled": true,
+    "envMap": { "HAIL_MARY_STASH_ID": "stashSceneId" }
+  },
+  {
+    "id": "stash_cutter",
+    "label": "Stash Cutter",
+    "type": "hybrid",
+    "group": "stash",
+    "folder": "Stash Cutter",
+    "script": "app.py",
+    "description": "Sucht Szenen in Stash, schneidet Ausschnitte — Export mit FFmpeg oder Resolve.",
+    "enabled": true,
+    "envMap": { "HAIL_MARY_STASH_ID": "stashSceneId" }
+  },
+  {
+    "id": "marker_updater",
+    "label": "Marker Updater",
+    "type": "hybrid",
+    "group": "stash",
+    "folder": "stash_metadaten_updt",
+    "script": "app.py",
+    "description": "Hält Titel, Notizen und Markierungen in Stash aktuell.",
+    "enabled": true
+  },
+  {
+    "id": "stash_pathfinder",
+    "label": "Stash pathfinder",
+    "type": "hybrid",
+    "group": "stash",
+    "folder": "Stash path copy",
+    "script": "app.py",
+    "description": "Sucht Szenen in Stash und kopiert echte Dateipfade (GraphQL, Pfad-Mapping) — in Hail Mary.",
+    "enabled": true
+  },
+  {
+    "id": "oxco",
+    "label": "Oxco",
+    "type": "hybrid",
+    "group": "oxco",
+    "bridge": "oxco_compare_job.py",
+    "folder": "Oxco",
+    "script": "oxco_gui.py",
+    "description": "Vergleicht Videos, Bitrate-Hilfen und Autotagger in einer Oberfläche.",
+    "enabled": true,
+    "envMap": { "HAIL_MARY_INPUT": "inputPaths.0" }
+  },
+  {
+    "id": "daten_sync",
+    "label": "Daten Sync",
+    "type": "hybrid",
+    "group": "workflow",
+    "folder": "Sync",
+    "script": "robocopy_gui.py",
+    "description": "Gleicht Ordner zwischen zwei Speicherorten ab (Robocopy, Profile, Intervalle).",
+    "enabled": true
+  },
+  {
+    "id": "dl_sort",
+    "label": "DL Sort",
+    "type": "hybrid",
+    "group": "workflow",
+    "bridge": "dl_sort_monitor_job.py",
+    "folder": "download_sorter",
+    "script": "main.py",
+    "description": "Sortiert Downloads automatisch nach Regeln — Monitor und Scan in Hail Mary.",
+    "enabled": true
+  },
+  {
+    "id": "autotagger",
+    "label": "Autotagger",
+    "type": "hybrid",
+    "group": "workflow",
+    "bridge": "autotagger_monitor_job.py",
+    "folder": "Watchdog tagger",
+    "script": "app.py",
+    "description": "Beobachtet einen Ordner und taggt/verschiebt .mp4-Dateien nach Profil-Warteschlange.",
+    "enabled": false
+  }
+]

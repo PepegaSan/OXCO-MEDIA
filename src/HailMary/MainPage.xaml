@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="HailMary.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:shell="using:HailMary.Views.Shell"
+    mc:Ignorable="d">
+
+    <Grid Padding="12" RowSpacing="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Button
+            Grid.Row="0"
+            HorizontalAlignment="Right"
+            Click="OpenSettings_Click"
+            ToolTipService.ToolTip="{x:Bind Shell.SettingsTooltip, Mode=OneWay}">
+            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE713;" />
+        </Button>
+
+        <shell:ToolShellPage x:Name="ToolShell" Grid.Row="1" />
+
+        <Expander Grid.Row="2" Header="{x:Bind Shell.LogHeader, Mode=OneWay}" IsExpanded="False">
+            <Grid RowSpacing="6">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="160" />
+                </Grid.RowDefinitions>
+
+                <Button
+                    Grid.Row="0"
+                    HorizontalAlignment="Left"
+                    Command="{x:Bind ViewModel.ClearLogCommand}"
+                    Content="{x:Bind Shell.LogClear, Mode=OneWay}" />
+
+                <Border
+                    Grid.Row="1"
+                    Padding="8"
+                    Background="{ThemeResource HmLogBackgroundBrush}"
+                    BorderBrush="{ThemeResource HmCardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4">
+                    <ScrollViewer x:Name="LogScrollViewer" VerticalScrollBarVisibility="Auto">
+                        <TextBlock
+                            FontFamily="{StaticResource HmMonoFont}"
+                            FontSize="12"
+                            Text="{x:Bind ViewModel.LogText, Mode=OneWay}"
+                            TextWrapping="Wrap" />
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+        </Expander>
+    </Grid>
+</Page>

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="HailMary.Views.Controls.MarkerUpdaterVideoPreviewHost"
+    x:Name="RootHost"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    HorizontalAlignment="Left"
+    VerticalAlignment="Top"
+    xmlns:conv="using:HailMary.Converters"
+    xmlns:controls="using:HailMary.Views.Controls"
+    mc:Ignorable="d"
+    KeyDown="RootHost_KeyDown" xmlns:loc="using:HailMary.Services">
+
+    <UserControl.Resources>
+        <conv:SecondsDisplayConverter x:Key="SecondsDisplayConverter" />
+    </UserControl.Resources>
+
+    <StackPanel HorizontalAlignment="Left" Spacing="8">
+        <controls:AspectFitVideoPresenter
+            x:Name="VideoSurface"
+            MaxPreviewHeight="560"
+            MinPreviewHeight="120" />
+
+        <StackPanel Spacing="6">
+            <Slider
+                x:Name="TimelineSlider"
+                IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
+                Maximum="{x:Bind ViewModel.SliderMaximum, Mode=OneWay}"
+                Value="{x:Bind ViewModel.SliderValue, Mode=TwoWay}" />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" FontFamily="Consolas" Text="{x:Bind ViewModel.PositionDisplay, Mode=OneWay}" />
+                <TextBlock
+                    Grid.Column="1"
+                    HorizontalAlignment="Center"
+                    Style="{StaticResource CaptionTextBlockStyle}"
+                    Text="{x:Bind ViewModel.MarkerMarks, Mode=OneWay}" />
+                <TextBlock
+                    Grid.Column="2"
+                    HorizontalAlignment="Right"
+                    FontFamily="Consolas"
+                    Text="{x:Bind ViewModel.DurationDisplay, Mode=OneWay}" />
+            </Grid>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Click="BtnPlay_Click" loc:Loc.Key="common.play" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
+            <Button Click="BtnPause_Click" loc:Loc.Key="common.pause" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
+            <Button Click="BtnStop_Click" loc:Loc.Key="common.stopButton" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
+            <Button Click="BtnMarkIn_Click" Content="Mark In (I)" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
+            <Button Click="BtnMarkOut_Click" Content="Mark Out (O)" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
+        </StackPanel>
+
+        <Grid ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <ComboBox
+                Grid.Column="0"
+                loc:Loc.HeaderKey="markerupdater.fineHeader"
+                ItemsSource="{x:Bind ViewModel.FineStepChoices, Mode=OneWay}"
+                SelectedItem="{x:Bind ViewModel.FineStepSeconds, Mode=TwoWay}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Converter={StaticResource SecondsDisplayConverter}}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <ComboBox
+                Grid.Column="1"
+                loc:Loc.HeaderKey="markerupdater.coarseHeader"
+                ItemsSource="{x:Bind ViewModel.CoarseStepChoices, Mode=OneWay}"
+                SelectedItem="{x:Bind ViewModel.CoarseStepSeconds, Mode=TwoWay}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Converter={StaticResource SecondsDisplayConverter}}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <ComboBox
+                Grid.Column="2"
+                loc:Loc.HeaderKey="markerupdater.speedHeader"
+                ItemsSource="{x:Bind ViewModel.SpeedChoices, Mode=OneWay}"
+                SelectedItem="{x:Bind ViewModel.PlaybackSpeed, Mode=TwoWay}" />
+        </Grid>
+
+        <TextBlock
+            Style="{StaticResource CaptionTextBlockStyle}"
+            loc:Loc.Key="markerupdater.keyboardHint" />
+    </StackPanel>
+</UserControl>

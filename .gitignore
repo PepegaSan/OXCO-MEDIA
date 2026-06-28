@@ -1,0 +1,23 @@
+# Build
+bin/
+**/bin/
+**/obj/
+src/HailMary/bin/
+src/HailMary/obj/
+*.user
+*.suo
+.vs/
+
+# Publish
+*.appx
+*.msix
+*.pfx
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo

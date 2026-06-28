@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="HailMary.Views.Controls.StashConnectionSettingsFlyout"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
+
+    <StackPanel Width="420" Padding="16" Spacing="10">
+        <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" loc:Loc.Key="stash.connectionTitle" />
+        <TextBox x:Name="EndpointBox" loc:Loc.HeaderKey="stash.graphqlUrl" PlaceholderText="http://localhost:9999/graphql" />
+        <PasswordBox x:Name="ApiKeyBox" loc:Loc.HeaderKey="stash.apiKey" PasswordChanged="ApiKeyBox_OnPasswordChanged" />
+        <TextBox x:Name="RemotePrefixBox" loc:Loc.HeaderKey="stash.remotePrefix" />
+        <TextBox x:Name="LocalPrefixBox" loc:Loc.HeaderKey="stash.localPrefix" />
+        <TextBox x:Name="BackupPrefixBox" loc:Loc.HeaderKey="stash.backupPrefix" />
+        <CheckBox x:Name="UseBackupBox" loc:Loc.Key="stash.useBackup" />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Click="Connect_Click" loc:Loc.Key="common.connect" />
+            <Button Click="Save_Click" loc:Loc.Key="common.save" Style="{StaticResource AccentButtonStyle}" />
+        </StackPanel>
+    </StackPanel>
+</UserControl>

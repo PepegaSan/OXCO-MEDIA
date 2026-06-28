@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="HailMary.Views.SubprocessToolView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
+
+    <StackPanel Style="{StaticResource ToolShellContentPanel}">
+        <TextBlock Text="{x:Bind ViewModel.Description, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Command="{x:Bind ViewModel.CopyInputCommand}" loc:Loc.Key="subprocess.copyInput" />
+            <Button Command="{x:Bind ViewModel.CopyOutputDirCommand}" loc:Loc.Key="subprocess.copyOutput" />
+            <Button Command="{x:Bind ViewModel.UseLastOutputCommand}" loc:Loc.Key="subprocess.useLastOutput" />
+        </StackPanel>
+    </StackPanel>
+</UserControl>

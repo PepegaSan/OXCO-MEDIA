@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<UserControl
+
+    x:Class="HailMary.Views.AutotaggerPanel"
+
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+
+    HorizontalAlignment="Left"
+    VerticalAlignment="Top"
+    mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
+
+
+
+    <ScrollViewer HorizontalContentAlignment="Left" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+
+        <StackPanel Style="{StaticResource ToolShellContentPanel}" Spacing="10">
+
+            <TextBlock Text="{x:Bind ViewModel.Description, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+
+            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.Status, Mode=OneWay}" />
+
+
+
+            <Border Style="{StaticResource ToolShellCard}">
+
+                <StackPanel Spacing="8">
+
+                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="autotagger.foldersHeader" />
+
+                    <Grid ColumnSpacing="8" RowSpacing="8">
+
+                        <Grid.ColumnDefinitions>
+
+                            <ColumnDefinition Width="120" />
+
+                            <ColumnDefinition Width="*" />
+
+                            <ColumnDefinition Width="Auto" />
+
+                        </Grid.ColumnDefinitions>
+
+                        <Grid.RowDefinitions>
+
+                            <RowDefinition />
+
+                            <RowDefinition />
+
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="audiocleaner.inputHeader" />
+
+                        <TextBox Grid.Row="0" Grid.Column="1" Text="{x:Bind ViewModel.InputFolder, Mode=TwoWay}" />
+
+                        <Button Grid.Row="0" Grid.Column="2" Command="{x:Bind ViewModel.PickInputFolderCommand}" loc:Loc.Key="common.addDots" />
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="autotagger.defaultOutput" />
+
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{x:Bind ViewModel.OutputFolder, Mode=TwoWay}" />
+
+                        <Button Grid.Row="1" Grid.Column="2" Command="{x:Bind ViewModel.PickOutputFolderCommand}" loc:Loc.Key="common.addDots" />
+
+                    </Grid>
+
+                </StackPanel>
+
+            </Border>
+
+
+
+            <Border Style="{StaticResource ToolShellCard}">
+
+                <StackPanel Spacing="8">
+
+                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="autotagger.monitorSuffixHeader" />
+
+                    <Grid ColumnSpacing="8" RowSpacing="8">
+
+                        <Grid.ColumnDefinitions>
+
+                            <ColumnDefinition Width="*" />
+
+                            <ColumnDefinition Width="*" />
+
+                        </Grid.ColumnDefinitions>
+
+                        <TextBox Grid.Column="0" Header="Keep suffix" Text="{x:Bind ViewModel.KeepSuffix, Mode=TwoWay}" />
+
+                        <TextBox Grid.Column="1" Header="Ignore suffix" Text="{x:Bind ViewModel.IgnoreSuffix, Mode=TwoWay}" />
+
+                    </Grid>
+
+                    <Grid ColumnSpacing="8">
+
+                        <Grid.ColumnDefinitions>
+
+                            <ColumnDefinition Width="*" />
+
+                            <ColumnDefinition Width="Auto" />
+
+                        </Grid.ColumnDefinitions>
+
+                        <TextBox Grid.Column="0" Header="Pattern to replace" Text="{x:Bind ViewModel.PatternToReplace, Mode=TwoWay}" />
+
+                        <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.ResetDefaultsCommand}" loc:Loc.Key="autotagger.resetDefaults" />
+
+                    </Grid>
+
+                    <TextBox Header="Drop suffix" Text="{x:Bind ViewModel.DropSuffix, Mode=TwoWay}" />
+
+                    <CheckBox loc:Loc.Key="autotagger.processExisting" IsChecked="{x:Bind ViewModel.ProcessExisting, Mode=TwoWay}" />
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+
+                        <Button Command="{x:Bind ViewModel.StopMonitorCommand}" loc:Loc.Key="common.stopButton" />
+
+                        <Button Command="{x:Bind ViewModel.SaveSettingsCommand}" loc:Loc.Key="common.save" />
+
+                    </StackPanel>
+
+                </StackPanel>
+
+            </Border>
+
+
+
+            <Border Style="{StaticResource ToolShellCard}">
+
+                <StackPanel Spacing="8">
+
+                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="autotagger.categoriesHeader" />
+
+                    <ListView MaxHeight="120" ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}">
+
+                        <ListView.ItemTemplate>
+
+                            <DataTemplate x:DataType="viewModels:AutotaggerCategoryRow" xmlns:viewModels="using:HailMary.ViewModels">
+
+                                <CheckBox Content="{x:Bind Label}" IsChecked="{x:Bind IsSelected, Mode=TwoWay}" />
+
+                            </DataTemplate>
+
+                        </ListView.ItemTemplate>
+
+                    </ListView>
+
+                    <TextBox Header="Optional extra tag" Text="{x:Bind ViewModel.ExtraTag, Mode=TwoWay}" />
+
+                    <Button Command="{x:Bind ViewModel.AddSelectedCategoriesCommand}" loc:Loc.Key="autotagger.addCategories" HorizontalAlignment="Left" />
+
+                </StackPanel>
+
+            </Border>
+
+
+
+            <Border Style="{StaticResource ToolShellCard}">
+
+                <StackPanel Spacing="8">
+
+                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="autotagger.manualStepHeader" />
+
+                    <Grid ColumnSpacing="8">
+
+                        <Grid.ColumnDefinitions>
+
+                            <ColumnDefinition Width="*" />
+
+                            <ColumnDefinition Width="*" />
+
+                            <ColumnDefinition Width="Auto" />
+
+                        </Grid.ColumnDefinitions>
+
+                        <TextBox Grid.Column="0" loc:Loc.HeaderKey="common.name" Text="{x:Bind ViewModel.ManualName, Mode=TwoWay}" />
+
+                        <TextBox Grid.Column="1" loc:Loc.HeaderKey="oxco.tagPlaceholderShort" Text="{x:Bind ViewModel.ManualTag, Mode=TwoWay}" />
+
+                        <Button Grid.Column="2" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.AddManualQueueItemCommand}" loc:Loc.Key="common.add" />
+
+                    </Grid>
+
+                </StackPanel>
+
+            </Border>
+
+
+
+            <Border Style="{StaticResource ToolShellCard}">
+
+                <StackPanel Spacing="8">
+
+                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="autotagger.profileQueueHeader" />
+
+                    <ListView
+
+                        x:Name="QueueList"
+
+                        MaxHeight="160"
+
+                        ItemsSource="{x:Bind ViewModel.Queue, Mode=OneWay}"
+
+                        SelectionChanged="QueueList_OnSelectionChanged">
+
+                        <ListView.ItemTemplate>
+
+                            <DataTemplate x:DataType="viewModels:AutotaggerQueueRow" xmlns:viewModels="using:HailMary.ViewModels">
+
+                                <TextBlock FontFamily="Consolas" Text="{x:Bind Name}" TextTrimming="CharacterEllipsis" />
+
+                            </DataTemplate>
+
+                        </ListView.ItemTemplate>
+
+                    </ListView>
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+
+                        <Button Command="{x:Bind ViewModel.RemoveSelectedQueueItemCommand}" loc:Loc.Key="common.remove" />
+
+                        <Button Command="{x:Bind ViewModel.MoveQueueUpCommand}" loc:Loc.Key="autotagger.moveUp" />
+
+                        <Button Command="{x:Bind ViewModel.MoveQueueDownCommand}" loc:Loc.Key="autotagger.moveDown" />
+
+                    </StackPanel>
+
+                </StackPanel>
+
+            </Border>
+
+        </StackPanel>
+
+    </ScrollViewer>
+
+</UserControl>
+
+

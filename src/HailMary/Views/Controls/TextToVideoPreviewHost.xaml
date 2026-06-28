@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="HailMary.Views.Controls.TextToVideoPreviewHost"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:HailMary.Views.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    HorizontalAlignment="Left"
+    VerticalAlignment="Top"
+    mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
+
+    <StackPanel Spacing="8">
+        <Grid HorizontalAlignment="Left">
+            <controls:AspectFitVideoPresenter
+                x:Name="VideoSurface"
+                MaxPreviewHeight="420"
+                MinPreviewHeight="180"
+                Opacity="0"
+                IsHitTestVisible="False" />
+            <controls:AspectFitImagePresenter
+                x:Name="PreviewPresenter"
+                MaxPreviewHeight="420"
+                MinPreviewHeight="180"
+                PointerPressed="PreviewPresenter_OnPointerPressed" />
+        </Grid>
+
+        <Grid ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Slider
+                x:Name="TimelineSlider"
+                Maximum="{x:Bind ViewModel.SliderMaximum, Mode=OneWay}"
+                Value="{x:Bind ViewModel.SliderValue, Mode=TwoWay}" />
+            <TextBlock
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                FontFamily="Consolas"
+                Text="{x:Bind ViewModel.TimeDisplay, Mode=OneWay}" />
+        </Grid>
+
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Click="BtnPlay_Click" loc:Loc.Key="common.play" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
+            <Button Click="BtnPause_Click" loc:Loc.Key="common.pause" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
+            <Button Click="BtnStop_Click" loc:Loc.Key="common.stopButton" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
+        </StackPanel>
+
+        <TextBlock
+            Style="{StaticResource CaptionTextBlockStyle}"
+            loc:Loc.Key="texttovideo.previewHint"
+            TextWrapping="WrapWholeWords" />
+    </StackPanel>
+</UserControl>

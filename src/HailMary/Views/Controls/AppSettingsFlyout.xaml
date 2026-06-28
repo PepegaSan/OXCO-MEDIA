@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="HailMary.Views.Controls.AppSettingsFlyout"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
+
+    <ScrollViewer MaxHeight="640" VerticalScrollBarVisibility="Auto">
+        <StackPanel Width="460" Padding="16" Spacing="16">
+            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="{x:Bind ViewModel.Title, Mode=OneWay}" />
+
+            <StackPanel Spacing="8">
+                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="{x:Bind ViewModel.AppearanceSection, Mode=OneWay}" />
+                <ComboBox
+                    x:Name="ThemeCombo"
+                    Header="{x:Bind ViewModel.ThemeHeader, Mode=OneWay}"
+                    SelectionChanged="ThemeCombo_OnSelectionChanged" />
+                <ComboBox
+                    x:Name="LanguageCombo"
+                    Header="{x:Bind ViewModel.LanguageHeader, Mode=OneWay}"
+                    SelectionChanged="LanguageCombo_OnSelectionChanged" />
+                <Button
+                    Click="SaveAppearance_Click"
+                    Content="{x:Bind ViewModel.SaveAppearanceLabel, Mode=OneWay}"
+                    Style="{StaticResource AccentButtonStyle}" />
+            </StackPanel>
+
+            <StackPanel Spacing="8">
+                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="{x:Bind ViewModel.GeneralSection, Mode=OneWay}" />
+                <TextBox
+                    x:Name="ProjectsRootBox"
+                    Header="{x:Bind ViewModel.ProjectsRootHeader, Mode=OneWay}"
+                    IsReadOnly="True"
+                    PlaceholderText="{x:Bind ViewModel.ProjectsRootHint, Mode=OneWay}" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Click="PickProjectsRoot_Click" Content="{x:Bind ViewModel.PickFolderLabel, Mode=OneWay}" />
+                    <Button Click="SaveGeneral_Click" Content="{x:Bind ViewModel.SaveLabel, Mode=OneWay}" Style="{StaticResource AccentButtonStyle}" />
+                </StackPanel>
+                <TextBox
+                    x:Name="PythonPathBox"
+                    Header="{x:Bind ViewModel.PythonHeader, Mode=OneWay}"
+                    PlaceholderText="python.exe" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Click="PickPython_Click" Content="{x:Bind ViewModel.PickPythonLabel, Mode=OneWay}" />
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel Spacing="8">
+                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="{x:Bind ViewModel.DavinciSection, Mode=OneWay}" />
+                <TextBlock
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Style="{StaticResource CaptionTextBlockStyle}"
+                    Text="{x:Bind ViewModel.DavinciHint, Mode=OneWay}"
+                    TextWrapping="Wrap" />
+                <TextBox
+                    x:Name="DavinciApiModulesBox"
+                    Header="{x:Bind ViewModel.DavinciModulesHeader, Mode=OneWay}"
+                    PlaceholderText="…\Developer\Scripting\Modules"
+                    TextWrapping="NoWrap" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Click="PickDavinciApiModules_Click" loc:Loc.Key="common.modules" />
+                </StackPanel>
+                <TextBox
+                    x:Name="DavinciExeBox"
+                    Header="{x:Bind ViewModel.DavinciExeHeader, Mode=OneWay}"
+                    PlaceholderText="…\DaVinci Resolve\Resolve.exe" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Click="PickDavinciExe_Click" Content="Resolve.exe…" />
+                </StackPanel>
+                <TextBox
+                    x:Name="DavinciFusionDllBox"
+                    Header="{x:Bind ViewModel.DavinciDllHeader, Mode=OneWay}"
+                    PlaceholderText="…\DaVinci Resolve\fusionscript.dll" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Click="PickDavinciFusionDll_Click" loc:Loc.Key="common.dll" />
+                    <Button Click="SaveDavinci_Click" Content="{x:Bind ViewModel.SaveLabel, Mode=OneWay}" Style="{StaticResource AccentButtonStyle}" />
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel Spacing="8">
+                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="{x:Bind ViewModel.StashSection, Mode=OneWay}" />
+                <TextBlock
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Style="{StaticResource CaptionTextBlockStyle}"
+                    Text="{x:Bind ViewModel.StashHint, Mode=OneWay}"
+                    TextWrapping="Wrap" />
+                <ContentControl x:Name="StashHost" />
+            </StackPanel>
+
+            <TextBlock
+                x:Name="StatusText"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Style="{StaticResource CaptionTextBlockStyle}" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

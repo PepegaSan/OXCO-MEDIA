@@ -1,0 +1,10 @@
+[
+  {"label": "Music", "tag": "[Music]"},
+  {"label": "Twitch", "tag": "[Twitch]"},
+  {"label": "Youtube", "tag": "[Youtube]"},
+  {"label": "Actor", "tag": "[Actor]"},
+  {"label": "Work", "tag": "[Work]"},
+  {"label": "Studium", "tag": "[Studium]"},
+  {"label": "Sport", "tag": "[Sport]"},
+  {"label": "Politics", "tag": "[Politics]"}
+]

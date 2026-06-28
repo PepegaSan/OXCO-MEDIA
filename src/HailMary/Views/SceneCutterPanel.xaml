@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<UserControl
+
+    x:Class="HailMary.Views.SceneCutterPanel"
+
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+
+    xmlns:drop="using:HailMary.Views.Helpers"
+
+    HorizontalAlignment="Left"
+
+    VerticalAlignment="Top"
+
+    mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
+
+
+
+    <Grid HorizontalAlignment="Left" MaxWidth="960" Padding="16,12" RowSpacing="10">
+
+        <Grid.RowDefinitions>
+
+            <RowDefinition Height="Auto" />
+
+            <RowDefinition Height="*" />
+
+        </Grid.RowDefinitions>
+
+
+
+        <Border Grid.Row="0" Style="{StaticResource ToolShellCard}">
+
+            <StackPanel Spacing="8">
+
+                <TextBlock Text="{x:Bind ViewModel.Description, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+
+                <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="common.video" />
+
+                <Grid ColumnSpacing="8" drop:VideoDrop.IsEnabled="True">
+
+                    <Grid.ColumnDefinitions>
+
+                        <ColumnDefinition Width="*" />
+
+                        <ColumnDefinition Width="Auto" />
+
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox Grid.Column="0" loc:Loc.PlaceholderKey="cutter.videoPlaceholder" Text="{x:Bind ViewModel.InputPath, Mode=TwoWay}" />
+
+                    <Button Grid.Column="1" VerticalAlignment="Center" Command="{x:Bind ViewModel.PickInputFileCommand}" loc:Loc.Key="common.file" />
+
+                </Grid>
+
+                <Grid ColumnSpacing="8">
+
+                    <Grid.ColumnDefinitions>
+
+                        <ColumnDefinition Width="*" />
+
+                        <ColumnDefinition Width="Auto" />
+
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox Grid.Column="0" loc:Loc.HeaderKey="cutter.outputDirHeader" Text="{x:Bind ViewModel.OutputDir, Mode=TwoWay}" />
+
+                    <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.PickOutputDirCommand}" loc:Loc.Key="common.addDots" />
+
+                </Grid>
+
+            </StackPanel>
+
+        </Border>
+
+
+
+        <ContentControl
+
+            x:Name="ScenesHost"
+
+            Grid.Row="1"
+
+            HorizontalAlignment="Stretch"
+
+            VerticalAlignment="Stretch"
+
+            HorizontalContentAlignment="Stretch"
+
+            VerticalContentAlignment="Stretch" />
+
+    </Grid>
+
+</UserControl>
+
+

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="HmFieldBackgroundBrush" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="HmFieldBorderBrush" Color="#C5C5C5" />
+            <SolidColorBrush x:Key="HmFieldPlaceholderBrush" Color="#6B6B6B" />
+            <SolidColorBrush x:Key="HmCardBackgroundBrush" Color="#F7F7F7" />
+            <SolidColorBrush x:Key="HmCardBorderBrush" Color="#DADADA" />
+            <SolidColorBrush x:Key="HmPreviewChromeBrush" Color="#EFEFEF" />
+            <SolidColorBrush x:Key="HmLogBackgroundBrush" Color="#FAFAFA" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+            <SolidColorBrush x:Key="HmFieldBackgroundBrush" Color="#2B2B2B" />
+            <SolidColorBrush x:Key="HmFieldBorderBrush" Color="#555555" />
+            <SolidColorBrush x:Key="HmFieldPlaceholderBrush" Color="#A0A0A0" />
+            <SolidColorBrush x:Key="HmCardBackgroundBrush" Color="#1F1F1F" />
+            <SolidColorBrush x:Key="HmCardBorderBrush" Color="#454545" />
+            <SolidColorBrush x:Key="HmPreviewChromeBrush" Color="#141414" />
+            <SolidColorBrush x:Key="HmLogBackgroundBrush" Color="#1A1A1A" />
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+
+    <FontFamily x:Key="HmUiFont">Segoe UI Variable Text</FontFamily>
+    <FontFamily x:Key="HmMonoFont">Consolas</FontFamily>
+
+    <Style x:Key="HmTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource DefaultTextBoxStyle}">
+        <Setter Property="FontFamily" Value="{StaticResource HmUiFont}" />
+        <Setter Property="Background" Value="{ThemeResource HmFieldBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource HmFieldBorderBrush}" />
+        <Setter Property="PlaceholderForeground" Value="{ThemeResource HmFieldPlaceholderBrush}" />
+    </Style>
+
+    <Style x:Key="HmComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource DefaultComboBoxStyle}">
+        <Setter Property="FontFamily" Value="{StaticResource HmUiFont}" />
+        <Setter Property="Background" Value="{ThemeResource HmFieldBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource HmFieldBorderBrush}" />
+    </Style>
+
+    <Style x:Key="HmNumberBoxStyle" TargetType="NumberBox">
+        <Setter Property="FontFamily" Value="{StaticResource HmUiFont}" />
+        <Setter Property="Background" Value="{ThemeResource HmFieldBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource HmFieldBorderBrush}" />
+    </Style>
+
+    <Style TargetType="TextBox" BasedOn="{StaticResource HmTextBoxStyle}" />
+    <Style TargetType="ComboBox" BasedOn="{StaticResource HmComboBoxStyle}" />
+    <Style TargetType="NumberBox" BasedOn="{StaticResource HmNumberBoxStyle}" />
+
+</ResourceDictionary>

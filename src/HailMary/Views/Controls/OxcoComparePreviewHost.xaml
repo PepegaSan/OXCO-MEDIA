@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="HailMary.Views.Controls.OxcoComparePreviewHost"
+    x:Name="RootHost"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:drop="using:HailMary.Views.Helpers"
+    xmlns:controls="using:HailMary.Views.Controls"
+    HorizontalAlignment="Left"
+    VerticalAlignment="Top"
+    KeyDown="RootHost_KeyDown"
+    mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
+
+    <Grid RowSpacing="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Spacing="6">
+            <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="audiocleaner.filesHeader" />
+            <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="oxco.previewOriginalLabel" Width="100" />
+                <TextBox Grid.Column="1" Text="{x:Bind ViewModel.PreviewPathA, Mode=TwoWay}" drop:VideoDrop.IsEnabled="True" drop:VideoDrop.PathPropertyName="PreviewPathA" />
+                <Button Grid.Column="2" Command="{x:Bind ViewModel.PickPreviewPathACommand}" loc:Loc.Key="common.addDots" />
+            </Grid>
+            <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="oxco.previewDeepfakeLabel" Width="100" />
+                <TextBox Grid.Column="1" Text="{x:Bind ViewModel.PreviewPathB, Mode=TwoWay}" drop:VideoDrop.IsEnabled="True" drop:VideoDrop.PathPropertyName="PreviewPathB" />
+                <Button Grid.Column="2" Command="{x:Bind ViewModel.PickPreviewPathBCommand}" loc:Loc.Key="common.addDots" />
+            </Grid>
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <CheckBox loc:Loc.Key="oxco.linkWorkflow" IsChecked="{x:Bind ViewModel.PreviewLinkPaths, Mode=TwoWay}" />
+                <CheckBox loc:Loc.Key="oxco.autoLoad" IsChecked="{x:Bind ViewModel.PreviewAutoLoad, Mode=TwoWay}" />
+                <Button Command="{x:Bind ViewModel.SyncPreviewFromWorkflowNowCommand}" loc:Loc.Key="oxco.syncNow" />
+            </StackPanel>
+            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="oxco.previewLinkHintFull" TextWrapping="WrapWholeWords" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Spacing="6">
+            <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="oxco.testDiffSection" />
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="48" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="oxco.noise" Width="100" />
+                <Slider Grid.Column="1" Maximum="80" Minimum="1" Value="{x:Bind ViewModel.PreviewNoise, Mode=TwoWay}" />
+                <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="{x:Bind ViewModel.PreviewNoise, Mode=OneWay}" />
+            </Grid>
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="48" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="oxco.pixelThreshold" Width="100" />
+                <Slider Grid.Column="1" Maximum="4000" Minimum="1" Value="{x:Bind ViewModel.PreviewPixel, Mode=TwoWay}" />
+                <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="{x:Bind ViewModel.PreviewPixel, Mode=OneWay}" />
+            </Grid>
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <CheckBox loc:Loc.Key="oxco.diffOverlay" IsChecked="{x:Bind ViewModel.PreviewOverlay, Mode=TwoWay}" />
+                <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.PreviewDiffText, Mode=OneWay}" />
+                <TextBlock Text="{x:Bind ViewModel.PreviewSwapText, Mode=OneWay}" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Command="{x:Bind ViewModel.ApplyPreviewToFiltersCommand}" loc:Loc.Key="oxco.toFilterTab" />
+                <Button Command="{x:Bind ViewModel.SavePreviewThresholdsCommand}" loc:Loc.Key="oxco.saveThresholds" />
+            </StackPanel>
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
+            <Button Command="{x:Bind ViewModel.LoadPreviewCommand}" loc:Loc.Key="common.load" />
+            <Button Command="{x:Bind ViewModel.TogglePreviewPlayCommand}" Content="{x:Bind ViewModel.PreviewPlayButtonText, Mode=OneWay}" />
+            <TextBlock VerticalAlignment="Center" loc:Loc.Key="oxco.maxFps" />
+            <NumberBox
+                Width="64"
+                Maximum="60"
+                Minimum="1"
+                SpinButtonPlacementMode="Inline"
+                Value="{x:Bind ViewModel.PreviewMaxFps, Mode=TwoWay}" />
+            <CheckBox loc:Loc.Key="oxco.sideBySide" IsChecked="{x:Bind ViewModel.PreviewSideBySide, Mode=TwoWay}" VerticalAlignment="Center" />
+        </StackPanel>
+
+        <Grid Grid.Row="3">
+            <controls:AspectFitImagePresenter
+                MaxPreviewHeight="560"
+                MinPreviewHeight="120"
+                ImageSource="{x:Bind ViewModel.PreviewImage, Mode=OneWay}" />
+            <ProgressRing
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                IsActive="{x:Bind ViewModel.PreviewIsBusy, Mode=OneWay}"
+                Visibility="{x:Bind ViewModel.PreviewIsBusy, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+            <TextBlock
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Foreground="#CCCCCC"
+                loc:Loc.Key="oxco.noVideoClickLoad"
+                Visibility="{x:Bind ViewModel.PreviewIsLoaded, Mode=OneWay, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}" />
+        </Grid>
+
+        <StackPanel Grid.Row="4" Spacing="4">
+            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.PreviewInfoText, Mode=OneWay}" />
+            <Slider
+                IsEnabled="{x:Bind ViewModel.PreviewIsLoaded, Mode=OneWay}"
+                Maximum="{x:Bind ViewModel.PreviewFrameMax, Mode=OneWay}"
+                Value="{x:Bind ViewModel.PreviewFrameIndex, Mode=TwoWay}" />
+            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="oxco.keyboardHint" />
+        </StackPanel>
+    </Grid>
+</UserControl>

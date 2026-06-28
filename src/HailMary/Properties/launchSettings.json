@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "HailMary (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "HailMary (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

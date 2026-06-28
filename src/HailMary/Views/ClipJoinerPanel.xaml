@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<UserControl
+
+    x:Class="HailMary.Views.ClipJoinerPanel"
+
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+
+    xmlns:viewModels="using:HailMary.ViewModels"
+
+    HorizontalAlignment="Left"
+    VerticalAlignment="Top"
+    mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
+
+
+
+    <ScrollViewer HorizontalContentAlignment="Left" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+
+        <StackPanel Style="{StaticResource ToolShellContentPanel}" Spacing="10">
+
+            <TextBlock Text="{x:Bind ViewModel.Description, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+
+            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.Status, Mode=OneWay}" />
+
+
+
+            <Border Style="{StaticResource ToolShellCard}">
+
+                <StackPanel Spacing="8">
+
+                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" Text="Clips" />
+
+                    <Border
+
+                        x:Name="DropZone"
+
+                        Padding="12"
+
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+
+                        BorderThickness="2"
+
+                        CornerRadius="4">
+
+                        <TextBlock HorizontalAlignment="Center" Opacity="0.7" loc:Loc.Key="clipjoiner.dropHint" />
+
+                    </Border>
+
+                    <ListView
+
+                        x:Name="ClipList"
+
+                        MaxHeight="180"
+
+                        ItemsSource="{x:Bind ViewModel.ClipRows, Mode=OneWay}"
+
+                        SelectionChanged="ClipList_OnSelectionChanged">
+
+                        <ListView.ItemTemplate>
+
+                            <DataTemplate x:DataType="viewModels:ClipJoinerClipRow">
+
+                                <TextBlock FontFamily="Consolas" TextTrimming="CharacterEllipsis">
+
+                                    <Run Text="{x:Bind Index}" />
+
+                                    <Run Text=". " />
+
+                                    <Run Text="{x:Bind DisplayName}" />
+
+                                </TextBlock>
+
+                            </DataTemplate>
+
+                        </ListView.ItemTemplate>
+
+                    </ListView>
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+
+                        <Button Command="{x:Bind ViewModel.PickClipsCommand}" loc:Loc.Key="clipjoiner.addButton" />
+
+                        <Button Command="{x:Bind ViewModel.RemoveSelectedClipsCommand}" loc:Loc.Key="common.remove" />
+
+                        <Button Command="{x:Bind ViewModel.MoveClipUpCommand}" Content="↑" />
+
+                        <Button Command="{x:Bind ViewModel.MoveClipDownCommand}" Content="↓" />
+
+                        <Button Command="{x:Bind ViewModel.SortClipsByNameCommand}" loc:Loc.Key="clipjoiner.sortByName" />
+
+                        <Button Command="{x:Bind ViewModel.ClearClipsCommand}" loc:Loc.Key="common.clear" />
+
+                    </StackPanel>
+
+                </StackPanel>
+
+            </Border>
+
+
+
+            <Border Style="{StaticResource ToolShellCard}">
+
+                <StackPanel Spacing="8">
+
+                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="clipjoiner.outputHeader" />
+
+                    <Grid ColumnSpacing="8" RowSpacing="8">
+
+                        <Grid.ColumnDefinitions>
+
+                            <ColumnDefinition Width="120" />
+
+                            <ColumnDefinition Width="*" />
+
+                            <ColumnDefinition Width="Auto" />
+
+                        </Grid.ColumnDefinitions>
+
+                        <Grid.RowDefinitions>
+
+                            <RowDefinition />
+
+                            <RowDefinition />
+
+                            <RowDefinition />
+
+                            <RowDefinition />
+
+                            <RowDefinition />
+
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="autotagger.foldersHeader" />
+
+                        <TextBox Grid.Row="0" Grid.Column="1" Text="{x:Bind ViewModel.OutputDir, Mode=TwoWay}" />
+
+                        <Button Grid.Row="0" Grid.Column="2" Command="{x:Bind ViewModel.PickOutputDirCommand}" Content="…" />
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="clipjoiner.filenameLabel" />
+
+                        <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Bind ViewModel.OutputName, Mode=TwoWay}" />
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="clipjoiner.modeLabel" />
+
+                        <ComboBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" ItemsSource="{x:Bind ViewModel.ModeOptions, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedMode, Mode=TwoWay}" />
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" Text="FFmpeg Encoder" />
+
+                        <ComboBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" ItemsSource="{x:Bind ViewModel.EncoderOptions, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedEncoder, Mode=TwoWay}" />
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" Text="DaVinci Preset" />
+
+                        <TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Bind ViewModel.DavinciPreset, Mode=TwoWay}" />
+
+                    </Grid>
+
+                    <TextBlock
+
+                        Style="{StaticResource CaptionTextBlockStyle}"
+
+                        loc:Loc.Key="clipjoiner.davinciPathHint"
+
+                        TextWrapping="WrapWholeWords" />
+
+                </StackPanel>
+
+            </Border>
+
+
+
+            <Border Style="{StaticResource ToolShellCard}">
+
+                <StackPanel Spacing="8">
+
+                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="clipjoiner.batchQueueHeader" />
+
+                    <ListView
+
+                        x:Name="BatchList"
+
+                        MaxHeight="120"
+
+                        ItemsSource="{x:Bind ViewModel.BatchRows, Mode=OneWay}"
+
+                        SelectionChanged="BatchList_OnSelectionChanged">
+
+                        <ListView.ItemTemplate>
+
+                            <DataTemplate x:DataType="viewModels:ClipJoinerBatchRow">
+
+                                <TextBlock Text="{x:Bind Summary}" />
+
+                            </DataTemplate>
+
+                        </ListView.ItemTemplate>
+
+                    </ListView>
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+
+                        <Button Command="{x:Bind ViewModel.AddCurrentToBatchCommand}" loc:Loc.Key="clipjoiner.batchAddCurrent" />
+
+                        <Button Command="{x:Bind ViewModel.RemoveSelectedBatchCommand}" loc:Loc.Key="clipjoiner.batchRemove" />
+
+                        <Button Command="{x:Bind ViewModel.ClearBatchCommand}" loc:Loc.Key="clipjoiner.batchClear" />
+
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+
+                        <Button Command="{x:Bind ViewModel.RunBatchCommand}" Content="{x:Bind ViewModel.RunBatchLabel, Mode=OneWay}" />
+
+                        <Button Command="{x:Bind ViewModel.SaveSettingsCommand}" loc:Loc.Key="common.save" />
+
+                    </StackPanel>
+
+                </StackPanel>
+
+            </Border>
+
+        </StackPanel>
+
+    </ScrollViewer>
+
+</UserControl>
+
+

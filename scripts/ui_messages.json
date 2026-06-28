@@ -1,0 +1,3878 @@
+{
+  "app.title": {
+    "de": "Hail Mary",
+    "en": "Hail Mary"
+  },
+  "main.settingsTooltip": {
+    "de": "Einstellungen",
+    "en": "Settings"
+  },
+  "main.logHeader": {
+    "de": "Log",
+    "en": "Log"
+  },
+  "main.logClear": {
+    "de": "Leeren",
+    "en": "Clear"
+  },
+  "main.readyLog": {
+    "de": "[System] Hail Mary bereit.",
+    "en": "[System] Hail Mary ready."
+  },
+  "settings.title": {
+    "de": "Einstellungen",
+    "en": "Settings"
+  },
+  "settings.appearance": {
+    "de": "Darstellung",
+    "en": "Appearance"
+  },
+  "settings.theme": {
+    "de": "Design",
+    "en": "Theme"
+  },
+  "settings.theme.system": {
+    "de": "System",
+    "en": "System"
+  },
+  "settings.theme.light": {
+    "de": "Hell",
+    "en": "Light"
+  },
+  "settings.theme.dark": {
+    "de": "Dunkel",
+    "en": "Dark"
+  },
+  "settings.language": {
+    "de": "Sprache",
+    "en": "Language"
+  },
+  "settings.language.de": {
+    "de": "Deutsch",
+    "en": "Deutsch"
+  },
+  "settings.language.en": {
+    "de": "English",
+    "en": "English"
+  },
+  "settings.saveAppearance": {
+    "de": "Darstellung speichern",
+    "en": "Save appearance"
+  },
+  "settings.appearanceSaved": {
+    "de": "Design und Sprache gespeichert.",
+    "en": "Theme and language saved."
+  },
+  "settings.general": {
+    "de": "Allgemein",
+    "en": "General"
+  },
+  "settings.projectsRoot": {
+    "de": "Projects-Root",
+    "en": "Projects root"
+  },
+  "settings.projectsRootHint": {
+    "de": "Ordner mit Python-Projekten",
+    "en": "Folder containing your Python tool projects"
+  },
+  "settings.pickFolder": {
+    "de": "Ordner wählen…",
+    "en": "Choose folder…"
+  },
+  "settings.save": {
+    "de": "Speichern",
+    "en": "Save"
+  },
+  "settings.pythonOptional": {
+    "de": "Python (optional)",
+    "en": "Python (optional)"
+  },
+  "settings.pickPython": {
+    "de": "Python wählen…",
+    "en": "Choose Python…"
+  },
+  "settings.generalSaved": {
+    "de": "Allgemeine Einstellungen gespeichert.",
+    "en": "General settings saved."
+  },
+  "settings.davinci": {
+    "de": "DaVinci Resolve (global)",
+    "en": "DaVinci Resolve (global)"
+  },
+  "settings.davinciHint": {
+    "de": "Scripting-API, Resolve.exe und fusionscript.dll — gelten für Oxco, Clip Joiner, Scene Cutter, Batch Render usw.",
+    "en": "Scripting API, Resolve.exe and fusionscript.dll — used by Oxco, Clip Joiner, Scene Cutter, Batch Render, and more."
+  },
+  "settings.davinciModules": {
+    "de": "API-Ordner (Modules)",
+    "en": "API folder (Modules)"
+  },
+  "settings.davinciExe": {
+    "de": "Resolve.exe",
+    "en": "Resolve.exe"
+  },
+  "settings.davinciDll": {
+    "de": "fusionscript.dll (optional)",
+    "en": "fusionscript.dll (optional)"
+  },
+  "settings.davinciSaved": {
+    "de": "DaVinci-Pfade gespeichert (gelten für alle Tools).",
+    "en": "DaVinci paths saved (apply to all tools)."
+  },
+  "settings.stash": {
+    "de": "Stash (global)",
+    "en": "Stash (global)"
+  },
+  "settings.stashHint": {
+    "de": "GraphQL, NAS-Pfad und Backup gelten für alle Stash-Tools.",
+    "en": "GraphQL, NAS path and backup apply to all Stash tools."
+  },
+  "actionBar.settingsTooltip": {
+    "de": "Einstellungen",
+    "en": "Settings"
+  },
+  "actionBar.moreActions": {
+    "de": "Weitere Aktionen",
+    "en": "More actions"
+  },
+  "actionBar.start": {
+    "de": "Start",
+    "en": "Start"
+  },
+  "group.video": {
+    "de": "Video",
+    "en": "Video"
+  },
+  "group.stash": {
+    "de": "Stash",
+    "en": "Stash"
+  },
+  "group.oxco": {
+    "de": "Oxco",
+    "en": "Oxco"
+  },
+  "group.workflow": {
+    "de": "Organisation",
+    "en": "Organisation"
+  },
+  "group.other": {
+    "de": "Sonstiges",
+    "en": "Other"
+  },
+  "common.ready": {
+    "de": "Bereit",
+    "en": "Ready"
+  },
+  "common.file": {
+    "de": "Datei…",
+    "en": "File…"
+  },
+  "common.folder": {
+    "de": "Ordner…",
+    "en": "Folder…"
+  },
+  "common.save": {
+    "de": "Speichern",
+    "en": "Save"
+  },
+  "common.cancel": {
+    "de": "Abbrechen",
+    "en": "Cancel"
+  },
+  "common.export": {
+    "de": "Export",
+    "en": "Export"
+  },
+  "common.input": {
+    "de": "Eingabe",
+    "en": "Input"
+  },
+  "common.output": {
+    "de": "Ausgabe",
+    "en": "Output"
+  },
+  "common.status": {
+    "de": "Status",
+    "en": "Status"
+  },
+  "session.noInput": {
+    "de": "(keine Eingabe)",
+    "en": "(no input)"
+  },
+  "tool.cutter.label": {
+    "de": "Szenecutter",
+    "en": "Scene Cutter"
+  },
+  "tool.cutter.description": {
+    "de": "Vorschau, Szenen markieren/auswählen, Reihenfolge, FFmpeg- und DaVinci-Export — alles in Hail Mary.",
+    "en": "Preview, mark and pick scenes, set order, export with FFmpeg or DaVinci — all inside Hail Mary."
+  },
+  "tool.intro_cutter.label": {
+    "de": "Intro Cutter",
+    "en": "Intro Cutter"
+  },
+  "tool.intro_cutter.description": {
+    "de": "Intro/Outro entfernen — direkt in Hail Mary (FFmpeg oder Resolve).",
+    "en": "Trim intro and outro — directly in Hail Mary (FFmpeg or Resolve)."
+  },
+  "tool.text_to_video.label": {
+    "de": "Text to Video",
+    "en": "Text to Video"
+  },
+  "tool.text_to_video.description": {
+    "de": "Text und Untertitel ins Video — Vorschau, Abschnitte, SRT, FFmpeg-Export in Hail Mary.",
+    "en": "Add text and subtitles to video — preview, segments, SRT, FFmpeg export in Hail Mary."
+  },
+  "tool.bitratechanger.label": {
+    "de": "Bitratechanger",
+    "en": "Bitrate Changer"
+  },
+  "tool.bitratechanger.description": {
+    "de": "Ordner scannen, Bitrate-Regeln anwenden, FFmpeg-Batch — wie mass_bitrate_gui.",
+    "en": "Scan folders, apply bitrate rules, FFmpeg batch — like mass_bitrate_gui."
+  },
+  "tool.audiocleaner.label": {
+    "de": "Audiocleaner",
+    "en": "Audio Cleaner"
+  },
+  "tool.audiocleaner.description": {
+    "de": "Audio aus Videos säubern (FFmpeg-Presets) — Minimal-Variante in Hail Mary.",
+    "en": "Clean up audio from videos (FFmpeg presets) — minimal variant in Hail Mary."
+  },
+  "tool.clip_joiner.label": {
+    "de": "Clip Joiner",
+    "en": "Clip Joiner"
+  },
+  "tool.clip_joiner.description": {
+    "de": "Clips per Drag & Drop laden, Reihenfolge festlegen, FFmpeg- oder DaVinci-Concat.",
+    "en": "Load clips by drag and drop, set order, concat with FFmpeg or DaVinci."
+  },
+  "tool.davinci_batch_render.label": {
+    "de": "DaVinci Batch Render",
+    "en": "DaVinci Batch Render"
+  },
+  "tool.davinci_batch_render.description": {
+    "de": "Videos in Warteschlange legen und nacheinander in DaVinci Resolve rendern.",
+    "en": "Queue videos and render them one by one in DaVinci Resolve."
+  },
+  "tool.marker_autocut.label": {
+    "de": "Marker Autocut",
+    "en": "Marker Autocut"
+  },
+  "tool.marker_autocut.description": {
+    "de": "Lädt Marker aus Stash und baut Schnitt-Timelines in DaVinci Resolve.",
+    "en": "Load markers from Stash and build cut timelines in DaVinci Resolve."
+  },
+  "tool.stash_cutter.label": {
+    "de": "Stash Cutter",
+    "en": "Stash Cutter"
+  },
+  "tool.stash_cutter.description": {
+    "de": "Sucht Szenen in Stash, schneidet Ausschnitte — Export mit FFmpeg oder Resolve.",
+    "en": "Find scenes in Stash, cut clips — export with FFmpeg or Resolve."
+  },
+  "tool.marker_updater.label": {
+    "de": "Marker Updater",
+    "en": "Marker Updater"
+  },
+  "tool.marker_updater.description": {
+    "de": "Hält Titel, Notizen und Markierungen in Stash aktuell.",
+    "en": "Keep titles, notes and markers in Stash up to date."
+  },
+  "tool.stash_pathfinder.label": {
+    "de": "Stash pathfinder",
+    "en": "Stash Pathfinder"
+  },
+  "tool.stash_pathfinder.description": {
+    "de": "Sucht Szenen in Stash und kopiert echte Dateipfade (GraphQL, Pfad-Mapping) — in Hail Mary.",
+    "en": "Find scenes in Stash and copy real file paths (GraphQL, path mapping) — in Hail Mary."
+  },
+  "tool.oxco.label": {
+    "de": "Oxco",
+    "en": "Oxco"
+  },
+  "tool.oxco.description": {
+    "de": "Vergleicht Videos, Bitrate-Hilfen und Autotagger in einer Oberfläche.",
+    "en": "Compare videos, bitrate helpers and autotagger in one place."
+  },
+  "tool.daten_sync.label": {
+    "de": "Daten Sync",
+    "en": "Data Sync"
+  },
+  "tool.daten_sync.description": {
+    "de": "Gleicht Ordner zwischen zwei Speicherorten ab (Robocopy, Profile, Intervalle).",
+    "en": "Sync folders between two locations (Robocopy, profiles, intervals)."
+  },
+  "tool.dl_sort.label": {
+    "de": "DL Sort",
+    "en": "DL Sort"
+  },
+  "tool.dl_sort.description": {
+    "de": "Sortiert Downloads automatisch nach Regeln — Monitor und Scan in Hail Mary.",
+    "en": "Sort downloads automatically by rules — monitor and scan in Hail Mary."
+  },
+  "tool.autotagger.label": {
+    "de": "Autotagger",
+    "en": "Autotagger"
+  },
+  "tool.autotagger.description": {
+    "de": "Beobachtet einen Ordner und taggt/verschiebt .mp4-Dateien nach Profil-Warteschlange.",
+    "en": "Watch a folder and tag/move .mp4 files via profile queue."
+  },
+  "common.delete": {
+    "de": "Löschen",
+    "en": "Delete"
+  },
+  "common.remove": {
+    "de": "Entfernen",
+    "en": "Remove"
+  },
+  "common.add": {
+    "de": "Hinzufügen",
+    "en": "Add"
+  },
+  "common.clear": {
+    "de": "Leeren",
+    "en": "Clear"
+  },
+  "common.scan": {
+    "de": "Scannen",
+    "en": "Scan"
+  },
+  "common.load": {
+    "de": "Laden",
+    "en": "Load"
+  },
+  "common.connect": {
+    "de": "Verbinden",
+    "en": "Connect"
+  },
+  "common.stop": {
+    "de": "Stoppen",
+    "en": "Stop"
+  },
+  "common.all": {
+    "de": "Alle",
+    "en": "All"
+  },
+  "common.none": {
+    "de": "Keine",
+    "en": "None"
+  },
+  "common.preview": {
+    "de": "Vorschau",
+    "en": "Preview"
+  },
+  "common.preset": {
+    "de": "Preset",
+    "en": "Preset"
+  },
+  "common.files": {
+    "de": "Dateien",
+    "en": "Files"
+  },
+  "common.folders": {
+    "de": "Ordner",
+    "en": "Folders"
+  },
+  "common.video": {
+    "de": "Video",
+    "en": "Video"
+  },
+  "common.batch": {
+    "de": "Batch",
+    "en": "Batch"
+  },
+  "common.running": {
+    "de": "Läuft…",
+    "en": "Running…"
+  },
+  "common.done": {
+    "de": "Fertig",
+    "en": "Done"
+  },
+  "common.aborted": {
+    "de": "Abgebrochen",
+    "en": "Aborted"
+  },
+  "common.error": {
+    "de": "Fehler",
+    "en": "Error"
+  },
+  "common.yes": {
+    "de": "Ja",
+    "en": "Yes"
+  },
+  "common.no": {
+    "de": "Nein",
+    "en": "No"
+  },
+  "common.pickFolder": {
+    "de": "Ordner…",
+    "en": "Folder…"
+  },
+  "common.pickFile": {
+    "de": "Datei…",
+    "en": "File…"
+  },
+  "common.pickFiles": {
+    "de": "Dateien…",
+    "en": "Files…"
+  },
+  "common.modules": {
+    "de": "Modules…",
+    "en": "Modules…"
+  },
+  "common.dll": {
+    "de": "DLL…",
+    "en": "DLL…"
+  },
+  "common.browse": {
+    "de": "Durchsuchen…",
+    "en": "Browse…"
+  },
+  "common.addDots": {
+    "de": "...",
+    "en": "..."
+  },
+  "common.originalGui": {
+    "de": "Originales GUI…",
+    "en": "Original GUI…"
+  },
+  "common.fullGui": {
+    "de": "Volles GUI…",
+    "en": "Full GUI…"
+  },
+  "common.plusGui": {
+    "de": "Plus-GUI (Vorschau)…",
+    "en": "Plus GUI (preview)…"
+  },
+  "common.batchExport": {
+    "de": "Batch exportieren",
+    "en": "Export batch"
+  },
+  "common.startExport": {
+    "de": "Export starten",
+    "en": "Start export"
+  },
+  "common.startCut": {
+    "de": "Schnitt starten",
+    "en": "Start cut"
+  },
+  "common.startCompare": {
+    "de": "Compare starten",
+    "en": "Start compare"
+  },
+  "common.startConversion": {
+    "de": "Konvertierung starten",
+    "en": "Start conversion"
+  },
+  "common.startMonitor": {
+    "de": "Monitor starten",
+    "en": "Start monitor"
+  },
+  "common.startBatch": {
+    "de": "Batch starten",
+    "en": "Start batch"
+  },
+  "common.saveScene": {
+    "de": "Szene speichern",
+    "en": "Save scene"
+  },
+  "common.search": {
+    "de": "Suchen",
+    "en": "Search"
+  },
+  "common.results": {
+    "de": "Treffer",
+    "en": "Results"
+  },
+  "common.paths": {
+    "de": "Pfade",
+    "en": "Paths"
+  },
+  "common.markers": {
+    "de": "Marker",
+    "en": "Markers"
+  },
+  "common.rules": {
+    "de": "Regeln",
+    "en": "Rules"
+  },
+  "common.profile": {
+    "de": "Profil",
+    "en": "Profile"
+  },
+  "common.queue": {
+    "de": "Warteschlange",
+    "en": "Queue"
+  },
+  "common.suffix": {
+    "de": "Suffix",
+    "en": "Suffix"
+  },
+  "common.cut": {
+    "de": "Schnitt",
+    "en": "Cut"
+  },
+  "common.intro": {
+    "de": "Intro",
+    "en": "Intro"
+  },
+  "common.outro": {
+    "de": "Outro",
+    "en": "Outro"
+  },
+  "common.recursive": {
+    "de": "Rekursiv",
+    "en": "Recursive"
+  },
+  "common.filename": {
+    "de": "Dateiname",
+    "en": "Filename"
+  },
+  "common.target": {
+    "de": "Ziel",
+    "en": "Target"
+  },
+  "common.source": {
+    "de": "Quelle",
+    "en": "Source"
+  },
+  "common.reason": {
+    "de": "Grund",
+    "en": "Reason"
+  },
+  "common.action": {
+    "de": "Aktion",
+    "en": "Action"
+  },
+  "common.resolution": {
+    "de": "Auflösung",
+    "en": "Resolution"
+  },
+  "common.length": {
+    "de": "Länge",
+    "en": "Length"
+  },
+  "common.size": {
+    "de": "Größe",
+    "en": "Size"
+  },
+  "common.path": {
+    "de": "Pfad",
+    "en": "Path"
+  },
+  "common.sort": {
+    "de": "Sortieren",
+    "en": "Sort"
+  },
+  "common.group": {
+    "de": "Gruppieren",
+    "en": "Group"
+  },
+  "common.convert": {
+    "de": "Konvertieren",
+    "en": "Convert"
+  },
+  "common.process": {
+    "de": "Verarbeiten",
+    "en": "Process"
+  },
+  "common.distribute": {
+    "de": "Verteilen",
+    "en": "Distribute"
+  },
+  "common.trim": {
+    "de": "Kürzen",
+    "en": "Trim"
+  },
+  "common.tolerance": {
+    "de": "Toleranz",
+    "en": "Tolerance"
+  },
+  "common.editor": {
+    "de": "Editor",
+    "en": "Editor"
+  },
+  "common.cleanup": {
+    "de": "Bereinigung",
+    "en": "Cleanup"
+  },
+  "common.tags": {
+    "de": "Tags",
+    "en": "Tags"
+  },
+  "common.notes": {
+    "de": "Notizen",
+    "en": "Notes"
+  },
+  "common.sceneTitle": {
+    "de": "Szenen-Titel",
+    "en": "Scene title"
+  },
+  "common.previousScene": {
+    "de": "← Vorherige Szene",
+    "en": "← Previous scene"
+  },
+  "common.nextScene": {
+    "de": "Nächste Szene →",
+    "en": "Next scene →"
+  },
+  "common.createMarker": {
+    "de": "Marker erstellen",
+    "en": "Create marker"
+  },
+  "common.update": {
+    "de": "Aktualisieren",
+    "en": "Update"
+  },
+  "common.end": {
+    "de": "Ende",
+    "en": "End"
+  },
+  "common.clamp": {
+    "de": "Kürzen",
+    "en": "Trim"
+  },
+  "common.deleteAll": {
+    "de": "Alle löschen",
+    "en": "Delete all"
+  },
+  "common.selectAll": {
+    "de": "Alle auswählen",
+    "en": "Select all"
+  },
+  "common.clearSelection": {
+    "de": "Auswahl löschen",
+    "en": "Clear selection"
+  },
+  "common.reload": {
+    "de": "Neu laden",
+    "en": "Reload"
+  },
+  "common.copyFolder": {
+    "de": "Ordner kopieren",
+    "en": "Copy folder"
+  },
+  "common.copyFilename": {
+    "de": "Dateiname kopieren",
+    "en": "Copy filename"
+  },
+  "common.copyFullPath": {
+    "de": "Vollpfad kopieren",
+    "en": "Copy full path"
+  },
+  "common.explorer": {
+    "de": "Explorer",
+    "en": "Explorer"
+  },
+  "common.clipboard": {
+    "de": "Clipboard",
+    "en": "Clipboard"
+  },
+  "common.start": {
+    "de": "Start",
+    "en": "Start"
+  },
+  "common.stopButton": {
+    "de": "Stop",
+    "en": "Stop"
+  },
+  "common.play": {
+    "de": "Play",
+    "en": "Play"
+  },
+  "common.pause": {
+    "de": "Pause",
+    "en": "Pause"
+  },
+  "common.settingsSaved": {
+    "de": "Einstellungen gespeichert.",
+    "en": "Settings saved."
+  },
+  "common.markAll": {
+    "de": "Alle markieren",
+    "en": "Select all"
+  },
+  "common.unmarkAll": {
+    "de": "Keine markieren",
+    "en": "Select none"
+  },
+  "common.clearList": {
+    "de": "Liste leeren",
+    "en": "Clear list"
+  },
+  "common.auto": {
+    "de": "Auto",
+    "en": "Auto"
+  },
+  "common.options": {
+    "de": "Optionen",
+    "en": "Options"
+  },
+  "common.mode": {
+    "de": "Modus",
+    "en": "Mode"
+  },
+  "common.active": {
+    "de": "Aktiv",
+    "en": "Active"
+  },
+  "common.title": {
+    "de": "Titel",
+    "en": "Title"
+  },
+  "common.name": {
+    "de": "Name",
+    "en": "Name"
+  },
+  "common.codec": {
+    "de": "Codec",
+    "en": "Codec"
+  },
+  "common.bitrate": {
+    "de": "Bitrate",
+    "en": "Bitrate"
+  },
+  "common.container": {
+    "de": "Container",
+    "en": "Container"
+  },
+  "common.position": {
+    "de": "Platz",
+    "en": "Position"
+  },
+  "common.order": {
+    "de": "Reihenfolge",
+    "en": "Order"
+  },
+  "common.startCol": {
+    "de": "Start",
+    "en": "Start"
+  },
+  "common.endCol": {
+    "de": "Ende",
+    "en": "End"
+  },
+  "common.inStash": {
+    "de": "In Stash",
+    "en": "In Stash"
+  },
+  "common.lastScene": {
+    "de": "Letzte Szene",
+    "en": "Last scene"
+  },
+  "common.sceneId": {
+    "de": "Szenen-ID",
+    "en": "Scene ID"
+  },
+  "common.searchScene": {
+    "de": "Szene suchen",
+    "en": "Search scene"
+  },
+  "common.insert": {
+    "de": "Einfügen",
+    "en": "Insert"
+  },
+  "common.bold": {
+    "de": "Fett",
+    "en": "Bold"
+  },
+  "common.italic": {
+    "de": "Kursiv",
+    "en": "Italic"
+  },
+  "common.strike": {
+    "de": "Durchgestrichen",
+    "en": "Strikethrough"
+  },
+  "common.sync": {
+    "de": "Sync",
+    "en": "Sync"
+  },
+  "common.up": {
+    "de": "↑",
+    "en": "↑"
+  },
+  "common.down": {
+    "de": "↓",
+    "en": "↓"
+  },
+  "common.moveTop": {
+    "de": "▲▲",
+    "en": "▲▲"
+  },
+  "common.moveUp": {
+    "de": "▲",
+    "en": "▲"
+  },
+  "common.moveDown": {
+    "de": "▼",
+    "en": "▼"
+  },
+  "common.moveBottom": {
+    "de": "▼▼",
+    "en": "▼▼"
+  },
+  "stash.connectionTitle": {
+    "de": "Stash-Verbindung",
+    "en": "Stash connection"
+  },
+  "stash.graphqlUrl": {
+    "de": "GraphQL-URL",
+    "en": "GraphQL URL"
+  },
+  "stash.apiKey": {
+    "de": "API-Key (optional)",
+    "en": "API key (optional)"
+  },
+  "stash.remotePrefix": {
+    "de": "Pfad-Praefix von Stash",
+    "en": "Path prefix from Stash"
+  },
+  "stash.localPrefix": {
+    "de": "Ersetzen durch (NAS/PC)",
+    "en": "Replace with (NAS/PC)"
+  },
+  "stash.backupPrefix": {
+    "de": "Backup-Praefix (optional)",
+    "en": "Backup prefix (optional)"
+  },
+  "stash.useBackup": {
+    "de": "Backup-Pfad statt NAS",
+    "en": "Use backup path instead of NAS"
+  },
+  "stash.notConnected": {
+    "de": "Nicht verbunden",
+    "en": "Not connected"
+  },
+  "stash.connected": {
+    "de": "Verbunden.",
+    "en": "Connected."
+  },
+  "stash.connectedTooltip": {
+    "de": "Mit Stash verbunden",
+    "en": "Connected to Stash"
+  },
+  "stash.notConnectedTooltip": {
+    "de": "Nicht mit Stash verbunden",
+    "en": "Not connected to Stash"
+  },
+  "stash.connectionFailed": {
+    "de": "Verbindung fehlgeschlagen",
+    "en": "Connection failed"
+  },
+  "stash.connecting": {
+    "de": "Verbinde mit Stash...",
+    "en": "Connecting to Stash..."
+  },
+  "stash.noSceneLoaded": {
+    "de": "Keine Szene geladen",
+    "en": "No scene loaded"
+  },
+  "stash.loadedSummary": {
+    "de": "Geladen: {0} | {1} | {2}",
+    "en": "Loaded: {0} | {1} | {2}"
+  },
+  "stash.selectionSummary": {
+    "de": "Auswahl: {0} | {1} | {2}",
+    "en": "Selection: {0} | {1} | {2}"
+  },
+  "stash.searchRunning": {
+    "de": "Suche läuft...",
+    "en": "Search running..."
+  },
+  "stash.searchTermRequired": {
+    "de": "Suchbegriff eingeben.",
+    "en": "Enter search term."
+  },
+  "stash.noResults": {
+    "de": "Keine Treffer.",
+    "en": "No results."
+  },
+  "stash.resultCount": {
+    "de": "{0} Treffer.",
+    "en": "{0} results."
+  },
+  "stash.noResultsHint": {
+    "de": "Keine Treffer — Suchbegriff ändern oder Stash prüfen.",
+    "en": "No results — change search term or check Stash."
+  },
+  "stash.resultsHint": {
+    "de": "Treffer — Doppelklick zum Laden",
+    "en": "Results — double-click to load"
+  },
+  "stash.sceneIdRequired": {
+    "de": "Bitte Szenen-ID eingeben.",
+    "en": "Please enter scene ID."
+  },
+  "stash.noLastScene": {
+    "de": "Noch keine zuletzt geladene Szene — zuerst in einem Stash-Tool laden.",
+    "en": "No last loaded scene yet — load one in a Stash tool first."
+  },
+  "stash.noSceneIdRecognized": {
+    "de": "Keine Szenen-ID erkannt.",
+    "en": "No scene ID recognized."
+  },
+  "stash.loadingScene": {
+    "de": "Lade Szene...",
+    "en": "Loading scene..."
+  },
+  "stash.sceneLoaded": {
+    "de": "Szene geladen.",
+    "en": "Scene loaded."
+  },
+  "stash.noLoadedScene": {
+    "de": "Keine geladene Szene.",
+    "en": "No loaded scene."
+  },
+  "stash.noSceneSelected": {
+    "de": "Keine Szene ausgewählt.",
+    "en": "No scene selected."
+  },
+  "stash.selectResult": {
+    "de": "Bitte einen Treffer auswählen.",
+    "en": "Please select a result."
+  },
+  "stash.resultAdopted": {
+    "de": "Treffer übernommen.",
+    "en": "Result adopted."
+  },
+  "stash.noFilePath": {
+    "de": "Kein Dateipfad verfuegbar.",
+    "en": "No file path available."
+  },
+  "stash.folderPathEmpty": {
+    "de": "Ordnerpfad leer.",
+    "en": "Folder path is empty."
+  },
+  "stash.folderCopied": {
+    "de": "Ordnerpfad kopiert.",
+    "en": "Folder path copied."
+  },
+  "stash.filenameCopied": {
+    "de": "Dateiname kopiert.",
+    "en": "Filename copied."
+  },
+  "stash.fullPathCopied": {
+    "de": "Kompletter Pfad kopiert.",
+    "en": "Full path copied."
+  },
+  "stash.folderUnreachable": {
+    "de": "Ordner nicht erreichbar — Pfad-Mapping prüfen.",
+    "en": "Folder unreachable — check path mapping."
+  },
+  "stash.explorerOpened": {
+    "de": "Explorer geöffnet.",
+    "en": "Explorer opened."
+  },
+  "stash.stashUrlMissing": {
+    "de": "Stash-URL nicht ermittelbar.",
+    "en": "Could not determine Stash URL."
+  },
+  "stash.stashUrlMissingEndpoint": {
+    "de": "Stash-URL nicht ermittelbar (Endpoint prüfen).",
+    "en": "Could not determine Stash URL (check endpoint)."
+  },
+  "stash.stashOpened": {
+    "de": "Stash im Browser geöffnet.",
+    "en": "Stash opened in browser."
+  },
+  "stash.lastSceneTooltip": {
+    "de": "Zuletzt in Hail Mary geladene Stash-Szene laden (merkt sich Tool-Wechsel)",
+    "en": "Load last Stash scene loaded in Hail Mary (persists across tool switches)"
+  },
+  "stash.reloadLoaded": {
+    "de": "Geladene Szene neu laden",
+    "en": "Reload loaded scene"
+  },
+  "scenecutter.sectionVideo": {
+    "de": "Video",
+    "en": "Video"
+  },
+  "scenecutter.videoPlaceholder": {
+    "de": "Video-Datei",
+    "en": "Video file"
+  },
+  "cutter.videoPlaceholder": {
+    "de": "Video-Datei",
+    "en": "Video file"
+  },
+  "scenecutter.outputDirHeader": {
+    "de": "Ausgabe-Ordner (FFmpeg-Default)",
+    "en": "Output folder (FFmpeg default)"
+  },
+  "cutter.outputDirHeader": {
+    "de": "Ausgabe-Ordner (FFmpeg-Default)",
+    "en": "Output folder (FFmpeg default)"
+  },
+  "scenecutter.scenesHeader": {
+    "de": "Szenen",
+    "en": "Scenes"
+  },
+  "cutter.scenesHeader": {
+    "de": "Szenen",
+    "en": "Scenes"
+  },
+  "scenecutter.chronologicalSort": {
+    "de": "Chronologisch sortieren",
+    "en": "Sort chronologically"
+  },
+  "cutter.chronologicalSort": {
+    "de": "Chronologisch sortieren",
+    "en": "Sort chronologically"
+  },
+  "scenecutter.clearScenes": {
+    "de": "Szenen leeren",
+    "en": "Clear scenes"
+  },
+  "cutter.clearScenes": {
+    "de": "Szenen leeren",
+    "en": "Clear scenes"
+  },
+  "scenecutter.exportHeader": {
+    "de": "Export",
+    "en": "Export"
+  },
+  "cutter.exportHeader": {
+    "de": "Export",
+    "en": "Export"
+  },
+  "scenecutter.safeOutput": {
+    "de": "Sichere Ausgabe (_2, _3 …)",
+    "en": "Safe output (_2, _3 …)"
+  },
+  "cutter.safeOutput": {
+    "de": "Sichere Ausgabe (_2, _3 …)",
+    "en": "Safe output (_2, _3 …)"
+  },
+  "scenecutter.autoRemoveExported": {
+    "de": "Exportierte Szenen entfernen",
+    "en": "Remove exported scenes"
+  },
+  "cutter.autoRemoveExported": {
+    "de": "Exportierte Szenen entfernen",
+    "en": "Remove exported scenes"
+  },
+  "scenecutter.useDavinciExport": {
+    "de": "DaVinci Resolve Export",
+    "en": "DaVinci Resolve export"
+  },
+  "cutter.useDavinciExport": {
+    "de": "DaVinci Resolve Export",
+    "en": "DaVinci Resolve export"
+  },
+  "scenecutter.ffmpegOutputDir": {
+    "de": "FFmpeg Zielordner",
+    "en": "FFmpeg target folder"
+  },
+  "cutter.ffmpegOutputDir": {
+    "de": "FFmpeg Zielordner",
+    "en": "FFmpeg target folder"
+  },
+  "scenecutter.ffmpegOutputDirPlaceholder": {
+    "de": "Leer = Tool-Ausgabeordner oder neben Quelle",
+    "en": "Empty = tool output folder or beside source"
+  },
+  "cutter.ffmpegOutputDirPlaceholder": {
+    "de": "Leer = Tool-Ausgabeordner oder neben Quelle",
+    "en": "Empty = tool output folder or beside source"
+  },
+  "scenecutter.resolvePreset": {
+    "de": "Resolve Preset",
+    "en": "Resolve preset"
+  },
+  "cutter.resolvePreset": {
+    "de": "Resolve Preset",
+    "en": "Resolve preset"
+  },
+  "scenecutter.davinciOutputDir": {
+    "de": "Zielordner",
+    "en": "Target folder"
+  },
+  "cutter.davinciOutputDir": {
+    "de": "Zielordner",
+    "en": "Target folder"
+  },
+  "scenecutter.addScene": {
+    "de": "Szene + (P)",
+    "en": "Scene + (P)"
+  },
+  "cutter.addScene": {
+    "de": "Szene + (P)",
+    "en": "Scene + (P)"
+  },
+  "scenecutter.addFullVideo": {
+    "de": "Ganzes Video",
+    "en": "Entire video"
+  },
+  "cutter.addFullVideo": {
+    "de": "Ganzes Video",
+    "en": "Entire video"
+  },
+  "scenecutter.partialSelectAll": {
+    "de": "Alle Szenen",
+    "en": "All scenes"
+  },
+  "cutter.partialSelectAll": {
+    "de": "Alle Szenen",
+    "en": "All scenes"
+  },
+  "scenecutter.partialSelectPartial": {
+    "de": "Teilschnitt",
+    "en": "Partial cut"
+  },
+  "cutter.partialSelectPartial": {
+    "de": "Teilschnitt",
+    "en": "Partial cut"
+  },
+  "scenecutter.partialSelectOnHint": {
+    "de": "Teilschnitt: Szenen anhaken, die exportiert werden sollen",
+    "en": "Partial cut: check scenes to export"
+  },
+  "cutter.partialSelectOnHint": {
+    "de": "Teilschnitt: Szenen anhaken, die exportiert werden sollen",
+    "en": "Partial cut: check scenes to export"
+  },
+  "scenecutter.partialSelectOffHint": {
+    "de": "Alle Szenen werden exportiert",
+    "en": "All scenes will be exported"
+  },
+  "cutter.partialSelectOffHint": {
+    "de": "Alle Szenen werden exportiert",
+    "en": "All scenes will be exported"
+  },
+  "scenecutter.markInOutRequired": {
+    "de": "Zuerst Mark In und Mark Out setzen",
+    "en": "Set Mark In and Mark Out first"
+  },
+  "cutter.markInOutRequired": {
+    "de": "Zuerst Mark In und Mark Out setzen",
+    "en": "Set Mark In and Mark Out first"
+  },
+  "scenecutter.outAfterIn": {
+    "de": "Out muss nach In liegen",
+    "en": "Out must be after In"
+  },
+  "cutter.outAfterIn": {
+    "de": "Out muss nach In liegen",
+    "en": "Out must be after In"
+  },
+  "scenecutter.sceneCount": {
+    "de": "{0} Szene(n)",
+    "en": "{0} scene(s)"
+  },
+  "cutter.sceneCount": {
+    "de": "{0} Szene(n)",
+    "en": "{0} scene(s)"
+  },
+  "scenecutter.loadVideoForFullScene": {
+    "de": "Video laden für Ganzes-Video-Szene",
+    "en": "Load video for full-video scene"
+  },
+  "cutter.loadVideoForFullScene": {
+    "de": "Video laden für Ganzes-Video-Szene",
+    "en": "Load video for full-video scene"
+  },
+  "scenecutter.fullVideoSceneAdded": {
+    "de": "Szene 1: ganzes Video (Start → Ende)",
+    "en": "Scene 1: entire video (start → end)"
+  },
+  "cutter.fullVideoSceneAdded": {
+    "de": "Szene 1: ganzes Video (Start → Ende)",
+    "en": "Scene 1: entire video (start → end)"
+  },
+  "scenecutter.scenesCleared": {
+    "de": "Szenen geleert",
+    "en": "Scenes cleared"
+  },
+  "cutter.scenesCleared": {
+    "de": "Szenen geleert",
+    "en": "Scenes cleared"
+  },
+  "scenecutter.settingsSaved": {
+    "de": "Einstellungen gespeichert (cutter_app_config.json)",
+    "en": "Settings saved (cutter_app_config.json)"
+  },
+  "cutter.settingsSaved": {
+    "de": "Einstellungen gespeichert (cutter_app_config.json)",
+    "en": "Settings saved (cutter_app_config.json)"
+  },
+  "scenecutter.noVideoFile": {
+    "de": "Keine Video-Datei",
+    "en": "No video file"
+  },
+  "cutter.noVideoFile": {
+    "de": "Keine Video-Datei",
+    "en": "No video file"
+  },
+  "scenecutter.exportRunning": {
+    "de": "Export läuft…",
+    "en": "Export running…"
+  },
+  "cutter.exportRunning": {
+    "de": "Export läuft…",
+    "en": "Export running…"
+  },
+  "scenecutter.exportDone": {
+    "de": "Export fertig",
+    "en": "Export finished"
+  },
+  "cutter.exportDone": {
+    "de": "Export fertig",
+    "en": "Export finished"
+  },
+  "scenecutter.autosaveRestored": {
+    "de": "Autosave: {0} Szene(n) wiederhergestellt",
+    "en": "Autosave: restored {0} scene(s)"
+  },
+  "cutter.autosaveRestored": {
+    "de": "Autosave: {0} Szene(n) wiederhergestellt",
+    "en": "Autosave: restored {0} scene(s)"
+  },
+  "scenecutter.startDavinciExport": {
+    "de": "DaVinci Export starten",
+    "en": "Start DaVinci export"
+  },
+  "cutter.startDavinciExport": {
+    "de": "DaVinci Export starten",
+    "en": "Start DaVinci export"
+  },
+  "scenecutter.startExport": {
+    "de": "Export starten",
+    "en": "Start export"
+  },
+  "cutter.startExport": {
+    "de": "Export starten",
+    "en": "Start export"
+  },
+  "scenecutter.pendingMarks": {
+    "de": "In: {0}   Out: {1}",
+    "en": "In: {0}   Out: {1}"
+  },
+  "cutter.pendingMarks": {
+    "de": "In: {0}   Out: {1}",
+    "en": "In: {0}   Out: {1}"
+  },
+  "scenecutter.minOneScene": {
+    "de": "Mindestens eine Szene hinzufügen",
+    "en": "Add at least one scene"
+  },
+  "cutter.minOneScene": {
+    "de": "Mindestens eine Szene hinzufügen",
+    "en": "Add at least one scene"
+  },
+  "scenecutter.partialNeedChecked": {
+    "de": "Teilschnitt: mindestens eine Szene anhaken",
+    "en": "Partial cut: check at least one scene"
+  },
+  "cutter.partialNeedChecked": {
+    "de": "Teilschnitt: mindestens eine Szene anhaken",
+    "en": "Partial cut: check at least one scene"
+  },
+  "intro.inputHeader": {
+    "de": "Eingabe",
+    "en": "Input"
+  },
+  "intro.inputPlaceholder": {
+    "de": "Videos über Datei, Ordner oder Drag & Drop hinzufügen",
+    "en": "Add videos via file, folder, or drag & drop"
+  },
+  "intro.batchHint": {
+    "de": "Zeile anklicken = Vorschau. Anhaken = beim Schnitt einbeziehen. Ordner-Inhalt ist zunächst nicht markiert.",
+    "en": "Click row = preview. Check = include in cut. Folder contents start unchecked."
+  },
+  "intro.outputBesideSource": {
+    "de": "Ausgabe im gleichen Ordner wie die Quelldatei",
+    "en": "Output in same folder as source"
+  },
+  "intro.outputDirHeader": {
+    "de": "Ausgabe-Ordner",
+    "en": "Output folder"
+  },
+  "intro.stripSuffixHeader": {
+    "de": "Suffix entfernen",
+    "en": "Remove suffix"
+  },
+  "intro.stripSuffixHint": {
+    "de": "Entfernt _introcut (FFmpeg) bzw. _resolve_cut (DaVinci) aus Dateinamen…",
+    "en": "Removes _introcut (FFmpeg) or _resolve_cut (DaVinci) from filenames…"
+  },
+  "intro.cutHeader": {
+    "de": "Schnitt",
+    "en": "Cut"
+  },
+  "intro.introSec": {
+    "de": "Intro (Sek.)",
+    "en": "Intro (sec.)"
+  },
+  "intro.outroSec": {
+    "de": "Outro (Sek.)",
+    "en": "Outro (sec.)"
+  },
+  "intro.loadPreset": {
+    "de": "Preset laden",
+    "en": "Load preset"
+  },
+  "intro.presetNameLabel": {
+    "de": "Name zum Speichern",
+    "en": "Name to save"
+  },
+  "intro.useResolve": {
+    "de": "DaVinci Resolve (statt FFmpeg)",
+    "en": "DaVinci Resolve (instead of FFmpeg)"
+  },
+  "intro.videoBitrate": {
+    "de": "Video-Bitrate",
+    "en": "Video bitrate"
+  },
+  "intro.videoBitrateAuto": {
+    "de": "Automatisch je Datei (ffprobe)",
+    "en": "Automatic per file (ffprobe)"
+  },
+  "intro.audioCodec": {
+    "de": "Audio-Codec",
+    "en": "Audio codec"
+  },
+  "intro.audioBitrate": {
+    "de": "Audio-Bitrate",
+    "en": "Audio bitrate"
+  },
+  "intro.resolvePreset": {
+    "de": "Resolve Deliver-Preset",
+    "en": "Resolve deliver preset"
+  },
+  "intro.seekIntroEnd": {
+    "de": "Intro-Ende",
+    "en": "Intro end"
+  },
+  "intro.seekOutroStart": {
+    "de": "Outro-Start",
+    "en": "Outro start"
+  },
+  "intro.batchSummaryEmpty": {
+    "de": "Keine Dateien",
+    "en": "No files"
+  },
+  "intro.batchSummaryNoVideos": {
+    "de": "Keine Videos",
+    "en": "No videos"
+  },
+  "intro.batchSummaryOneMarked": {
+    "de": "1 Video — zum Schnitt markiert",
+    "en": "1 video — marked for cut"
+  },
+  "intro.batchSummaryOneUnmarked": {
+    "de": "1 Video — nicht markiert",
+    "en": "1 video — not marked"
+  },
+  "intro.batchSummaryMany": {
+    "de": "{0} Videos — {1} zum Schnitt markiert",
+    "en": "{0} videos — {1} marked for cut"
+  },
+  "intro.primaryActionBatch": {
+    "de": "Schnitt starten ({0})",
+    "en": "Start cut ({0})"
+  },
+  "intro.primaryAction": {
+    "de": "Schnitt starten",
+    "en": "Start cut"
+  },
+  "intro.runBatch": {
+    "de": "Batch starten ({0})",
+    "en": "Start batch ({0})"
+  },
+  "intro.run": {
+    "de": "Ausführen",
+    "en": "Run"
+  },
+  "intro.mainBarLabel": {
+    "de": "Inhalt",
+    "en": "Content"
+  },
+  "intro.mainBarWithDuration": {
+    "de": "Inhalt {0:0.#}s",
+    "en": "Content {0:0.#}s"
+  },
+  "intro.mainBarEmpty": {
+    "de": "Inhalt —",
+    "en": "Content —"
+  },
+  "intro.introBar": {
+    "de": "Intro {0:0.##}s",
+    "en": "Intro {0:0.##}s"
+  },
+  "intro.outroBar": {
+    "de": "Outro {0:0.##}s",
+    "en": "Outro {0:0.##}s"
+  },
+  "intro.cutSummary": {
+    "de": "Gesamt {0} | behalten {1}",
+    "en": "Total {0} | keep {1}"
+  },
+  "intro.cutSummaryDefault": {
+    "de": "Intro / Outro",
+    "en": "Intro / Outro"
+  },
+  "intro.loadVideoForPreview": {
+    "de": "Video laden für Vorschau",
+    "en": "Load video for preview"
+  },
+  "intro.negativeLengths": {
+    "de": "Intro/Outro dürfen nicht negativ sein",
+    "en": "Intro/outro must not be negative"
+  },
+  "intro.lengthsTooLong": {
+    "de": "Intro + Outro müssen kürzer als die Videolänge sein",
+    "en": "Intro + outro must be shorter than video length"
+  },
+  "intro.presetNameRequired": {
+    "de": "Bitte unter 'Name zum Speichern' einen Preset-Namen eingeben",
+    "en": "Enter a preset name under 'Name to save'"
+  },
+  "intro.presetSaved": {
+    "de": "Preset '{0}' gespeichert ({1:0.##}s / {2:0.##}s)",
+    "en": "Preset '{0}' saved ({1:0.##}s / {2:0.##}s)"
+  },
+  "intro.presetDeleted": {
+    "de": "Preset '{0}' gelöscht",
+    "en": "Preset '{0}' deleted"
+  },
+  "intro.noVideosImport": {
+    "de": "Keine Videos — Datei(en) oder Ordner importieren",
+    "en": "No videos — import file(s) or folder"
+  },
+  "intro.noVideosMarked": {
+    "de": "Keine Videos zum Schnitt markiert — bitte anhaken",
+    "en": "No videos marked for cut — please check rows"
+  },
+  "intro.running": {
+    "de": "Läuft…",
+    "en": "Running…"
+  },
+  "intro.runningBatch": {
+    "de": "Batch {0}/{1}: {2}",
+    "en": "Batch {0}/{1}: {2}"
+  },
+  "intro.batchDone": {
+    "de": "Batch fertig — {0} Videos",
+    "en": "Batch finished — {0} videos"
+  },
+  "intro.abortedSeeLog": {
+    "de": "Abgebrochen — siehe Log",
+    "en": "Aborted — see log"
+  },
+  "intro.openFullGui": {
+    "de": "Volles GUI öffnen",
+    "en": "Open full GUI"
+  },
+  "intro.fullGuiStarted": {
+    "de": "Volles GUI gestartet",
+    "en": "Full GUI started"
+  },
+  "intro.fullGuiFailed": {
+    "de": "Start fehlgeschlagen",
+    "en": "Start failed"
+  },
+  "intro.noSourceFolders": {
+    "de": "Keine Quellordner — bitte Videos importieren.",
+    "en": "No source folders — import videos."
+  },
+  "intro.noOutputFolder": {
+    "de": "Ausgabe-Ordner fehlt — bitte setzen oder „Neben Quelle“ aktivieren.",
+    "en": "Output folder missing — set it or enable 'Beside source'."
+  },
+  "texttovideo.sectionVideo": {
+    "de": "Video",
+    "en": "Video"
+  },
+  "texttovideo.videoPath": {
+    "de": "Video-Pfad",
+    "en": "Video path"
+  },
+  "texttovideo.segmentsHeader": {
+    "de": "Text-Abschnitte",
+    "en": "Text segments"
+  },
+  "texttovideo.newSegment": {
+    "de": "Neuer Abschnitt",
+    "en": "New segment"
+  },
+  "texttovideo.editSegment": {
+    "de": "Abschnitt {0} bearbeiten",
+    "en": "Edit segment {0}"
+  },
+  "texttovideo.commitNew": {
+    "de": "Abschnitt hinzufügen",
+    "en": "Add segment"
+  },
+  "texttovideo.commitEdit": {
+    "de": "Änderungen speichern",
+    "en": "Save changes"
+  },
+  "texttovideo.textHeader": {
+    "de": "Text",
+    "en": "Text"
+  },
+  "texttovideo.stylePresets": {
+    "de": "Stil-Vorlagen",
+    "en": "Style presets"
+  },
+  "texttovideo.preset.subtitleBottom": {
+    "de": "Untertitel unten",
+    "en": "Subtitle bottom"
+  },
+  "texttovideo.preset.titleTop": {
+    "de": "Titel oben",
+    "en": "Title top"
+  },
+  "texttovideo.preset.watermark": {
+    "de": "Wasserzeichen",
+    "en": "Watermark"
+  },
+  "texttovideo.preset.centerLarge": {
+    "de": "Mitte groß",
+    "en": "Center large"
+  },
+  "texttovideo.fontSize": {
+    "de": "Schriftgröße",
+    "en": "Font size"
+  },
+  "texttovideo.color": {
+    "de": "Farbe (#RRGGBB)",
+    "en": "Color (#RRGGBB)"
+  },
+  "texttovideo.position": {
+    "de": "Position X / Y",
+    "en": "Position X / Y"
+  },
+  "texttovideo.lineSpacing": {
+    "de": "Zeilenabstand",
+    "en": "Line spacing"
+  },
+  "texttovideo.timeFromTo": {
+    "de": "Zeit von / bis",
+    "en": "Time from / to"
+  },
+  "texttovideo.timePlaceholder": {
+    "de": "Sek. oder h:m:s",
+    "en": "Sec. or h:m:s"
+  },
+  "texttovideo.insertFrom": {
+    "de": "↵ von",
+    "en": "↵ from"
+  },
+  "texttovideo.insertTo": {
+    "de": "↵ bis",
+    "en": "↵ to"
+  },
+  "texttovideo.insertFromTooltip": {
+    "de": "Aktuelle Playhead-Position als Start",
+    "en": "Current playhead position as start"
+  },
+  "texttovideo.insertToTooltip": {
+    "de": "Aktuelle Playhead-Position als Ende",
+    "en": "Current playhead position as end"
+  },
+  "texttovideo.timeFormatHint": {
+    "de": "Eingabe als Sekunden (z. B. 90), Minuten:Sekunden (1:30) oder Stunden:Minuten:Sekunden (0:01:30.5).",
+    "en": "Enter seconds (e.g. 90), minutes:seconds (1:30), or hours:minutes:seconds (0:01:30.5)."
+  },
+  "texttovideo.fontFile": {
+    "de": "Schriftdatei",
+    "en": "Font file"
+  },
+  "texttovideo.textBackground": {
+    "de": "Texthintergrund",
+    "en": "Text background"
+  },
+  "texttovideo.italicFont": {
+    "de": "Kursiv-Schrift",
+    "en": "Italic font"
+  },
+  "texttovideo.padding": {
+    "de": "Rahmenabstand",
+    "en": "Padding"
+  },
+  "texttovideo.subtitlesOptional": {
+    "de": "Untertitel (optional)",
+    "en": "Subtitles (optional)"
+  },
+  "texttovideo.srtPath": {
+    "de": "SRT-Pfad",
+    "en": "SRT path"
+  },
+  "texttovideo.srtPick": {
+    "de": "SRT…",
+    "en": "SRT…"
+  },
+  "texttovideo.importSrt": {
+    "de": "SRT → Text-Abschnitte importieren",
+    "en": "Import SRT → text segments"
+  },
+  "texttovideo.batchHeader": {
+    "de": "Batch (gleicher Overlay auf mehrere Videos)",
+    "en": "Batch (same overlay on multiple videos)"
+  },
+  "texttovideo.batchVideos": {
+    "de": "Videos…",
+    "en": "Videos…"
+  },
+  "texttovideo.scanFolder": {
+    "de": "Ordner scannen",
+    "en": "Scan folder"
+  },
+  "texttovideo.removeSelection": {
+    "de": "Auswahl entfernen",
+    "en": "Remove selection"
+  },
+  "texttovideo.batchOutputDir": {
+    "de": "Batch-Ausgabeordner",
+    "en": "Batch output folder"
+  },
+  "texttovideo.applySourceBitrate": {
+    "de": "Quelle",
+    "en": "Source"
+  },
+  "texttovideo.audioCopyMp4": {
+    "de": "Audio kopieren (MP4)",
+    "en": "Copy audio (MP4)"
+  },
+  "texttovideo.gifFps": {
+    "de": "GIF FPS",
+    "en": "GIF FPS"
+  },
+  "texttovideo.gifMaxWidth": {
+    "de": "GIF max. Breite",
+    "en": "GIF max. width"
+  },
+  "texttovideo.paletteColors": {
+    "de": "Palettenfarben",
+    "en": "Palette colors"
+  },
+  "texttovideo.exportFfmpeg": {
+    "de": "Mit FFmpeg exportieren…",
+    "en": "Export with FFmpeg…"
+  },
+  "texttovideo.davinciSection": {
+    "de": "DaVinci Resolve",
+    "en": "DaVinci Resolve"
+  },
+  "texttovideo.davinciHint": {
+    "de": "Importiert das Video in Resolve und rendert mit dem angegebenen Preset-Namen (wie im Original-Tool).",
+    "en": "Imports the video into Resolve and renders with the given preset name (like the original tool)."
+  },
+  "texttovideo.renderPreset": {
+    "de": "Render-Preset",
+    "en": "Render preset"
+  },
+  "texttovideo.outputDir": {
+    "de": "Ausgabeordner",
+    "en": "Output folder"
+  },
+  "texttovideo.outputDirDefault": {
+    "de": "Standard: Ordner der Quelle",
+    "en": "Default: source folder"
+  },
+  "texttovideo.useLastFfmpeg": {
+    "de": "Letztes FFmpeg-Ergebnis verwenden (statt Quellvideo)",
+    "en": "Use last FFmpeg result (instead of source video)"
+  },
+  "texttovideo.exportResolve": {
+    "de": "In Resolve importieren & rendern…",
+    "en": "Import into Resolve & render…"
+  },
+  "texttovideo.previewHint": {
+    "de": "Klick auf die Vorschau setzt X/Y-Position. Während Play: Audio über MediaPlayer, Bild mit Text per FFmpeg.",
+    "en": "Click preview to set X/Y position. During play: audio via MediaPlayer, image with text via FFmpeg."
+  },
+  "bitrate.foldersHeader": {
+    "de": "Ordner",
+    "en": "Folders"
+  },
+  "bitrate.inputLabel": {
+    "de": "Eingabe",
+    "en": "Input"
+  },
+  "bitrate.outputLabel": {
+    "de": "Ausgabe",
+    "en": "Output"
+  },
+  "bitrate.outputBesideSource": {
+    "de": "Ausgabe neben Quelle (gleicher Ordner)",
+    "en": "Output beside source (same folder)"
+  },
+  "bitrate.renameHeader": {
+    "de": "Umbenennen (_bitrate entfernen)",
+    "en": "Rename (remove _bitrate)"
+  },
+  "bitrate.renameHint": {
+    "de": "Sucht *_bitrate* in Eingabe- und Ausgabeordner…",
+    "en": "Finds *_bitrate* in input and output folders…"
+  },
+  "bitrate.stripSuffixNow": {
+    "de": "Suffix jetzt entfernen",
+    "en": "Remove suffix now"
+  },
+  "bitrate.optionsHeader": {
+    "de": "Optionen",
+    "en": "Options"
+  },
+  "bitrate.onlyLower": {
+    "de": "Nur senken (skip wenn keine Einsparung)",
+    "en": "Only lower (skip if no savings)"
+  },
+  "bitrate.outputMp4": {
+    "de": "Ausgabe als MP4",
+    "en": "Output as MP4"
+  },
+  "bitrate.stripAfterSuccess": {
+    "de": "_bitrate-Suffix entfernen nach Erfolg",
+    "en": "Remove _bitrate suffix after success"
+  },
+  "bitrate.replaceOriginalHint": {
+    "de": "Nach Konvertierung neben der Quelle: Original wird durch die neue Datei ersetzt.",
+    "en": "After conversion beside source: original is replaced by the new file."
+  },
+  "bitrate.rulesHeader": {
+    "de": "Bitrate-Regeln (kbps)",
+    "en": "Bitrate rules (kbps)"
+  },
+  "bitrate.loadPreset": {
+    "de": "Preset laden",
+    "en": "Load preset"
+  },
+  "bitrate.scanFolder": {
+    "de": "Ordner scannen",
+    "en": "Scan folder"
+  },
+  "bitrate.convertHint": {
+    "de": "Angehakte Zeilen werden konvertiert…",
+    "en": "Checked rows will be converted…"
+  },
+  "bitrate.colFile": {
+    "de": "Datei",
+    "en": "File"
+  },
+  "bitrate.colResolution": {
+    "de": "Aufloesung",
+    "en": "Resolution"
+  },
+  "bitrate.colSource": {
+    "de": "Quelle",
+    "en": "Source"
+  },
+  "bitrate.colTarget": {
+    "de": "Ziel",
+    "en": "Target"
+  },
+  "bitrate.colAction": {
+    "de": "Aktion",
+    "en": "Action"
+  },
+  "bitrate.colReason": {
+    "de": "Grund",
+    "en": "Reason"
+  },
+  "bitrate.inputMissing": {
+    "de": "Eingabeordner fehlt oder existiert nicht.",
+    "en": "Input folder missing or does not exist."
+  },
+  "bitrate.outputMissing": {
+    "de": "Ausgabeordner fehlt.",
+    "en": "Output folder missing."
+  },
+  "bitrate.scanRunning": {
+    "de": "Scan läuft...",
+    "en": "Scan running..."
+  },
+  "bitrate.scanDone": {
+    "de": "Scan fertig: {0} Dateien, {1} markiert zum Konvertieren",
+    "en": "Scan done: {0} files, {1} marked for conversion"
+  },
+  "bitrate.reason.noSavings": {
+    "de": "Keine Einsparung",
+    "en": "No savings"
+  },
+  "bitrate.reason.reduce": {
+    "de": "Reduzieren",
+    "en": "Reduce"
+  },
+  "bitrate.reason.unknownBitrate": {
+    "de": "Bitrate unbekannt",
+    "en": "Bitrate unknown"
+  },
+  "bitrate.action.convert": {
+    "de": "Konvertieren",
+    "en": "Convert"
+  },
+  "bitrate.action.skip": {
+    "de": "Überspringen",
+    "en": "Skip"
+  },
+  "bitrate.foldersMissing": {
+    "de": "Eingabe- oder Ausgabeordner fehlt.",
+    "en": "Input or output folder missing."
+  },
+  "bitrate.scanFirst": {
+    "de": "Bitte zuerst scannen.",
+    "en": "Please scan first."
+  },
+  "bitrate.convertRunning": {
+    "de": "Konvertierung läuft...",
+    "en": "Conversion running..."
+  },
+  "bitrate.noRowsSelected": {
+    "de": "Keine Dateien markiert — bitte Zeilen anhaken.",
+    "en": "No files selected — check rows."
+  },
+  "bitrate.suffixRemoved": {
+    "de": "Suffix entfernt.",
+    "en": "Suffix removed."
+  },
+  "bitrate.startConversion": {
+    "de": "Konvertierung starten",
+    "en": "Start conversion"
+  },
+  "bitrate.presetStandard": {
+    "de": "Standard",
+    "en": "Standard"
+  },
+  "bitrate.presetLight": {
+    "de": "Leicht reduziert",
+    "en": "Slightly reduced"
+  },
+  "bitrate.presetReduced": {
+    "de": "Reduziert",
+    "en": "Reduced"
+  },
+  "audiocleaner.inputHeader": {
+    "de": "Eingabe",
+    "en": "Input"
+  },
+  "audiocleaner.inputPlaceholder": {
+    "de": "Video oder Ordner",
+    "en": "Video or folder"
+  },
+  "audiocleaner.filesHeader": {
+    "de": "Dateien",
+    "en": "Files"
+  },
+  "audiocleaner.outputDirHeader": {
+    "de": "Ausgabe-Ordner",
+    "en": "Output folder"
+  },
+  "audiocleaner.outputPreview": {
+    "de": "Ausgabe (Vorschau für erste Datei)",
+    "en": "Output (preview for first file)"
+  },
+  "audiocleaner.cleanHeader": {
+    "de": "Audio reinigen",
+    "en": "Clean audio"
+  },
+  "audiocleaner.focusEcho": {
+    "de": "Echo/Hall reduzieren",
+    "en": "Reduce echo/reverb"
+  },
+  "audiocleaner.focusNoise": {
+    "de": "Nebengeraeusche reduzieren",
+    "en": "Reduce background noise"
+  },
+  "audiocleaner.boostHeader": {
+    "de": "Lautstaerke (% — 100 = Original, ~117 = +3 dB)",
+    "en": "Volume (% — 100 = original, ~117 = +3 dB)"
+  },
+  "audiocleaner.videoSection": {
+    "de": "Video (nur bei Video-Eingabe)",
+    "en": "Video (video input only)"
+  },
+  "audiocleaner.videoCodec": {
+    "de": "Video-Codec",
+    "en": "Video codec"
+  },
+  "audiocleaner.videoBitrate": {
+    "de": "Video-Bitrate (kbps)",
+    "en": "Video bitrate (kbps)"
+  },
+  "audiocleaner.batchSummaryMany": {
+    "de": "{0} Videos (Batch)",
+    "en": "{0} videos (batch)"
+  },
+  "audiocleaner.exportBatch": {
+    "de": "Batch exportieren ({0})",
+    "en": "Export batch ({0})"
+  },
+  "audiocleaner.noInput": {
+    "de": "Keine Eingabedatei — Video oder Ordner wählen.",
+    "en": "No input file — choose video or folder."
+  },
+  "audiocleaner.exportRunning": {
+    "de": "Export läuft...",
+    "en": "Export running..."
+  },
+  "audiocleaner.exportDone": {
+    "de": "Export fertig",
+    "en": "Export finished"
+  },
+  "audiocleaner.batchDone": {
+    "de": "Batch fertig — {0} Dateien",
+    "en": "Batch finished — {0} files"
+  },
+  "clipjoiner.dropHint": {
+    "de": "Videos hierher ziehen (mehrere gleichzeitig möglich)",
+    "en": "Drag videos here (multiple at once)"
+  },
+  "clipjoiner.addButton": {
+    "de": "Hinzufügen…",
+    "en": "Add…"
+  },
+  "clipjoiner.sortByName": {
+    "de": "Nach Name",
+    "en": "By name"
+  },
+  "clipjoiner.outputHeader": {
+    "de": "Ausgabe & Modus",
+    "en": "Output & mode"
+  },
+  "clipjoiner.folderLabel": {
+    "de": "Ordner",
+    "en": "Folder"
+  },
+  "clipjoiner.filenameLabel": {
+    "de": "Dateiname",
+    "en": "Filename"
+  },
+  "clipjoiner.modeLabel": {
+    "de": "Modus",
+    "en": "Mode"
+  },
+  "clipjoiner.davinciPathHint": {
+    "de": "DaVinci API-Pfad: Einstellungen (global) → DaVinci Resolve.",
+    "en": "DaVinci API path: Settings (global) → DaVinci Resolve."
+  },
+  "clipjoiner.batchQueueHeader": {
+    "de": "Batch-Warteschlange",
+    "en": "Batch queue"
+  },
+  "clipjoiner.batchAddCurrent": {
+    "de": "Aktuelle → Batch",
+    "en": "Current → batch"
+  },
+  "clipjoiner.batchRemove": {
+    "de": "Batch entfernen",
+    "en": "Remove batch"
+  },
+  "clipjoiner.batchClear": {
+    "de": "Batch leeren",
+    "en": "Clear batch"
+  },
+  "clipjoiner.runCurrent": {
+    "de": "Jetzt zusammenfügen",
+    "en": "Join now"
+  },
+  "clipjoiner.runBatch": {
+    "de": "Batch starten ({0})",
+    "en": "Start batch ({0})"
+  },
+  "clipjoiner.noClips": {
+    "de": "Keine Clips in der Liste.",
+    "en": "No clips in list."
+  },
+  "clipjoiner.batchAdded": {
+    "de": "Batch: {0} mit {1} Clips hinzugefügt.",
+    "en": "Batch: {0} with {1} clips added."
+  },
+  "clipjoiner.batchEmpty": {
+    "de": "Batch-Warteschlange ist leer.",
+    "en": "Batch queue is empty."
+  },
+  "clipjoiner.running": {
+    "de": "Zusammenfügen…",
+    "en": "Joining…"
+  },
+  "clipjoiner.batchRunning": {
+    "de": "Batch läuft…",
+    "en": "Batch running…"
+  },
+  "davincibatch.queueHeader": {
+    "de": "Warteschlange",
+    "en": "Queue"
+  },
+  "davincibatch.dropHint": {
+    "de": "Videos oder Ordner hierher ziehen",
+    "en": "Drag videos or folders here"
+  },
+  "davincibatch.exportHeader": {
+    "de": "Export",
+    "en": "Export"
+  },
+  "davincibatch.presetLabel": {
+    "de": "Preset",
+    "en": "Preset"
+  },
+  "davincibatch.outputLabel": {
+    "de": "Ausgabe",
+    "en": "Output"
+  },
+  "davincibatch.safeOutput": {
+    "de": "Sichere Ausgabe (_2, _3 bei Kollision)",
+    "en": "Safe output (_2, _3 on collision)"
+  },
+  "davincibatch.resolvePathHint": {
+    "de": "Resolve-Pfade (API, Resolve.exe, DLL): Einstellungen (global) → DaVinci Resolve.",
+    "en": "Resolve paths (API, Resolve.exe, DLL): Settings (global) → DaVinci Resolve."
+  },
+  "davincibatch.batchButton": {
+    "de": "Batch starten ({0})",
+    "en": "Start batch ({0})"
+  },
+  "davincibatch.batchButtonEmpty": {
+    "de": "Batch starten",
+    "en": "Start batch"
+  },
+  "davincibatch.queueCount": {
+    "de": "{0} Video(s) in der Warteschlange.",
+    "en": "{0} video(s) in queue."
+  },
+  "davincibatch.noNewVideos": {
+    "de": "Keine neuen Videodateien hinzugefügt.",
+    "en": "No new video files added."
+  },
+  "davincibatch.noVideosInFolder": {
+    "de": "Im Ordner keine unterstützten Videodateien gefunden.",
+    "en": "No supported video files found in folder."
+  },
+  "davincibatch.queueEmpty": {
+    "de": "Warteschlange ist leer.",
+    "en": "Queue is empty."
+  },
+  "davincibatch.running": {
+    "de": "Batch-Render läuft…",
+    "en": "Batch render running…"
+  },
+  "davincibatch.cancelRequested": {
+    "de": "Abbruch angefordert…",
+    "en": "Cancel requested…"
+  },
+  "davincibatch.itemPending": {
+    "de": "Ausstehend",
+    "en": "Pending"
+  },
+  "davincibatch.itemRunning": {
+    "de": "Läuft…",
+    "en": "Running…"
+  },
+  "davincibatch.itemDone": {
+    "de": "Fertig",
+    "en": "Done"
+  },
+  "davincibatch.itemError": {
+    "de": "Fehler",
+    "en": "Error"
+  },
+  "davincibatch.itemAborted": {
+    "de": "Abgebrochen",
+    "en": "Cancelled"
+  },
+  "davincibatch.batchDone": {
+    "de": "Batch fertig — {0} ok.",
+    "en": "Batch finished — {0} ok."
+  },
+  "davincibatch.batchDoneWithErrors": {
+    "de": "Batch fertig — {0} ok, {1} fehlgeschlagen.",
+    "en": "Batch finished — {0} ok, {1} failed."
+  },
+  "davincibatch.batchAborted": {
+    "de": "Batch abgebrochen.",
+    "en": "Batch cancelled."
+  },
+  "davincibatch.batchAbortedDetail": {
+    "de": "Batch abgebrochen — {0} fertig, {1} fehlgeschlagen, {2} ausstehend.",
+    "en": "Batch cancelled — {0} done, {1} failed, {2} pending."
+  },
+  "markerautocut.markersHeader": {
+    "de": "Marker (Stash)",
+    "en": "Markers (Stash)"
+  },
+  "markerautocut.nameFilter": {
+    "de": "Name/Tag enthält (Komma = ODER)",
+    "en": "Name/tag contains (comma = OR)"
+  },
+  "markerautocut.nameExclude": {
+    "de": "Name/Tag schließt aus",
+    "en": "Name/tag excludes"
+  },
+  "markerautocut.pathFilter": {
+    "de": "Pfad enthält (Komma = ODER)",
+    "en": "Path contains (comma = OR)"
+  },
+  "markerautocut.pathExclude": {
+    "de": "Pfad schließt aus",
+    "en": "Path excludes"
+  },
+  "markerautocut.mediaRoot": {
+    "de": "Media-Root (optional)",
+    "en": "Media root (optional)"
+  },
+  "markerautocut.fetchMarkers": {
+    "de": "Marker laden",
+    "en": "Load markers"
+  },
+  "markerautocut.exportOrderHeader": {
+    "de": "Export-Reihenfolge",
+    "en": "Export order"
+  },
+  "markerautocut.exportOrderHint": {
+    "de": "Reihenfolge für Resolve — pro Datei bei Modus „per_file“. Ziehen zum Sortieren, Strg/Klick für Mehrfachauswahl.",
+    "en": "Order for Resolve — per file in per_file mode. Drag to sort, Ctrl/click for multi-select."
+  },
+  "markerautocut.moveTopTooltip": {
+    "de": "Ganz nach oben",
+    "en": "Move to top"
+  },
+  "markerautocut.moveUpTooltip": {
+    "de": "Nach oben",
+    "en": "Move up"
+  },
+  "markerautocut.moveDownTooltip": {
+    "de": "Nach unten",
+    "en": "Move down"
+  },
+  "markerautocut.moveBottomTooltip": {
+    "de": "Ganz nach unten",
+    "en": "Move to bottom"
+  },
+  "markerautocut.syncTooltip": {
+    "de": "Aus Auswahl neu aufbauen",
+    "en": "Rebuild from selection"
+  },
+  "markerautocut.resolveExportHeader": {
+    "de": "Resolve-Export",
+    "en": "Resolve export"
+  },
+  "markerautocut.outputDir": {
+    "de": "Output-Ordner",
+    "en": "Output folder"
+  },
+  "markerautocut.renderPreset": {
+    "de": "Render-Preset (optional)",
+    "en": "Render preset (optional)"
+  },
+  "markerautocut.minSegment": {
+    "de": "Min. Segment (s)",
+    "en": "Min. segment (s)"
+  },
+  "markerautocut.defaultFps": {
+    "de": "Default FPS",
+    "en": "Default FPS"
+  },
+  "markerautocut.inclusiveEnd": {
+    "de": "Inclusive End",
+    "en": "Inclusive end"
+  },
+  "markerautocut.doRender": {
+    "de": "Render-Queue starten",
+    "en": "Start render queue"
+  },
+  "markerautocut.loadingMarkers": {
+    "de": "Lade Marker...",
+    "en": "Loading markers..."
+  },
+  "markerautocut.noMarkers": {
+    "de": "Keine Marker gefunden.",
+    "en": "No markers found."
+  },
+  "markerautocut.markersLoaded": {
+    "de": "{0} Marker geladen.",
+    "en": "{0} markers loaded."
+  },
+  "markerautocut.emptyExportOrder": {
+    "de": "Export-Reihenfolge ist leer — Marker auswählen.",
+    "en": "Export order empty — select markers."
+  },
+  "markerautocut.exportRunning": {
+    "de": "Export nach Resolve...",
+    "en": "Exporting to Resolve..."
+  },
+  "markerautocut.orderCount": {
+    "de": "{0} Marker in Export-Reihenfolge.",
+    "en": "{0} markers in export order."
+  },
+  "markerautocut.primaryAction": {
+    "de": "Export Resolve",
+    "en": "Export Resolve"
+  },
+  "markerautocut.pathSortAsc": {
+    "de": "Pfad A→Z",
+    "en": "Path A→Z"
+  },
+  "markerautocut.pathSortDesc": {
+    "de": "Pfad Z→A",
+    "en": "Path Z→A"
+  },
+  "markerautocut.pathSortStash": {
+    "de": "Stash-Reihenfolge",
+    "en": "Stash order"
+  },
+  "markerautocut.noPath": {
+    "de": "(ohne Pfad)",
+    "en": "(no path)"
+  },
+  "stashcutter.stashSceneHeader": {
+    "de": "Stash-Szene",
+    "en": "Stash scene"
+  },
+  "stashcutter.cutHeader": {
+    "de": "Szenen schneiden",
+    "en": "Cut scenes"
+  },
+  "stashcutter.cutHint": {
+    "de": "Video-Vorschau oben — Mark In/Out (I/O), Szene + (P). Schnitte erscheinen unten.",
+    "en": "Video preview above — Mark In/Out (I/O), Scene + (P). Cuts appear below."
+  },
+  "stashcutter.sceneLoadedVideoReady": {
+    "de": "Szene geladen — Video bereit.",
+    "en": "Scene loaded — video ready."
+  },
+  "stashcutter.fileNotFound": {
+    "de": "Szene geladen, aber Datei nicht gefunden: {0}",
+    "en": "Scene loaded, but file not found: {0}"
+  },
+  "stashcutter.noFilePathInStash": {
+    "de": "Szene geladen, aber kein Dateipfad in Stash.",
+    "en": "Scene loaded, but no file path in Stash."
+  },
+  "stashpathfinder.searchHeader": {
+    "de": "Suche",
+    "en": "Search"
+  },
+  "stashpathfinder.resultsHeader": {
+    "de": "Treffer",
+    "en": "Results"
+  },
+  "stashpathfinder.pathsHeader": {
+    "de": "Pfade",
+    "en": "Paths"
+  },
+  "stashpathfinder.primaryAction": {
+    "de": "Suchen",
+    "en": "Search"
+  },
+  "markerupdater.tabEditor": {
+    "de": "Editor",
+    "en": "Editor"
+  },
+  "markerupdater.tabCleanup": {
+    "de": "Bereinigung",
+    "en": "Cleanup"
+  },
+  "markerupdater.tabBatch": {
+    "de": "Batch",
+    "en": "Batch"
+  },
+  "markerupdater.scenePreviewHeader": {
+    "de": "Szene & Vorschau",
+    "en": "Scene & preview"
+  },
+  "markerupdater.prevSceneTooltip": {
+    "de": "Vorherige Szene in der Trefferliste — Reihenfolge der Suche",
+    "en": "Previous scene in results — search order"
+  },
+  "markerupdater.nextSceneTooltip": {
+    "de": "Nächste Szene in der Trefferliste — Reihenfolge der Suche",
+    "en": "Next scene in results — search order"
+  },
+  "markerupdater.markersTagsHeader": {
+    "de": "Marker & Tags",
+    "en": "Markers & tags"
+  },
+  "markerupdater.sceneDetails": {
+    "de": "Notizen (Details)",
+    "en": "Notes (details)"
+  },
+  "markerupdater.sceneTagsHeader": {
+    "de": "Tags der Szene",
+    "en": "Scene tags"
+  },
+  "markerupdater.sceneTagsHint": {
+    "de": "Klicken zum Auswählen — Entfernen oder Marker an aktueller Position anhängen.",
+    "en": "Click to select — remove or attach marker at current position."
+  },
+  "markerupdater.addTagHeader": {
+    "de": "Tag hinzufügen",
+    "en": "Add tag"
+  },
+  "markerupdater.tagPlaceholder": {
+    "de": "Tag wählen oder eingeben…",
+    "en": "Choose or enter tag…"
+  },
+  "markerupdater.removeTagTooltip": {
+    "de": "Ausgewählten Tag von der Szene entfernen",
+    "en": "Remove selected tag from scene"
+  },
+  "markerupdater.markerAtTag": {
+    "de": "Marker an Tag",
+    "en": "Marker at tag"
+  },
+  "markerupdater.markerAtTagTooltip": {
+    "de": "Marker an aktueller Videoposition mit ausgewähltem Tag erstellen",
+    "en": "Create marker at current video position with selected tag"
+  },
+  "markerupdater.markersHeader": {
+    "de": "Marker",
+    "en": "Markers"
+  },
+  "markerupdater.timePlaceholder": {
+    "de": "Sek. oder mm:ss",
+    "en": "Sec. or mm:ss"
+  },
+  "markerupdater.createMarker": {
+    "de": "Marker erstellen",
+    "en": "Create marker"
+  },
+  "markerupdater.updateMarker": {
+    "de": "Marker aktualisieren",
+    "en": "Update marker"
+  },
+  "markerupdater.deleteMarker": {
+    "de": "Marker löschen",
+    "en": "Delete marker"
+  },
+  "markerupdater.cleanupHint": {
+    "de": "Findet Marker, deren Start- oder Endzeit über die Videolänge hinausgeht…",
+    "en": "Finds markers whose start/end exceeds video length…"
+  },
+  "markerupdater.cleanupScan": {
+    "de": "Scannen",
+    "en": "Scan"
+  },
+  "markerupdater.cleanupTolerance": {
+    "de": "Toleranz (Sek.)",
+    "en": "Tolerance (sec.)"
+  },
+  "markerupdater.cleanupToleranceHint": {
+    "de": "Marker bis zur Toleranz werden zum Kürzen vorgeschlagen statt zum Löschen.",
+    "en": "Markers within tolerance are suggested for trimming instead of deletion."
+  },
+  "markerupdater.clampHeader": {
+    "de": "Kürzen (≤ Toleranz über Videolänge)",
+    "en": "Trim (≤ tolerance beyond video length)"
+  },
+  "markerupdater.clampSelected": {
+    "de": "Ausgewählte kürzen",
+    "en": "Trim selected"
+  },
+  "markerupdater.clampAll": {
+    "de": "Alle kürzen",
+    "en": "Trim all"
+  },
+  "markerupdater.deleteHeader": {
+    "de": "Löschen (weit über Videolänge)",
+    "en": "Delete (far beyond video length)"
+  },
+  "markerupdater.deleteSelected": {
+    "de": "Ausgewählte löschen",
+    "en": "Delete selected"
+  },
+  "markerupdater.batchSearchByFile": {
+    "de": "Tag per Dateiname / Pfad",
+    "en": "Tag by filename / path"
+  },
+  "markerupdater.batchSearchByPath": {
+    "de": "Nach Pfad",
+    "en": "By path"
+  },
+  "markerupdater.batchSearchByTag": {
+    "de": "Nach Tag",
+    "en": "By tag"
+  },
+  "markerupdater.batchScopeSelected": {
+    "de": "Nur ausgewählte Zeilen",
+    "en": "Selected rows only"
+  },
+  "markerupdater.batchSearchTerms": {
+    "de": "Suchbegriffe",
+    "en": "Search terms"
+  },
+  "markerupdater.batchSearchPlaceholder": {
+    "de": "Enter startet Suche — leer = alle Szenen",
+    "en": "Enter starts search — empty = all scenes"
+  },
+  "markerupdater.batchTagPlaceholder": {
+    "de": "Tag wählen …",
+    "en": "Choose tag …"
+  },
+  "markerupdater.batchSearchButton": {
+    "de": "Treffer suchen",
+    "en": "Search results"
+  },
+  "markerupdater.batchTagAction": {
+    "de": "Tag-Aktion",
+    "en": "Tag action"
+  },
+  "markerupdater.batchApplyTag": {
+    "de": "Tag anwenden",
+    "en": "Apply tag"
+  },
+  "markerupdater.batchRemoveTag": {
+    "de": "Von Treffern abnehmen",
+    "en": "Remove from matches"
+  },
+  "markerupdater.batchDeleteTag": {
+    "de": "Tag in Stash löschen",
+    "en": "Delete tag in Stash"
+  },
+  "markerupdater.batchRemoveAlsoDelete": {
+    "de": "Tag auch aus Stash löschen",
+    "en": "Also delete tag from Stash"
+  },
+  "markerupdater.batchDeleteGlobalPlaceholder": {
+    "de": "Tag-Eintrag in Stash zum Löschen wählen",
+    "en": "Choose tag entry in Stash to delete"
+  },
+  "markerupdater.batchTagHelp": {
+    "de": "«Tag in Stash löschen» entfernt den Tag-Eintrag…",
+    "en": "'Delete tag in Stash' removes the tag entry…"
+  },
+  "markerupdater.batchDoubleClickHint": {
+    "de": "Doppelklick auf eine Zeile: Szene in Stash öffnen.",
+    "en": "Double-click row: open scene in Stash."
+  },
+  "markerupdater.fineHeader": {
+    "de": "Fein",
+    "en": "Fine"
+  },
+  "markerupdater.coarseHeader": {
+    "de": "Grob",
+    "en": "Coarse"
+  },
+  "markerupdater.speedHeader": {
+    "de": "Tempo",
+    "en": "Speed"
+  },
+  "markerupdater.keyboardHint": {
+    "de": "←/→ Fein · Umschalt+←/→ Grob · I/O Marker",
+    "en": "←/→ fine · Shift+←/→ coarse · I/O marker"
+  },
+  "markerupdater.localFileMissing": {
+    "de": "Datei nicht lokal gefunden — in Einstellungen NAS-Pfad (z. B. H:\\VideoStash) prüfen.",
+    "en": "File not found locally — check NAS path in settings (e.g. H:\\VideoStash)."
+  },
+  "markerupdater.noTitle": {
+    "de": "(ohne Titel)",
+    "en": "(no title)"
+  },
+  "markerupdater.noSceneLoadedOrSelected": {
+    "de": "Keine Szene geladen oder ausgewählt.",
+    "en": "No scene loaded or selected."
+  },
+  "markerupdater.noSceneLoaded": {
+    "de": "Es ist keine Szene geladen.",
+    "en": "No scene is loaded."
+  },
+  "markerupdater.notInResults": {
+    "de": "Die geladene Szene steht nicht in der aktuellen Trefferliste. Dort suchen und die Szene aus der Liste laden (Reihenfolge = Navigation).",
+    "en": "Loaded scene is not in current results. Search there and load from the list (order = navigation)."
+  },
+  "markerupdater.noMoreInDirection": {
+    "de": "In dieser Richtung gibt es keine weitere Szene in der aktuellen Trefferliste.",
+    "en": "No more scenes in this direction in the current results."
+  },
+  "markerupdater.noPrevScene": {
+    "de": "Keine vorherige Szene (Stash-ID).",
+    "en": "No previous scene (Stash ID)."
+  },
+  "markerupdater.noNextScene": {
+    "de": "Keine nächste Szene (Stash-ID).",
+    "en": "No next scene (Stash ID)."
+  },
+  "markerupdater.sceneLoadedWithVideo": {
+    "de": "Szene geladen — {0} Tag(s), {1} Marker. Video: {2}",
+    "en": "Scene loaded — {0} tag(s), {1} markers. Video: {2}"
+  },
+  "markerupdater.sceneLoadedNoVideo": {
+    "de": "Szene geladen — {0} Tag(s), {1} Marker. Video nicht gefunden (Pfad-Mapping prüfen).",
+    "en": "Scene loaded — {0} tag(s), {1} markers. Video not found (check path mapping)."
+  },
+  "markerupdater.tagNameRequired": {
+    "de": "Tag-Name eingeben.",
+    "en": "Enter tag name."
+  },
+  "markerupdater.tagAlreadyOnScene": {
+    "de": "Tag ist bereits an der Szene.",
+    "en": "Tag is already on the scene."
+  },
+  "markerupdater.tagAddedPending": {
+    "de": "Tag zur Liste hinzugefuegt — bitte speichern.",
+    "en": "Tag added to list — please save."
+  },
+  "markerupdater.tagSelectOrEnter": {
+    "de": "Tag auswählen oder Name eingeben.",
+    "en": "Select tag or enter name."
+  },
+  "markerupdater.tagNotOnScene": {
+    "de": "Tag nicht an der Szene.",
+    "en": "Tag is not on the scene."
+  },
+  "markerupdater.tagRemovedPending": {
+    "de": "Tag entfernt — bitte speichern.",
+    "en": "Tag removed — please save."
+  },
+  "markerupdater.tagSelect": {
+    "de": "Tag auswählen.",
+    "en": "Select tag."
+  },
+  "markerupdater.savingScene": {
+    "de": "Speichere Szene...",
+    "en": "Saving scene..."
+  },
+  "markerupdater.sceneSaved": {
+    "de": "Szene gespeichert.",
+    "en": "Scene saved."
+  },
+  "markerupdater.invalidStartSeconds": {
+    "de": "Ungueltige Start-Sekunden.",
+    "en": "Invalid start seconds."
+  },
+  "markerupdater.invalidEndSeconds": {
+    "de": "Ungueltige End-Sekunden.",
+    "en": "Invalid end seconds."
+  },
+  "markerupdater.primaryTagRequired": {
+    "de": "Primary-Tag für Marker erforderlich.",
+    "en": "Primary tag required for marker."
+  },
+  "markerupdater.markerCreated": {
+    "de": "Marker erstellt.",
+    "en": "Marker created."
+  },
+  "markerupdater.markerUpdated": {
+    "de": "Marker aktualisiert.",
+    "en": "Marker updated."
+  },
+  "markerupdater.markerDeleted": {
+    "de": "Marker geloescht.",
+    "en": "Marker deleted."
+  },
+  "markerupdater.markerSelect": {
+    "de": "Marker auswählen.",
+    "en": "Select marker."
+  },
+  "markerupdater.batchResults": {
+    "de": "Treffer: {0}",
+    "en": "Results: {0}"
+  },
+  "markerupdater.batchSearchRunning": {
+    "de": "Batch-Suche...",
+    "en": "Batch search..."
+  },
+  "markerupdater.batchTagAdded": {
+    "de": "Tag „{0}“ bei {1} Szenen hinzugefügt.",
+    "en": "Tag \"{0}\" added to {1} scenes."
+  },
+  "markerupdater.cleanupScanning": {
+    "de": "Scanne Szenen… (Seite {0})",
+    "en": "Scanning scenes… (page {0})"
+  },
+  "markerupdater.cleanupNoneFound": {
+    "de": "Keine überlaufenden Marker gefunden — alles in Ordnung.",
+    "en": "No overflowing markers found — all good."
+  },
+  "markerupdater.cleanupFound": {
+    "de": "{0} ungültige Marker in {1} Szenen gefunden.",
+    "en": "{0} invalid markers in {1} scenes found."
+  },
+  "markerupdater.cleanupClamping": {
+    "de": "Kürze… {0}/{1}",
+    "en": "Trimming… {0}/{1}"
+  },
+  "markerupdater.cleanupClamped": {
+    "de": "{0} Marker auf Videolänge gekürzt.",
+    "en": "{0} markers trimmed to video length."
+  },
+  "markerupdater.cleanupDeleting": {
+    "de": "Lösche… {0}/{1}",
+    "en": "Deleting… {0}/{1}"
+  },
+  "markerupdater.cleanupDeleted": {
+    "de": "{0} Marker gelöscht.",
+    "en": "{0} markers deleted."
+  },
+  "markerupdater.primaryAction": {
+    "de": "Szene speichern",
+    "en": "Save scene"
+  },
+  "oxco.workflowTab": {
+    "de": "Workflow",
+    "en": "Workflow"
+  },
+  "oxco.pathsTab": {
+    "de": "Pfade",
+    "en": "Paths"
+  },
+  "oxco.filterTab": {
+    "de": "Filter",
+    "en": "Filter"
+  },
+  "oxco.originalFile": {
+    "de": "Original (Datei)",
+    "en": "Original (file)"
+  },
+  "oxco.deepfakeFile": {
+    "de": "Deepfake (Datei)",
+    "en": "Deepfake (file)"
+  },
+  "oxco.originalFolder": {
+    "de": "Original-Ordner",
+    "en": "Original folder"
+  },
+  "oxco.deepfakeFolder": {
+    "de": "Deepfake-Ordner",
+    "en": "Deepfake folder"
+  },
+  "oxco.loadLists": {
+    "de": "Listen laden",
+    "en": "Load lists"
+  },
+  "oxco.originalSelect": {
+    "de": "Original (1 auswählen)",
+    "en": "Original (pick one)"
+  },
+  "oxco.deepfakeMultiSelect": {
+    "de": "Deepfake (Strg+Klick = Mehrfachauswahl)",
+    "en": "Deepfake (Ctrl+click = multi-select)"
+  },
+  "oxco.colName": {
+    "de": "Name",
+    "en": "Name"
+  },
+  "oxco.colPath": {
+    "de": "Pfad",
+    "en": "Path"
+  },
+  "oxco.colLength": {
+    "de": "Länge",
+    "en": "Length"
+  },
+  "oxco.colResolution": {
+    "de": "Auflösung",
+    "en": "Resolution"
+  },
+  "oxco.colSize": {
+    "de": "Größe",
+    "en": "Size"
+  },
+  "oxco.colMark": {
+    "de": "Mark.",
+    "en": "Mark."
+  },
+  "oxco.sessionInput": {
+    "de": "Session-Eingabe",
+    "en": "Session input"
+  },
+  "oxco.startCompare": {
+    "de": "Compare starten",
+    "en": "Start compare"
+  },
+  "oxco.batchSelection": {
+    "de": "Batch (Auswahl / Treffer)",
+    "en": "Batch (selection / matches)"
+  },
+  "oxco.repeatExport": {
+    "de": "Export wiederholen",
+    "en": "Repeat export"
+  },
+  "oxco.step2Bitrate": {
+    "de": "Schritt 2 — Bitrate",
+    "en": "Step 2 — Bitrate"
+  },
+  "oxco.step3Autotagger": {
+    "de": "Schritt 3 — Autotagger",
+    "en": "Step 3 — Autotagger"
+  },
+  "oxco.tagInFilename": {
+    "de": "Tag im Dateinamen",
+    "en": "Tag in filename"
+  },
+  "oxco.loadList": {
+    "de": "Liste laden",
+    "en": "Load list"
+  },
+  "oxco.previewRecognize": {
+    "de": "Vorschau (Person erkennen)",
+    "en": "Preview (recognize person)"
+  },
+  "oxco.processAll": {
+    "de": "Verarbeiten (alle/Markierung)",
+    "en": "Process (all/marked)"
+  },
+  "oxco.autoAfterTag": {
+    "de": "Auto nach Taggen",
+    "en": "Auto after tagging"
+  },
+  "oxco.noMarkAllFiles": {
+    "de": "Keine Markierung: alle Dateien…",
+    "en": "No mark: all files…"
+  },
+  "oxco.compareExport": {
+    "de": "Compare-Export",
+    "en": "Compare export"
+  },
+  "oxco.bitrateInput": {
+    "de": "Bitrate-Eingabe",
+    "en": "Bitrate input"
+  },
+  "oxco.bitrateOutput": {
+    "de": "Bitrate-Ausgabe",
+    "en": "Bitrate output"
+  },
+  "oxco.taggerInput": {
+    "de": "Tagger-Eingabe",
+    "en": "Tagger input"
+  },
+  "oxco.taggerOutput": {
+    "de": "Tagger-Ausgabe",
+    "en": "Tagger output"
+  },
+  "oxco.filenamePattern": {
+    "de": "Dateinamen-Muster (Matching)",
+    "en": "Filename pattern (matching)"
+  },
+  "oxco.previewFiles": {
+    "de": "Dateien",
+    "en": "Files"
+  },
+  "oxco.linkWorkflow": {
+    "de": "Mit Workflow verknüpfen",
+    "en": "Link with workflow"
+  },
+  "oxco.autoLoad": {
+    "de": "Automatisch laden",
+    "en": "Auto load"
+  },
+  "oxco.syncNow": {
+    "de": "Jetzt syncen",
+    "en": "Sync now"
+  },
+  "oxco.testDiff": {
+    "de": "Diff testen",
+    "en": "Test diff"
+  },
+  "oxco.noise": {
+    "de": "Rauschen",
+    "en": "Noise"
+  },
+  "oxco.pixelThreshold": {
+    "de": "Pixel-Schwelle",
+    "en": "Pixel threshold"
+  },
+  "oxco.diffOverlay": {
+    "de": "Diff-Overlay",
+    "en": "Diff overlay"
+  },
+  "oxco.toFilterTab": {
+    "de": "→ Filter-Tab",
+    "en": "→ Filter tab"
+  },
+  "oxco.saveThresholds": {
+    "de": "Schwellen speichern",
+    "en": "Save thresholds"
+  },
+  "oxco.noVideoClickLoad": {
+    "de": "Kein Video — Laden klicken",
+    "en": "No video — click Load"
+  },
+  "oxco.keyboardHint": {
+    "de": "Leertaste = Play/Pause, ←/→ = Frame",
+    "en": "Space = play/pause, ←/→ = frame"
+  },
+  "oxco.sessionInputAdopted": {
+    "de": "Session-Eingabe übernommen.",
+    "en": "Session input adopted."
+  },
+  "oxco.noSessionInput": {
+    "de": "Keine Session-Eingabe.",
+    "en": "No session input."
+  },
+  "oxco.sourceVideoMissing": {
+    "de": "Quell-Video fehlt oder nicht gefunden.",
+    "en": "Source video missing or not found."
+  },
+  "oxco.deepfakeVideoMissing": {
+    "de": "Deepfake-Video fehlt oder nicht gefunden.",
+    "en": "Deepfake video missing or not found."
+  },
+  "oxco.compareRunning": {
+    "de": "Compare läuft...",
+    "en": "Compare running..."
+  },
+  "oxco.scanningFolders": {
+    "de": "Ordner werden gescannt…",
+    "en": "Scanning folders…"
+  },
+  "oxco.listsLoaded": {
+    "de": "Listen geladen: {0}",
+    "en": "Lists loaded: {0}"
+  },
+  "oxco.probeStatus": {
+    "de": "Metadaten: {0}/{1}",
+    "en": "Metadata: {0}/{1}"
+  },
+  "oxco.noDeepfake": {
+    "de": "Kein Deepfake (B)",
+    "en": "No deepfake (B)"
+  },
+  "oxco.diffPixels": {
+    "de": "{0} abweichende Pixel",
+    "en": "{0} differing pixels"
+  },
+  "oxco.aboveThreshold": {
+    "de": "Über Schwelle (Swap sinnvoll)",
+    "en": "Above threshold (swap useful)"
+  },
+  "oxco.belowThreshold": {
+    "de": "Unter Schwelle",
+    "en": "Below threshold"
+  },
+  "oxco.noVideoLoaded": {
+    "de": "Kein Video geladen.",
+    "en": "No video loaded."
+  },
+  "oxco.noFileSelected": {
+    "de": "Keine Datei gewählt.",
+    "en": "No file selected."
+  },
+  "oxco.thresholdsApplied": {
+    "de": "Vorschau-Schwellen in Filter-Tab übernommen.",
+    "en": "Preview thresholds applied to Filter tab."
+  },
+  "oxco.taggerRunning": {
+    "de": "Autotagger läuft…",
+    "en": "Autotagger running…"
+  },
+  "oxco.taggerDone": {
+    "de": "Autotagger fertig: {0}",
+    "en": "Autotagger finished: {0}"
+  },
+  "oxco.tagHint": {
+    "de": "Ersetzt das Datums-Muster — frei eintippen…",
+    "en": "Replaces the date pattern — type freely…"
+  },
+  "oxco.tagPlaceholder": {
+    "de": "z.B. [Anna] oder [Julia Müller]",
+    "en": "e.g. [Anna] or [Julia Müller]"
+  },
+  "oxco.legendMatch": {
+    "de": "Passender Treffer",
+    "en": "Matching hit"
+  },
+  "oxco.legendBest": {
+    "de": "Bester Treffer",
+    "en": "Best hit"
+  },
+  "oxco.legendMarked": {
+    "de": "Markiert",
+    "en": "Marked"
+  },
+  "oxco.legendSelected": {
+    "de": "Ausgewählt",
+    "en": "Selected"
+  },
+  "oxco.moveToBitrate": {
+    "de": "→ Bitrate-Eingabe ({0})",
+    "en": "→ Bitrate input ({0})"
+  },
+  "oxco.moveToTagger": {
+    "de": "→ Tagger-Eingabe ({0})",
+    "en": "→ Tagger input ({0})"
+  },
+  "oxco.groupMain": {
+    "de": "Hauptordner",
+    "en": "Main folder"
+  },
+  "oxco.lengthUnknown": {
+    "de": "Länge unbekannt",
+    "en": "Length unknown"
+  },
+  "oxco.metadataMissing": {
+    "de": "Metadaten fehlen",
+    "en": "Metadata missing"
+  },
+  "oxco.sortDateNewest": {
+    "de": "Datum (neueste zuerst)",
+    "en": "Date (newest first)"
+  },
+  "oxco.sortDateOldest": {
+    "de": "Datum (älteste zuerst)",
+    "en": "Date (oldest first)"
+  },
+  "oxco.sortNameAsc": {
+    "de": "Name (A–Z)",
+    "en": "Name (A–Z)"
+  },
+  "oxco.sortNameDesc": {
+    "de": "Name (Z–A)",
+    "en": "Name (Z–A)"
+  },
+  "oxco.groupNone": {
+    "de": "Keine",
+    "en": "None"
+  },
+  "oxco.groupSubfolder": {
+    "de": "Unterordner",
+    "en": "Subfolder"
+  },
+  "oxco.groupDate": {
+    "de": "Datum",
+    "en": "Date"
+  },
+  "oxco.groupVideoLength": {
+    "de": "Video-Länge",
+    "en": "Video length"
+  },
+  "oxco.groupLengthResolution": {
+    "de": "Länge + Auflösung (Paar)",
+    "en": "Length + resolution (pair)"
+  },
+  "oxco.groupFirstLetter": {
+    "de": "Anfangsbuchstabe",
+    "en": "First letter"
+  },
+  "oxco.brPresetStandard": {
+    "de": "Standard",
+    "en": "Standard"
+  },
+  "oxco.brPresetLight": {
+    "de": "Leicht reduziert",
+    "en": "Slightly reduced"
+  },
+  "oxco.brPresetReduced": {
+    "de": "Reduziert",
+    "en": "Reduced"
+  },
+  "oxco.primaryAction": {
+    "de": "Compare starten",
+    "en": "Start compare"
+  },
+  "dlsort.profileHint": {
+    "de": "Ein Profil überwacht genau einen Ordner…",
+    "en": "One profile monitors exactly one folder…"
+  },
+  "dlsort.addProfile": {
+    "de": "Profil hinzufügen",
+    "en": "Add profile"
+  },
+  "dlsort.removeProfile": {
+    "de": "Profil entfernen",
+    "en": "Remove profile"
+  },
+  "dlsort.selectedProfile": {
+    "de": "Ausgewähltes Profil",
+    "en": "Selected profile"
+  },
+  "dlsort.profileName": {
+    "de": "Profilname",
+    "en": "Profile name"
+  },
+  "dlsort.watchFolder": {
+    "de": "Überwachungsordner (Downloads o.ä.)",
+    "en": "Watch folder (downloads etc.)"
+  },
+  "dlsort.stopMonitor": {
+    "de": "Monitor stoppen",
+    "en": "Stop monitor"
+  },
+  "dlsort.scanFolder": {
+    "de": "Ordner scannen",
+    "en": "Scan folder"
+  },
+  "dlsort.rulesForProfile": {
+    "de": "Regeln gelten für Profil:",
+    "en": "Rules apply to profile:"
+  },
+  "dlsort.rulesHint": {
+    "de": "Regeln werden von oben nach unten geprüft…",
+    "en": "Rules checked top to bottom…"
+  },
+  "dlsort.addRule": {
+    "de": "Regel hinzufügen",
+    "en": "Add rule"
+  },
+  "dlsort.removeLastRule": {
+    "de": "Letzte Regel entfernen",
+    "en": "Remove last rule"
+  },
+  "dlsort.ifLabel": {
+    "de": "WENN",
+    "en": "IF"
+  },
+  "dlsort.thenLabel": {
+    "de": "DANN",
+    "en": "THEN"
+  },
+  "dlsort.orLabel": {
+    "de": "ODER",
+    "en": "OR"
+  },
+  "dlsort.addOr": {
+    "de": "+ ODER",
+    "en": "+ OR"
+  },
+  "dlsort.addAnd": {
+    "de": "+ Kriterium (UND)",
+    "en": "+ criterion (AND)"
+  },
+  "dlsort.criterionExample": {
+    "de": "z. B. .jpg",
+    "en": "e.g. .jpg"
+  },
+  "dlsort.criterionAlt": {
+    "de": "weitere Alternative",
+    "en": "another alternative"
+  },
+  "dlsort.moveUpTooltip": {
+    "de": "Nach oben",
+    "en": "Move up"
+  },
+  "dlsort.moveDownTooltip": {
+    "de": "Nach unten",
+    "en": "Move down"
+  },
+  "dlsort.removeRuleTooltip": {
+    "de": "Regel entfernen",
+    "en": "Remove rule"
+  },
+  "dlsort.removeCriterionTooltip": {
+    "de": "Kriterium entfernen",
+    "en": "Remove criterion"
+  },
+  "dlsort.ifExtension": {
+    "de": "Dateiendung",
+    "en": "File extension"
+  },
+  "dlsort.ifFilename": {
+    "de": "Dateiname",
+    "en": "Filename"
+  },
+  "dlsort.ifSourceUrl": {
+    "de": "Quell-URL",
+    "en": "Source URL"
+  },
+  "dlsort.condContains": {
+    "de": "enthält",
+    "en": "contains"
+  },
+  "dlsort.condEquals": {
+    "de": "ist gleich",
+    "en": "equals"
+  },
+  "dlsort.actionMove": {
+    "de": "Verschieben nach",
+    "en": "Move to"
+  },
+  "dlsort.actionDelete": {
+    "de": "Löschen",
+    "en": "Delete"
+  },
+  "dlsort.actionIgnore": {
+    "de": "Ignorieren",
+    "en": "Ignore"
+  },
+  "dlsort.targetFolderEmpty": {
+    "de": "Zielordner…",
+    "en": "Target folder…"
+  },
+  "dlsort.ruleTitle": {
+    "de": "Regel {0}",
+    "en": "Rule {0}"
+  },
+  "dlsort.profileDefaultName": {
+    "de": "Profil {0}",
+    "en": "Profile {0}"
+  },
+  "dlsort.minOneRule": {
+    "de": "Mindestens eine Regel pro Profil.",
+    "en": "At least one rule per profile."
+  },
+  "dlsort.profileAdded": {
+    "de": "Profil hinzugefuegt.",
+    "en": "Profile added."
+  },
+  "dlsort.profileRemoved": {
+    "de": "Profil entfernt.",
+    "en": "Profile removed."
+  },
+  "dlsort.ruleAdded": {
+    "de": "Regel hinzugefügt.",
+    "en": "Rule added."
+  },
+  "dlsort.ruleRemoved": {
+    "de": "Regel entfernt.",
+    "en": "Rule removed."
+  },
+  "dlsort.selectProfile": {
+    "de": "Profil auswählen.",
+    "en": "Select profile."
+  },
+  "dlsort.monitorAlreadyRunning": {
+    "de": "Monitor läuft bereits.",
+    "en": "Monitor already running."
+  },
+  "dlsort.noActiveProfile": {
+    "de": "Mindestens ein Profil für Überwachung aktivieren.",
+    "en": "Enable at least one profile for monitoring."
+  },
+  "dlsort.monitorStarted": {
+    "de": "DL Sort Monitor gestartet.",
+    "en": "DL Sort monitor started."
+  },
+  "dlsort.monitorStartFailed": {
+    "de": "Monitor-Start fehlgeschlagen.",
+    "en": "Monitor start failed."
+  },
+  "dlsort.monitorStopped": {
+    "de": "Monitor gestoppt.",
+    "en": "Monitor stopped."
+  },
+  "dlsort.configSaved": {
+    "de": "Konfiguration gespeichert.",
+    "en": "Configuration saved."
+  },
+  "dlsort.scanRunning": {
+    "de": "Scan läuft...",
+    "en": "Scan running..."
+  },
+  "dlsort.primaryAction": {
+    "de": "Monitor starten",
+    "en": "Start monitor"
+  },
+  "datensync.syncJobHeader": {
+    "de": "Sync-Job",
+    "en": "Sync job"
+  },
+  "datensync.sourceLabel": {
+    "de": "Quelle",
+    "en": "Source"
+  },
+  "datensync.targetLabel": {
+    "de": "Ziel",
+    "en": "Target"
+  },
+  "datensync.addJob": {
+    "de": "Job hinzufügen",
+    "en": "Add job"
+  },
+  "datensync.loadSelection": {
+    "de": "Auswahl laden",
+    "en": "Load selection"
+  },
+  "datensync.updateSelection": {
+    "de": "Auswahl aktualisieren",
+    "en": "Update selection"
+  },
+  "datensync.removeSelection": {
+    "de": "Auswahl entfernen",
+    "en": "Remove selection"
+  },
+  "datensync.jobsHeader": {
+    "de": "Jobs",
+    "en": "Jobs"
+  },
+  "datensync.sourceArrow": {
+    "de": "Quelle →",
+    "en": "Source →"
+  },
+  "datensync.targetArrow": {
+    "de": "→ Ziel",
+    "en": "→ Target"
+  },
+  "datensync.intervalHeader": {
+    "de": "Intervall (Minuten, 0 = einmalig)",
+    "en": "Interval (minutes, 0 = once)"
+  },
+  "datensync.robocopyOptions": {
+    "de": "Robocopy-Optionen",
+    "en": "Robocopy options"
+  },
+  "datensync.profileName": {
+    "de": "Profilname",
+    "en": "Profile name"
+  },
+  "datensync.loadProfile": {
+    "de": "Profil laden",
+    "en": "Load profile"
+  },
+  "datensync.saveDefault": {
+    "de": "Als Default speichern",
+    "en": "Save as default"
+  },
+  "datensync.fillSourceTarget": {
+    "de": "Quelle und Ziel für neuen Job ausfüllen.",
+    "en": "Fill source and target for new job."
+  },
+  "datensync.sourceTargetSame": {
+    "de": "Quelle und Ziel dürfen nicht identisch sein.",
+    "en": "Source and target must differ."
+  },
+  "datensync.jobAdded": {
+    "de": "Job hinzugefügt.",
+    "en": "Job added."
+  },
+  "datensync.jobLoaded": {
+    "de": "Job in Editor geladen.",
+    "en": "Job loaded in editor."
+  },
+  "datensync.jobUpdated": {
+    "de": "Job aktualisiert.",
+    "en": "Job updated."
+  },
+  "datensync.jobRemoved": {
+    "de": "Job entfernt.",
+    "en": "Job removed."
+  },
+  "datensync.selectJob": {
+    "de": "Bitte einen Job in der Liste auswählen.",
+    "en": "Please select a job in the list."
+  },
+  "datensync.selectJobShort": {
+    "de": "Bitte einen Job auswählen.",
+    "en": "Please select a job."
+  },
+  "datensync.profileNameMissing": {
+    "de": "Profilname fehlt.",
+    "en": "Profile name missing."
+  },
+  "datensync.profileNameInvalid": {
+    "de": "Ungültiger Profilname.",
+    "en": "Invalid profile name."
+  },
+  "datensync.profileSaved": {
+    "de": "Profil gespeichert: {0}",
+    "en": "Profile saved: {0}"
+  },
+  "datensync.profileLoaded": {
+    "de": "Profil geladen: {0}",
+    "en": "Profile loaded: {0}"
+  },
+  "datensync.defaultSaved": {
+    "de": "Default-Profil gespeichert.",
+    "en": "Default profile saved."
+  },
+  "datensync.syncRunning": {
+    "de": "Sync läuft — Log siehe unten.",
+    "en": "Sync running — see log below."
+  },
+  "datensync.syncRunningRepeat": {
+    "de": "Sync läuft (Wiederholung alle {0} Min.)…",
+    "en": "Sync running (repeat every {0} min.)…"
+  },
+  "datensync.syncStopped": {
+    "de": "Sync gestoppt.",
+    "en": "Sync stopped."
+  },
+  "datensync.primaryAction": {
+    "de": "Jobs starten",
+    "en": "Start jobs"
+  },
+  "datensync.optionMir": {
+    "de": "Ziel exakt spiegeln (fehlende Dateien im Ziel löschen)",
+    "en": "Mirror destination exactly (delete missing files in target)"
+  },
+  "datensync.optionE": {
+    "de": "Unterordner kopieren, auch wenn leer",
+    "en": "Copy subfolders including empty ones"
+  },
+  "datensync.optionXo": {
+    "de": "Nur neue oder geänderte Dateien kopieren",
+    "en": "Copy only new or changed files"
+  },
+  "datensync.optionCopyDat": {
+    "de": "Datei- und Ordnerattribute mitkopieren",
+    "en": "Copy file and folder attributes"
+  },
+  "datensync.optionZ": {
+    "de": "Restartfähiger Modus (/Z)",
+    "en": "Restartable mode (/Z)"
+  },
+  "datensync.optionW2": {
+    "de": "2 Sekunden zwischen Wiederholungsversuchen",
+    "en": "2 seconds between retries"
+  },
+  "datensync.optionR3": {
+    "de": "Maximal 3 Wiederholungsversuche",
+    "en": "Max 3 retries"
+  },
+  "datensync.optionNp": {
+    "de": "Ausgabe ohne Fortschrittsprozente",
+    "en": "Output without progress percent"
+  },
+  "datensync.optionL": {
+    "de": "Trockenlauf (nur anzeigen)",
+    "en": "Dry run (show only)"
+  },
+  "autotagger.foldersHeader": {
+    "de": "Ordner",
+    "en": "Folders"
+  },
+  "autotagger.defaultOutput": {
+    "de": "Default-Ausgabe",
+    "en": "Default output"
+  },
+  "autotagger.monitorSuffixHeader": {
+    "de": "Monitor / Suffixe",
+    "en": "Monitor / suffixes"
+  },
+  "autotagger.resetDefaults": {
+    "de": "Standard",
+    "en": "Default"
+  },
+  "autotagger.processExisting": {
+    "de": "Beim Start vorhandene .mp4 im Eingabeordner verarbeiten",
+    "en": "Process existing .mp4 in input folder on start"
+  },
+  "autotagger.categoriesHeader": {
+    "de": "Kategorien",
+    "en": "Categories"
+  },
+  "autotagger.addCategories": {
+    "de": "Ausgewählte Kategorien zur Warteschlange",
+    "en": "Add selected categories to queue"
+  },
+  "autotagger.manualStepHeader": {
+    "de": "Manueller Schritt",
+    "en": "Manual step"
+  },
+  "autotagger.profileQueueHeader": {
+    "de": "Profil-Warteschlange",
+    "en": "Profile queue"
+  },
+  "autotagger.moveUp": {
+    "de": "Hoch",
+    "en": "Up"
+  },
+  "autotagger.moveDown": {
+    "de": "Runter",
+    "en": "Down"
+  },
+  "autotagger.setDefaultOutput": {
+    "de": "Default-Ausgabeordner setzen.",
+    "en": "Set default output folder."
+  },
+  "autotagger.nameTagRequired": {
+    "de": "Name und Tag ausfüllen.",
+    "en": "Fill in name and tag."
+  },
+  "autotagger.selectCategories": {
+    "de": "Kategorien auswählen.",
+    "en": "Select categories."
+  },
+  "autotagger.profileQueued": {
+    "de": "Profil zur Warteschlange hinzugefuegt.",
+    "en": "Profile added to queue."
+  },
+  "autotagger.selectQueueItem": {
+    "de": "Warteschlangen-Eintrag auswählen.",
+    "en": "Select queue entry."
+  },
+  "autotagger.entryRemoved": {
+    "de": "Eintrag entfernt.",
+    "en": "Entry removed."
+  },
+  "autotagger.monitorStarted": {
+    "de": "Autotagger Monitor gestartet.",
+    "en": "Autotagger monitor started."
+  },
+  "autotagger.monitorStartFailed": {
+    "de": "Monitor-Start fehlgeschlagen.",
+    "en": "Monitor start failed."
+  },
+  "autotagger.monitorStopped": {
+    "de": "Monitor gestoppt.",
+    "en": "Monitor stopped."
+  },
+  "autotagger.defaultsRestored": {
+    "de": "Suffix- und Muster-Felder auf Standard gesetzt.",
+    "en": "Suffix and pattern fields reset to defaults."
+  },
+  "autotagger.primaryAction": {
+    "de": "Monitor starten",
+    "en": "Start monitor"
+  },
+  "subprocess.copyInput": {
+    "de": "Eingabe kopieren",
+    "en": "Copy input"
+  },
+  "subprocess.copyOutput": {
+    "de": "Output kopieren",
+    "en": "Copy output"
+  },
+  "subprocess.useLastOutput": {
+    "de": "Letzte Ausgabe übernehmen",
+    "en": "Use last output"
+  },
+  "subprocess.statusRunning": {
+    "de": "Läuft (PID {0})",
+    "en": "Running (PID {0})"
+  },
+  "subprocess.statusError": {
+    "de": "Fehler — siehe Log",
+    "en": "Error — see log"
+  },
+  "subprocess.noSessionInput": {
+    "de": "Keine Eingabe in Session",
+    "en": "No input in session"
+  },
+  "subprocess.inputCopied": {
+    "de": "Eingabe kopiert",
+    "en": "Input copied"
+  },
+  "subprocess.noOutputDir": {
+    "de": "Kein Output-Ordner gesetzt",
+    "en": "No output folder set"
+  },
+  "subprocess.outputCopied": {
+    "de": "Output-Ordner kopiert",
+    "en": "Output folder copied"
+  },
+  "subprocess.lastOutputAdopted": {
+    "de": "Letzte Ausgabe als Eingabe übernommen",
+    "en": "Last output adopted as input"
+  },
+  "oxco.colorLegend": {
+    "de": "Gleiche Pastellfarbe = gleiche Länge/Auflösung (ffprobe). Gelb = passend zum gewählten Original. Grün = bester Treffer. Dicker blauer Rand = markiert / aktives Paar.",
+    "en": "Same pastel color = same length/resolution (ffprobe). Yellow = match for selected original. Green = best hit. Thick blue border = marked / active pair."
+  },
+  "oxco.legendMarkedSelected": {
+    "de": "Markiert / Ausgewählt",
+    "en": "Marked / selected"
+  },
+  "oxco.deepfakeListHint": {
+    "de": "Deepfake-Liste: Rechtsklick → verschieben / Papierkorb. Mehrfachauswahl für Batch-Compare.",
+    "en": "Deepfake list: right-click → move / trash. Multi-select for batch compare."
+  },
+  "oxco.tagHintFull": {
+    "de": "Ersetzt das Datums-Muster — frei eintippen oder aus Tag-Verteilung wählen, danach eigene Ergänzungen möglich.",
+    "en": "Replaces the date pattern — type freely or pick from tag distribution, then add your own text."
+  },
+  "oxco.scopeHintFull": {
+    "de": "Keine Markierung: alle Dateien. Mit Markierung: nur gewählte Zeilen.",
+    "en": "No selection: all files. With selection: selected rows only."
+  },
+  "oxco.batchPipeline": {
+    "de": "Batch-Pipeline: Analyse während DaVinci-Render",
+    "en": "Batch pipeline: analyze during DaVinci render"
+  },
+  "oxco.applyPreset": {
+    "de": "Preset übernehmen",
+    "en": "Apply preset"
+  },
+  "oxco.onlyLowerNever": {
+    "de": "Nur senken (nie erhöhen)",
+    "en": "Only lower (never raise)"
+  },
+  "oxco.deleteOriginalAfterOk": {
+    "de": "Nach erfolgreicher Bitrate-Konvertierung: Original im Eingangsordner löschen",
+    "en": "After successful bitrate conversion: delete original in input folder"
+  },
+  "markerupdater.cleanupHintFull": {
+    "de": "Findet Marker, deren Start- oder Endzeit über die Videolänge hinausgeht (z. B. durch fehlerhaften AI-Tagger).",
+    "en": "Finds markers whose start or end exceeds video length (e.g. from a faulty AI tagger)."
+  },
+  "markerupdater.pickTag": {
+    "de": "Tag wählen",
+    "en": "Pick tag"
+  },
+  "markerupdater.tagDeleteHintFull": {
+    "de": "«Tag in Stash löschen» entfernt den Tag-Eintrag. «Von Treffern abnehmen» streicht nur die Zuordnung bei den passenden Szenen.",
+    "en": "Delete tag in Stash removes the tag entry. Remove from hits only clears the link on matching scenes."
+  },
+  "dlsort.profileHintFull": {
+    "de": "Ein Profil überwacht genau einen Ordner. Aktiviere „Aktiv“ und starte den Monitor in der Aktionsleiste.",
+    "en": "Each profile watches one folder. Enable Active and start the monitor from the action bar."
+  },
+  "dlsort.rulesHintFull": {
+    "de": "Regeln werden von oben nach unten geprüft (oben = höchste Priorität, mit ↑/↓ ändern). Alle Kriterien einer Regel müssen passen (UND). „+ ODER“ fügt einem Kriterium Alternativen hinzu, „+ Kriterium (UND)“ verknüpft ein weiteres. Die erste passende Regel gewinnt.",
+    "en": "Rules are checked top to bottom (top = highest priority, use arrows to reorder). All criteria in a rule must match (AND). + OR adds alternatives, + criterion (AND) adds another. First matching rule wins."
+  },
+  "bitrate.scanHintFull": {
+    "de": "Angehakte Zeilen werden konvertiert (nach Scan standardmäßig alle mit Aktion „convert“).",
+    "en": "Checked rows are converted (after scan, all with action convert by default)."
+  },
+  "oxco.previewLinkHintFull": {
+    "de": "Pfade starten aus Workflow (Original/Deepfake). Eigene Pfade oder Abweichung deaktiviert die Verknüpfung.",
+    "en": "Paths start from workflow (original/deepfake). Custom paths or changes disable the link."
+  },
+  "texttovideo.status.newSegmentHint": {
+    "de": "Neuer Abschnitt — Text und Zeiten eingeben, dann hinzufügen.",
+    "en": "New segment — enter text and times, then add."
+  },
+  "texttovideo.status.clipboardEmpty": {
+    "de": "Zwischenablage enthält keinen Text.",
+    "en": "Clipboard has no text."
+  },
+  "texttovideo.status.clipboardPasted": {
+    "de": "Text aus Zwischenablage eingefügt.",
+    "en": "Text pasted from clipboard."
+  },
+  "texttovideo.status.selectSrt": {
+    "de": "Bitte zuerst eine SRT-Datei wählen.",
+    "en": "Choose an SRT file first."
+  },
+  "texttovideo.status.needSegmentOrSrt": {
+    "de": "Mindestens ein Text-Abschnitt oder SRT nötig.",
+    "en": "At least one text segment or SRT required."
+  },
+  "texttovideo.status.needSegmentOrSrtBatch": {
+    "de": "Mindestens ein Text-Abschnitt oder SRT für den Batch nötig.",
+    "en": "At least one text segment or SRT required for batch."
+  },
+  "texttovideo.videoInfoLine": {
+    "de": "{0}×{1}, {2} fps, {3} s",
+    "en": "{0}×{1}, {2} fps, {3} s"
+  },
+  "texttovideo.suggestedBitrate": {
+    "de": "Vorschlag {0}",
+    "en": "Suggested {0}"
+  },
+  "texttovideo.status.analyzingVideo": {
+    "de": "Video wird analysiert…",
+    "en": "Analyzing video…"
+  },
+  "texttovideo.status.videoProbeFailed": {
+    "de": "Video-Analyse fehlgeschlagen.",
+    "en": "Video analysis failed."
+  },
+  "texttovideo.status.loadVideoFirst": {
+    "de": "Bitte zuerst ein Video laden.",
+    "en": "Load a video first."
+  },
+  "texttovideo.status.noSourceBitrate": {
+    "de": "Keine Quell-Bitrate verfügbar.",
+    "en": "No source bitrate available."
+  },
+  "datensync.status.fillSourceTarget": {
+    "de": "Quelle und Ziel ausfüllen.",
+    "en": "Fill in source and target."
+  },
+  "datensync.status.selectProfile": {
+    "de": "Profil im Dropdown auswählen.",
+    "en": "Select a profile from the dropdown."
+  },
+  "datensync.noJobs": {
+    "de": "Keine Jobs definiert.",
+    "en": "No jobs defined."
+  },
+  "datensync.invalidInterval": {
+    "de": "Intervall muss eine Zahl >= 0 sein.",
+    "en": "Interval must be a number >= 0."
+  },
+  "datensync.profileNotFound": {
+    "de": "Profil nicht gefunden: {0}",
+    "en": "Profile not found: {0}"
+  },
+  "datensync.log.startJobs": {
+    "de": "Starte {0} Robocopy-Job(s)...",
+    "en": "Starting {0} Robocopy job(s)..."
+  },
+  "datensync.log.allStopped": {
+    "de": "Alle Robocopy-Jobs gestoppt.",
+    "en": "All Robocopy jobs stopped."
+  },
+  "datensync.log.processFailed": {
+    "de": "Job {0}: Prozess konnte nicht gestartet werden.",
+    "en": "Job {0}: process could not be started."
+  },
+  "datensync.log.jobFinished": {
+    "de": "Job {0} beendet (Code {1})",
+    "en": "Job {0} finished (code {1})"
+  },
+  "datensync.log.jobError": {
+    "de": "Job {0} Fehler: {1}",
+    "en": "Job {0} error: {1}"
+  },
+  "markerupdater.status.noMarkersSelected": {
+    "de": "Keine Marker ausgewählt.",
+    "en": "No markers selected."
+  },
+  "markerupdater.status.tagNotOnScene": {
+    "de": "Im gewählten Umfang hat keine Szene diesen Tag — nichts geändert.",
+    "en": "No scene in scope has this tag — nothing changed."
+  },
+  "markerupdater.status.pickTagToDelete": {
+    "de": "Tag-Eintrag in Stash zum Löschen wählen.",
+    "en": "Choose a tag entry in Stash to delete."
+  },
+  "oxco.sortDurationLongest": {
+    "de": "Länge (längste zuerst)",
+    "en": "Duration (longest first)"
+  },
+  "oxco.sortDurationShortest": {
+    "de": "Länge (kürzeste zuerst)",
+    "en": "Duration (shortest first)"
+  },
+  "oxco.sortSizeLargest": {
+    "de": "Größe (größte zuerst)",
+    "en": "Size (largest first)"
+  },
+  "oxco.sortSizeSmallest": {
+    "de": "Größe (kleinste zuerst)",
+    "en": "Size (smallest first)"
+  },
+  "oxco.moveToBitrateShort": {
+    "de": "→ Bitrate-Eingabe",
+    "en": "→ Bitrate input"
+  },
+  "oxco.moveToTaggerShort": {
+    "de": "→ Tagger-Eingabe",
+    "en": "→ Tagger input"
+  },
+  "oxco.processAllFiles": {
+    "de": "Verarbeiten (alle)",
+    "en": "Process (all)"
+  },
+  "oxco.processSelection": {
+    "de": "Verarbeiten (Markierung)",
+    "en": "Process (selection)"
+  },
+  "oxco.tagRouteSetup": {
+    "de": "Tag-Verteilung…",
+    "en": "Tag routing…"
+  },
+  "oxco.moveConvertedToTagger": {
+    "de": "Konvertierte → Tagger",
+    "en": "Converted → Tagger"
+  },
+  "oxco.bestBadge": {
+    "de": "Best",
+    "en": "Best"
+  },
+  "oxco.filterCompareSection": {
+    "de": "Compare",
+    "en": "Compare"
+  },
+  "oxco.bufferSeconds": {
+    "de": "Buffer (s)",
+    "en": "Buffer (s)"
+  },
+  "oxco.pixelMaxOff": {
+    "de": "Pixel max (0 = aus)",
+    "en": "Pixel max (0 = off)"
+  },
+  "oxco.davinciTimeout": {
+    "de": "DaVinci-Timeout (s)",
+    "en": "DaVinci timeout (s)"
+  },
+  "oxco.ffmpegExport": {
+    "de": "FFmpeg-Export",
+    "en": "FFmpeg export"
+  },
+  "oxco.davinciExport": {
+    "de": "DaVinci-Export",
+    "en": "DaVinci export"
+  },
+  "oxco.batchPipelineTooltip": {
+    "de": "Schneller bei Mehrfach-Compare. Deaktivieren auf schwachen PCs — dann erst Resolve fertig, dann nächste Analyse.",
+    "en": "Faster for batch compare. Disable on weak PCs — finish Resolve first, then next analysis."
+  },
+  "oxco.pipelineOffHint": {
+    "de": "Pipeline aus: sequentiell wie bisher (weniger CPU/GPU parallel). Nur relevant bei Batch + DaVinci.",
+    "en": "Pipeline off: sequential as before (less parallel CPU/GPU). Only relevant for batch + DaVinci."
+  },
+  "oxco.davinciOnlyHint": {
+    "de": "Nur DaVinci: FFmpeg-Export deaktivieren. Beide an = zuerst FFmpeg, danach Resolve.",
+    "en": "DaVinci only: disable FFmpeg export. Both on = FFmpeg first, then Resolve."
+  },
+  "oxco.ffmpegTargetHeader": {
+    "de": "FFmpeg rendert",
+    "en": "FFmpeg renders"
+  },
+  "oxco.exportUniqueName": {
+    "de": "Export eindeutig benennen",
+    "en": "Unique export names"
+  },
+  "oxco.includeSubfoldersBitrate": {
+    "de": "Unterordner einbeziehen (Bitrate-Scan + Tagger-Liste)",
+    "en": "Include subfolders (bitrate scan + tagger list)"
+  },
+  "oxco.outputSuffix": {
+    "de": "Suffix Ausgabe",
+    "en": "Output suffix"
+  },
+  "oxco.outputAsMp4": {
+    "de": "Ausgabe als .mp4 (statt Original-Endung)",
+    "en": "Output as .mp4 (instead of original extension)"
+  },
+  "oxco.autotaggerPatternsSection": {
+    "de": "Autotagger — Muster und Suffixe",
+    "en": "Autotagger — patterns and suffixes"
+  },
+  "oxco.filenamePatternHeader": {
+    "de": "Dateinamen-Muster",
+    "en": "Filename pattern"
+  },
+  "oxco.keepSuffixesCsv": {
+    "de": "Keep-Suffixe (CSV)",
+    "en": "Keep suffixes (CSV)"
+  },
+  "oxco.ignoreSuffixesCsv": {
+    "de": "Ignore-Suffixe (CSV)",
+    "en": "Ignore suffixes (CSV)"
+  },
+  "oxco.dropSuffixesCsv": {
+    "de": "Drop-Suffixe (CSV)",
+    "en": "Drop suffixes (CSV)"
+  },
+  "oxco.davinciResolveSection": {
+    "de": "DaVinci / Resolve",
+    "en": "DaVinci / Resolve"
+  },
+  "oxco.davinciApiHint": {
+    "de": "API-Pfad und Resolve.exe: Einstellungen (global) → DaVinci Resolve.",
+    "en": "API path and Resolve.exe: Settings (global) → DaVinci Resolve."
+  },
+  "oxco.startupWait": {
+    "de": "Startup-Wartezeit (s)",
+    "en": "Startup wait (s)"
+  },
+  "oxco.saveFilters": {
+    "de": "Filter speichern",
+    "en": "Save filters"
+  },
+  "oxco.pathsChainHint": {
+    "de": "Kette: Compare-Export → Bitrate-Eingabe → Bitrate-Ausgabe → Tagger-Eingabe.",
+    "en": "Chain: compare export → bitrate input → bitrate output → tagger input."
+  },
+  "oxco.previewOriginalLabel": {
+    "de": "Original (A)",
+    "en": "Original (A)"
+  },
+  "oxco.previewDeepfakeLabel": {
+    "de": "Deepfake (B)",
+    "en": "Deepfake (B)"
+  },
+  "oxco.testDiffSection": {
+    "de": "Diff testen (Compare-Filter)",
+    "en": "Test diff (compare filter)"
+  },
+  "oxco.maxFps": {
+    "de": "Max FPS",
+    "en": "Max FPS"
+  },
+  "oxco.sideBySide": {
+    "de": "Side-by-Side",
+    "en": "Side-by-Side"
+  },
+  "oxco.contextMoveToBitrate": {
+    "de": "→ Bitrate-Eingabe verschieben",
+    "en": "→ Move to bitrate input"
+  },
+  "oxco.contextMoveToTagger": {
+    "de": "→ Tagger-Eingabe verschieben",
+    "en": "→ Move to tagger input"
+  },
+  "oxco.contextRemoveFromList": {
+    "de": "Aus Liste entfernen",
+    "en": "Remove from list"
+  },
+  "oxco.contextRecycle": {
+    "de": "In Papierkorb",
+    "en": "Move to trash"
+  },
+  "oxco.tagRouteDialogTitle": {
+    "de": "Tag-Verteilung",
+    "en": "Tag routing"
+  },
+  "oxco.tagRouteAddRow": {
+    "de": "Zeile hinzufügen",
+    "en": "Add row"
+  },
+  "oxco.tagRouteHint": {
+    "de": "Pro Zeile: Tag-Text und Zielordner für die Verteilung nach dem Taggen. Die Tags erscheinen auch im Autotagger-Dropdown oben. Klammer-Inhalt muss exakt passen: [Julia] ≠ [Julia Müller]. Längere Tags haben Vorrang.",
+    "en": "Per row: tag text and target folder for distribution after tagging. Tags also appear in the autotagger dropdown above. Bracket content must match exactly: [Julia] ≠ [Julia Müller]. Longer tags take priority."
+  },
+  "oxco.targetFolderPlaceholder": {
+    "de": "Zielordner",
+    "en": "Target folder"
+  },
+  "oxco.tagPlaceholderShort": {
+    "de": "Tag",
+    "en": "Tag"
+  },
+  "oxco.brMin2160": {
+    "de": "≥2160px (kbps)",
+    "en": "≥2160px (kbps)"
+  },
+  "oxco.brMin1440": {
+    "de": "≥1440px (kbps)",
+    "en": "≥1440px (kbps)"
+  },
+  "oxco.brMin1080": {
+    "de": "≥1080px (kbps)",
+    "en": "≥1080px (kbps)"
+  },
+  "oxco.brMin720": {
+    "de": "≥720px (kbps)",
+    "en": "≥720px (kbps)"
+  },
+  "oxco.brMin480": {
+    "de": "≥480px (kbps)",
+    "en": "≥480px (kbps)"
+  },
+  "oxco.brMin360": {
+    "de": "≥360px (kbps)",
+    "en": "≥360px (kbps)"
+  },
+  "oxco.brMin0": {
+    "de": "≥0px (kbps)",
+    "en": "≥0px (kbps)"
+  },
+  "oxco.audioHeader": {
+    "de": "Audio",
+    "en": "Audio"
+  },
+  "oxco.status.filesMoved": {
+    "de": "{0} Datei(en) nach {1} verschoben.",
+    "en": "{0} file(s) moved to {1}."
+  },
+  "oxco.status.filesMovedWithErrors": {
+    "de": "{0} Datei(en) nach {1} verschoben, {2} fehlgeschlagen ({3}).",
+    "en": "{0} file(s) moved to {1}, {2} failed ({3})."
+  },
+  "oxco.status.destFolderMissing": {
+    "de": "{0}-Ordner fehlt (Tab Pfade).",
+    "en": "{0} folder missing (Paths tab)."
+  },
+  "oxco.status.pickOriginal": {
+    "de": "Zuerst ein Original in der Liste auswählen.",
+    "en": "Select an original in the list first."
+  },
+  "oxco.status.noDeepfake": {
+    "de": "Kein Deepfake zum Vergleichen (auswählen oder Original klicken).",
+    "en": "No deepfake to compare (select one or click original)."
+  },
+  "oxco.status.batchDavinciRunning": {
+    "de": "Compare-Batch: letzter DaVinci-Export läuft…",
+    "en": "Compare batch: last DaVinci export running…"
+  },
+  "oxco.status.thresholdsSaved": {
+    "de": "Schwellen gespeichert (Filter-Tab + oxco_config.json). Beim Compare-Lauf werden sie in settings.ini übernommen.",
+    "en": "Thresholds saved (Filter tab + oxco_config.json). They apply to settings.ini on the next compare run."
+  },
+  "oxco.status.noFilesMarked": {
+    "de": "Keine Dateien markiert — alle verarbeiten oder Zeilen wählen.",
+    "en": "No files marked — process all or select rows."
+  },
+  "oxco.status.invalidTaggerSelection": {
+    "de": "Ungültige Markierung in der Autotagger-Liste — „Liste laden“ und Zeilen wählen.",
+    "en": "Invalid selection in autotagger list — load list and pick rows."
+  },
+  "oxco.status.taggerTargetInvalid": {
+    "de": "Autotagger-Zielordner ungültig (Tab Pfade).",
+    "en": "Autotagger target folder invalid (Paths tab)."
+  },
+  "oxco.status.tagDistributionRunning": {
+    "de": "Tag-Verteilung läuft…",
+    "en": "Tag distribution running…"
+  }
+}
