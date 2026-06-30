@@ -29,10 +29,21 @@ public partial class MarkerAutocutRowViewModel
     public string ResolvedFilePath { get; init; } = string.Empty;
 
     public string Display =>
-        $"{Source.MarkerTitle} @ {TimecodeHelper.FormatRangeFromText(Source.StartSeconds, Source.EndSeconds)} | {Source.PrimaryTag} | Szene {Source.SceneId}";
+        Loc.F(
+            "markerautocut.markerRowDisplay",
+            Source.MarkerTitle,
+            TimecodeHelper.FormatRangeFromText(Source.StartSeconds, Source.EndSeconds),
+            Source.PrimaryTag,
+            Source.SceneId);
 
     public string GroupedDisplay =>
         $"{Source.MarkerTitle} @ {TimecodeHelper.FormatRangeFromText(Source.StartSeconds, Source.EndSeconds)} | {Source.PrimaryTag}";
+
+    internal void NotifyDisplayChanged()
+    {
+        OnPropertyChanged(nameof(Display));
+        OnPropertyChanged(nameof(GroupedDisplay));
+    }
 
     partial void OnIsSelectedChanged(bool value)
     {
@@ -64,9 +75,9 @@ public partial class MarkerAutocutViewModel
 
     public string PathSortLabel => PathSortMode switch
     {
-        MarkerPathSortMode.Asc => "Pfad A→Z",
-        MarkerPathSortMode.Desc => "Pfad Z→A",
-        _ => "Stash-Reihenfolge",
+        MarkerPathSortMode.Asc => Loc.T("markerautocut.pathSortAsc"),
+        MarkerPathSortMode.Desc => Loc.T("markerautocut.pathSortDesc"),
+        _ => Loc.T("markerautocut.pathSortStash"),
     };
 
     private string MapFilePath(string remotePath)
@@ -263,7 +274,7 @@ public partial class MarkerAutocutViewModel
     private void SyncExportOrder()
     {
         RebuildExportOrderFromSelection();
-        Status = $"{ExportOrder.Count} Marker in Export-Reihenfolge.";
+        Status = Loc.F("markerautocut.orderCount", ExportOrder.Count);
     }
 
     [RelayCommand]

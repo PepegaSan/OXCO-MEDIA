@@ -34,7 +34,7 @@ public partial class MarkerAutocutViewModel
                 {
                     IsFileHeader = true,
                     HeaderText = string.IsNullOrWhiteSpace(pathKey)
-                        ? "▶ (ohne Pfad)"
+                        ? $"▶ {Loc.T("markerautocut.noPath")}"
                         : $"▶ {shortName}",
                 });
             }

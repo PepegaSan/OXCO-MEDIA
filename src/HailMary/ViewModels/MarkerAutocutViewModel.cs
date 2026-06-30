@@ -183,7 +183,9 @@ public partial class MarkerAutocutViewModel : ObservableObject, IToolShellHost, 
             ApplyMarkerSort();
             RebuildExportOrderFromSelection();
             RebuildDisplayItems();
-            Status = Markers.Count == 0 ? "Keine Marker gefunden." : $"{Markers.Count} Marker geladen.";
+            Status = Markers.Count == 0
+                ? Loc.T("markerautocut.noMarkers")
+                : Loc.F("markerautocut.markersLoaded", Markers.Count);
         }
         catch (Exception ex)
         {

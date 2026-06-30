@@ -17,7 +17,9 @@ src/HailMary/obj/
 Thumbs.db
 Desktop.ini
 
-# Python
+# Python venv (setup_python.bat)
+.venv/
+venv/
 __pycache__/
 *.py[cod]
 *.pyo

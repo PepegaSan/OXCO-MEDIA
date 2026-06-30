@@ -1995,6 +1995,10 @@
     "de": "Batch läuft…",
     "en": "Batch running…"
   },
+  "clipjoiner.batchSummary": {
+    "de": "{0} ({1} Clips)",
+    "en": "{0} ({1} clips)"
+  },
   "davincibatch.queueHeader": {
     "de": "Warteschlange",
     "en": "Queue"
@@ -2218,6 +2222,10 @@
   "markerautocut.noPath": {
     "de": "(ohne Pfad)",
     "en": "(no path)"
+  },
+  "markerautocut.markerRowDisplay": {
+    "de": "{0} @ {1} | {2} | Szene {3}",
+    "en": "{0} @ {1} | {2} | Scene {3}"
   },
   "stashcutter.stashSceneHeader": {
     "de": "Stash-Szene",
@@ -3874,5 +3882,281 @@
   "oxco.status.tagDistributionRunning": {
     "de": "Tag-Verteilung läuft…",
     "en": "Tag distribution running…"
+  },
+  "oxco.status.tagDistributionDone": {
+    "de": "Tag-Verteilung: {0} verschoben, {1} ohne Treffer, {2} Fehler.",
+    "en": "Tag distribution: {0} moved, {1} no match, {2} errors."
+  },
+  "oxco.status.tagDistributionBridgeFailed": {
+    "de": "Tag-Verteilung: Bridge fehlgeschlagen.",
+    "en": "Tag distribution: bridge failed."
+  },
+  "oxco.status.noTagRouteRules": {
+    "de": "Keine Tag-Verteilungsregeln — zuerst einrichten.",
+    "en": "No tag routing rules — set them up first."
+  },
+  "oxco.status.autotaggerBridgeFailed": {
+    "de": "Autotagger: Bridge fehlgeschlagen.",
+    "en": "Autotagger: bridge failed."
+  },
+  "oxco.status.autotaggerDone": {
+    "de": "Autotagger fertig: {0} verschoben, {1} übersprungen.",
+    "en": "Autotagger done: {0} moved, {1} skipped."
+  },
+  "oxco.status.taggerSourceMissing": {
+    "de": "Tagger-Quellordner fehlt (Tab Pfade).",
+    "en": "Tagger source folder missing (Paths tab)."
+  },
+  "oxco.status.taggerPathsMissing": {
+    "de": "Tagger: Quell- und Zielordner setzen (Tab Pfade).",
+    "en": "Tagger: set source and target folders (Paths tab)."
+  },
+  "oxco.status.taggerTargetMissing": {
+    "de": "Tagger: Zielordner fehlt (Tab Pfade).",
+    "en": "Tagger: target folder missing (Paths tab)."
+  },
+  "oxco.status.taggerInputMissing": {
+    "de": "Tagger-Eingabeordner fehlt (Tab Pfade).",
+    "en": "Tagger input folder missing (Paths tab)."
+  },
+  "oxco.status.autotaggerList": {
+    "de": "Autotagger-Liste: {0} .mp4 ({1}).",
+    "en": "Autotagger list: {0} .mp4 ({1})."
+  },
+  "oxco.status.autotaggerListEmpty": {
+    "de": "Autotagger-Liste: keine .mp4 ({0}).",
+    "en": "Autotagger list: no .mp4 ({0})."
+  },
+  "oxco.scopeRecursive": {
+    "de": "inkl. Unterordner",
+    "en": "incl. subfolders"
+  },
+  "oxco.scopeMainOnly": {
+    "de": "nur Hauptordner",
+    "en": "main folder only"
+  },
+  "oxco.status.compareAborted": {
+    "de": "Compare wird abgebrochen…",
+    "en": "Compare is being cancelled…"
+  },
+  "oxco.status.exportRetrying": {
+    "de": "Export wird wiederholt…",
+    "en": "Retrying export…"
+  },
+  "oxco.status.noFilesSelected": {
+    "de": "Keine Dateien ausgewählt.",
+    "en": "No files selected."
+  },
+  "oxco.status.recycledToTrash": {
+    "de": "{0} Datei(en) in Papierkorb verschoben.",
+    "en": "{0} file(s) moved to trash."
+  },
+  "oxco.status.taggerSameAsBitrate": {
+    "de": "Tagger-Eingabe ist gleich Bitrate-Eingabe — nichts zu verschieben.",
+    "en": "Tagger input equals bitrate input — nothing to move."
+  },
+  "oxco.status.alreadyInTaggerFolder": {
+    "de": "Konvertierte Dateien liegen bereits im Tagger-Ordner.",
+    "en": "Converted files are already in the tagger folder."
+  },
+  "oxco.status.nothingToMove": {
+    "de": "Keine Dateien zum Verschieben.",
+    "en": "No files to move."
+  },
+  "oxco.status.moveFailed": {
+    "de": "Verschieben fehlgeschlagen: {0}",
+    "en": "Move failed: {0}"
+  },
+  "oxco.status.removedFromDeepfakeList": {
+    "de": "{0} Eintrag/Einträge aus Deepfake-Liste entfernt.",
+    "en": "{0} entry/entries removed from deepfake list."
+  },
+  "oxco.status.originalsRemovedFromBitrate": {
+    "de": "{0} Original(e) aus Bitrate-Eingabe entfernt — konvertierte Dateien liegen im Tagger-Ordner.",
+    "en": "{0} original(s) removed from bitrate input — converted files are in the tagger folder."
+  },
+  "oxco.status.noDeepfakesSelected": {
+    "de": "Keine Deepfakes ausgewählt.",
+    "en": "No deepfakes selected."
+  },
+  "oxco.status.originalFolderMissing": {
+    "de": "Original-Ordner fehlt oder nicht gefunden.",
+    "en": "Original folder missing or not found."
+  },
+  "oxco.status.deepfakeFolderMissing": {
+    "de": "Deepfake-Ordner fehlt oder nicht gefunden.",
+    "en": "Deepfake folder missing or not found."
+  },
+  "oxco.status.scanAborted": {
+    "de": "Scan abgebrochen.",
+    "en": "Scan cancelled."
+  },
+  "oxco.status.batchAborted": {
+    "de": "Compare-Batch abgebrochen.",
+    "en": "Compare batch cancelled."
+  },
+  "oxco.status.scanProbeRunning": {
+    "de": "Gescannt: {0} Original, {1} Deepfake — ffprobe läuft…",
+    "en": "Scanned: {0} original, {1} deepfake — ffprobe running…"
+  },
+  "oxco.status.probeProgress": {
+    "de": "Metadaten: {0}/{1}",
+    "en": "Metadata: {0}/{1}"
+  },
+  "oxco.status.listsLoaded": {
+    "de": "Listen geladen: {0} Original, {1} Deepfake ({2} mit Metadaten).",
+    "en": "Lists loaded: {0} original, {1} deepfake ({2} with metadata)."
+  },
+  "oxco.status.settingsIniMissing": {
+    "de": "settings.ini fehlt: {0}",
+    "en": "settings.ini missing: {0}"
+  },
+  "oxco.status.compareBatchAnalysis": {
+    "de": "Compare {0}/{1}: Analyse — {2}",
+    "en": "Compare {0}/{1}: analysis — {2}"
+  },
+  "oxco.status.compareBatchFile": {
+    "de": "Compare {0}/{1}: {2}",
+    "en": "Compare {0}/{1}: {2}"
+  },
+  "oxco.status.compareWaitingDavinci": {
+    "de": "Compare {0}/{1}: warte auf DaVinci-Render…",
+    "en": "Compare {0}/{1}: waiting for DaVinci render…"
+  },
+  "oxco.status.compareDavinciRender": {
+    "de": "Compare {0}/{1}: DaVinci-Render — {2}",
+    "en": "Compare {0}/{1}: DaVinci render — {2}"
+  },
+  "oxco.status.batchDonePipeline": {
+    "de": "Batch fertig (Pipeline): {0} OK, {1} Fehler.",
+    "en": "Batch done (pipeline): {0} OK, {1} failed."
+  },
+  "oxco.status.batchDone": {
+    "de": "Batch fertig: {0} OK, {1} Fehler.",
+    "en": "Batch done: {0} OK, {1} failed."
+  },
+  "oxco.status.matchingDeepfake": {
+    "de": "Passendes Deepfake: {0}",
+    "en": "Matching deepfake: {0}"
+  },
+  "oxco.status.matchingOriginal": {
+    "de": "Passendes Original: {0}",
+    "en": "Matching original: {0}"
+  },
+  "oxco.status.noMatchingDeepfake": {
+    "de": "Kein passendes Deepfake (ffprobe) gefunden.",
+    "en": "No matching deepfake found (ffprobe)."
+  },
+  "oxco.status.noMatchingOriginal": {
+    "de": "Kein passendes Original (ffprobe) gefunden.",
+    "en": "No matching original found (ffprobe)."
+  },
+  "oxco.status.enableExport": {
+    "de": "Mindestens FFmpeg- oder DaVinci-Export aktivieren.",
+    "en": "Enable at least FFmpeg or DaVinci export."
+  },
+  "oxco.status.comparePhaseStatus": {
+    "de": "{0}: FFmpeg={1}, DaVinci={2}…",
+    "en": "{0}: FFmpeg={1}, DaVinci={2}…"
+  },
+  "oxco.status.invalidFilterSettings": {
+    "de": "Ungültige Filter-Einstellungen: {0}",
+    "en": "Invalid filter settings: {0}"
+  },
+  "oxco.status.exportPartialRetry": {
+    "de": "Export teilweise — „Export wiederholen“ nutzen.",
+    "en": "Export partial — use “Repeat export”."
+  },
+  "oxco.phase.analysis": {
+    "de": "Analyse",
+    "en": "Analysis"
+  },
+  "oxco.phase.davinci": {
+    "de": "DaVinci",
+    "en": "DaVinci"
+  },
+  "oxco.phase.compare": {
+    "de": "Compare",
+    "en": "Compare"
+  },
+  "common.on": {
+    "de": "an",
+    "en": "on"
+  },
+  "common.off": {
+    "de": "aus",
+    "en": "off"
+  },
+  "oxco.status.bitrateInMissing": {
+    "de": "Bitrate-Eingabeordner fehlt.",
+    "en": "Bitrate input folder missing."
+  },
+  "oxco.status.bitrateOutMissing": {
+    "de": "Bitrate-Ausgabeordner fehlt.",
+    "en": "Bitrate output folder missing."
+  },
+  "oxco.status.bitrateScanRunning": {
+    "de": "Bitrate-Scan läuft...",
+    "en": "Bitrate scan running..."
+  },
+  "oxco.status.bitrateScanDone": {
+    "de": "Bitrate-Scan: {0} Dateien, {1} zum Konvertieren.",
+    "en": "Bitrate scan: {0} files, {1} to convert."
+  },
+  "oxco.status.runBitrateScanFirst": {
+    "de": "Zuerst Bitrate-Scan ausführen.",
+    "en": "Run bitrate scan first."
+  },
+  "oxco.status.bitrateConvertRunning": {
+    "de": "Bitrate-Konvertierung läuft...",
+    "en": "Bitrate conversion running..."
+  },
+  "oxco.status.bitrateConvertErrors": {
+    "de": "Bitrate-Konvertierung mit Fehlern — siehe Log. Originale ggf. manuell prüfen.",
+    "en": "Bitrate conversion had errors — see log. Check originals manually if needed."
+  },
+  "oxco.preview.sourceMissing": {
+    "de": "Vorschau: Original-Video fehlt.",
+    "en": "Preview: original video missing."
+  },
+  "oxco.preview.deepfakeMissing": {
+    "de": "Vorschau: Deepfake-Video fehlt (Side-by-Side).",
+    "en": "Preview: deepfake video missing (side-by-side)."
+  },
+  "oxco.preview.metadataUnreadable": {
+    "de": "Vorschau: Metadaten konnten nicht gelesen werden (ffprobe/OpenCV).",
+    "en": "Preview: could not read metadata (ffprobe/OpenCV)."
+  },
+  "oxco.preview.metadataUnreadableShort": {
+    "de": "Vorschau: Metadaten nicht lesbar.",
+    "en": "Preview: metadata not readable."
+  },
+  "oxco.preview.fileFrames": {
+    "de": "{0} — {1} Frames",
+    "en": "{0} — {1} frames"
+  },
+  "oxco.status.matchingDeepfakesBest": {
+    "de": "{0} passende Deepfakes — bestes: {1}",
+    "en": "{0} matching deepfakes — best: {1}"
+  },
+  "oxco.status.matchingOriginalsBest": {
+    "de": "{0} passende Originale — bestes: {1}",
+    "en": "{0} matching originals — best: {1}"
+  },
+  "oxco.status.deepfakeMarkedSingle": {
+    "de": "1 Deepfake markiert — Strg+Klick für weitere, dann „→ Bitrate“.",
+    "en": "1 deepfake selected — Ctrl+click for more, then “→ Bitrate”."
+  },
+  "oxco.status.deepfakesSelectedMulti": {
+    "de": "{0} Deepfakes ausgewählt — „→ Bitrate“ oder Rechtsklick.",
+    "en": "{0} deepfakes selected — “→ Bitrate” or right-click."
+  },
+  "oxco.preview.fileInfoDetailed": {
+    "de": "{0} — {1} Frames, {2}×{3}",
+    "en": "{0} — {1} frames, {2}×{3}"
+  },
+  "oxco.preview.frameInfo": {
+    "de": "Frame {0} / {1}",
+    "en": "Frame {0} / {1}"
   }
 }

@@ -129,13 +129,13 @@ public partial class OxcoCompareViewModel
     {
         if (string.IsNullOrWhiteSpace(CompareSourceDir) || !Directory.Exists(CompareSourceDir))
         {
-            Status = "Original-Ordner fehlt oder nicht gefunden.";
+            Status = Loc.T("oxco.status.originalFolderMissing");
             return;
         }
 
         if (string.IsNullOrWhiteSpace(CompareDeepfakeDir) || !Directory.Exists(CompareDeepfakeDir))
         {
-            Status = "Deepfake-Ordner fehlt oder nicht gefunden.";
+            Status = Loc.T("oxco.status.deepfakeFolderMissing");
             return;
         }
 
@@ -158,7 +158,7 @@ public partial class OxcoCompareViewModel
             RebuildDisplayLists();
             if (generation == _loadListGeneration)
             {
-                Status = $"Gescannt: {_origEntries.Count} Original, {_dfEntries.Count} Deepfake — ffprobe läuft…";
+                Status = Loc.F("oxco.status.scanProbeRunning", _origEntries.Count, _dfEntries.Count);
             }
 
             PersistSettings();
@@ -170,7 +170,7 @@ public partial class OxcoCompareViewModel
                 {
                     if (generation == _loadListGeneration)
                     {
-                        ProbeStatus = $"Metadaten: {p.done}/{p.total}";
+                        ProbeStatus = Loc.F("oxco.status.probeProgress", p.done, p.total);
                     }
                 });
             });
@@ -190,7 +190,7 @@ public partial class OxcoCompareViewModel
                     return;
                 }
 
-                Status = $"Listen geladen: {_origEntries.Count} Original, {_dfEntries.Count} Deepfake ({probed} mit Metadaten).";
+                Status = Loc.F("oxco.status.listsLoaded", _origEntries.Count, _dfEntries.Count, probed);
                 ProbeStatus = string.Empty;
             });
         }
@@ -198,7 +198,7 @@ public partial class OxcoCompareViewModel
         {
             if (generation == _loadListGeneration)
             {
-                Status = "Scan abgebrochen.";
+                Status = Loc.T("oxco.status.scanAborted");
             }
         }
         catch (Exception ex)
@@ -228,7 +228,7 @@ public partial class OxcoCompareViewModel
 
         if (!File.Exists(OxcoCompareConfigReader.SettingsIniPath))
         {
-            Status = $"settings.ini fehlt: {OxcoCompareConfigReader.SettingsIniPath}";
+            Status = Loc.F("oxco.status.settingsIniMissing", OxcoCompareConfigReader.SettingsIniPath);
             return;
         }
 
@@ -276,8 +276,8 @@ public partial class OxcoCompareViewModel
                 AppServices.JobProgress.SetBatchItem(i);
                 DeepfakePath = selectedDfs[i].Path;
                 Status = usePipeline
-                    ? $"Compare {i + 1}/{selectedDfs.Count}: Analyse — {selectedDfs[i].FileName}"
-                    : $"Compare {i + 1}/{selectedDfs.Count}: {selectedDfs[i].FileName}";
+                    ? Loc.F("oxco.status.compareBatchAnalysis", i + 1, selectedDfs.Count, selectedDfs[i].FileName)
+                    : Loc.F("oxco.status.compareBatchFile", i + 1, selectedDfs.Count, selectedDfs[i].FileName);
                 PersistSettings();
 
                 if (usePipeline)
@@ -294,7 +294,7 @@ public partial class OxcoCompareViewModel
 
                     if (pendingDavinci is not null)
                     {
-                        Status = $"Compare {i}/{selectedDfs.Count}: warte auf DaVinci-Render…";
+                        Status = Loc.F("oxco.status.compareWaitingDavinci", i, selectedDfs.Count);
                         var davinciResult = await pendingDavinci;
                         RecordBatchCompareOutcome(davinciResult, ref ok, ref fail);
                         TryDeleteFile(pendingCheckpoint);
@@ -310,7 +310,7 @@ public partial class OxcoCompareViewModel
                             resetCompareCts: false,
                             pipelinePhase: "davinci_export",
                             checkpointPath: checkpointPath);
-                        Status = $"Compare {i + 1}/{selectedDfs.Count}: DaVinci-Render — {selectedDfs[i].FileName}";
+                        Status = Loc.F("oxco.status.compareDavinciRender", i + 1, selectedDfs.Count, selectedDfs[i].FileName);
                     }
                     else
                     {
@@ -335,13 +335,13 @@ public partial class OxcoCompareViewModel
             }
             else if (batchToken.IsCancellationRequested)
             {
-                Status = "Compare-Batch abgebrochen.";
+                Status = Loc.T("oxco.status.batchAborted");
             }
             else
             {
                 Status = usePipeline
-                    ? $"Batch fertig (Pipeline): {ok} OK, {fail} Fehler."
-                    : $"Batch fertig: {ok} OK, {fail} Fehler.";
+                    ? Loc.F("oxco.status.batchDonePipeline", ok, fail)
+                    : Loc.F("oxco.status.batchDone", ok, fail);
             }
         }
         finally
@@ -421,13 +421,13 @@ public partial class OxcoCompareViewModel
                 SelectedDeepfakeItem = DeepfakeDisplayItems.FirstOrDefault(i =>
                     !i.IsGroupHeader && string.Equals(i.Entry?.Path, ranked[0].Path, StringComparison.OrdinalIgnoreCase));
                 Status = ranked.Count == 1
-                    ? $"Passendes Deepfake: {ranked[0].FileName}"
-                    : $"{ranked.Count} passende Deepfakes — bestes: {ranked[0].FileName}";
+                    ? Loc.F("oxco.status.matchingDeepfake", ranked[0].FileName)
+                    : Loc.F("oxco.status.matchingDeepfakesBest", ranked.Count, ranked[0].FileName);
                 ScrollToDeepfakeRequested?.Invoke(ranked[0].Path);
             }
             else
             {
-                Status = "Kein passendes Deepfake (ffprobe) gefunden.";
+                Status = Loc.T("oxco.status.noMatchingDeepfake");
             }
 
             RefreshPreviewFromWorkflow();
@@ -474,13 +474,13 @@ public partial class OxcoCompareViewModel
                 SelectedOriginalItem = OriginalDisplayItems.FirstOrDefault(i =>
                     !i.IsGroupHeader && string.Equals(i.Entry?.Path, ranked[0].Path, StringComparison.OrdinalIgnoreCase));
                 Status = ranked.Count == 1
-                    ? $"Passendes Original: {ranked[0].FileName}"
-                    : $"{ranked.Count} passende Originale — bestes: {ranked[0].FileName}";
+                    ? Loc.F("oxco.status.matchingOriginal", ranked[0].FileName)
+                    : Loc.F("oxco.status.matchingOriginalsBest", ranked.Count, ranked[0].FileName);
                 ScrollToOriginalRequested?.Invoke(ranked[0].Path);
             }
             else
             {
-                Status = "Kein passendes Original (ffprobe) gefunden.";
+                Status = Loc.T("oxco.status.noMatchingOriginal");
             }
 
             RefreshPreviewFromWorkflow();
@@ -700,7 +700,7 @@ public partial class OxcoCompareViewModel
     {
         if (!File.Exists(OxcoCompareConfigReader.SettingsIniPath))
         {
-            Status = $"settings.ini fehlt: {OxcoCompareConfigReader.SettingsIniPath}";
+            Status = Loc.F("oxco.status.settingsIniMissing", OxcoCompareConfigReader.SettingsIniPath);
             return new JobResult { Success = false, Message = Status };
         }
 
@@ -722,7 +722,7 @@ public partial class OxcoCompareViewModel
 
         if (!FilterFfmpeg && !FilterDavinci)
         {
-            Status = "Mindestens FFmpeg- oder DaVinci-Export aktivieren.";
+            Status = Loc.T("oxco.status.enableExport");
             IsCompareRunning = false;
             return new JobResult { Success = false, Message = Status };
         }
@@ -730,11 +730,15 @@ public partial class OxcoCompareViewModel
         PersistSettings();
         var phaseLabel = pipelinePhase switch
         {
-            "analysis" => "Analyse",
-            "davinci_export" => "DaVinci",
-            _ => "Compare",
+            "analysis" => Loc.T("oxco.phase.analysis"),
+            "davinci_export" => Loc.T("oxco.phase.davinci"),
+            _ => Loc.T("oxco.phase.compare"),
         };
-        Status = $"{phaseLabel}: FFmpeg={(FilterFfmpeg ? "an" : "aus")}, DaVinci={(FilterDavinci ? "an" : "aus")}…";
+        Status = Loc.F(
+            "oxco.status.comparePhaseStatus",
+            phaseLabel,
+            FilterFfmpeg ? Loc.T("common.on") : Loc.T("common.off"),
+            FilterDavinci ? Loc.T("common.on") : Loc.T("common.off"));
 
         Dictionary<string, object?> filterPayload;
         try
@@ -744,7 +748,7 @@ public partial class OxcoCompareViewModel
         catch (Exception ex)
         {
             IsCompareRunning = false;
-            Status = $"Ungültige Filter-Einstellungen: {ex.Message}";
+            Status = Loc.F("oxco.status.invalidFilterSettings", ex.Message);
             return new JobResult { Success = false, Message = Status };
         }
 
@@ -788,7 +792,7 @@ public partial class OxcoCompareViewModel
             if (result.ExitCode == 3)
             {
                 CanRetryCompare = true;
-                Status = "Export teilweise — „Export wiederholen“ nutzen.";
+                Status = Loc.T("oxco.status.exportPartialRetry");
             }
         }
 

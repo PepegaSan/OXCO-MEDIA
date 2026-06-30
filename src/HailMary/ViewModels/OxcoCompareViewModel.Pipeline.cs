@@ -81,19 +81,19 @@ public partial class OxcoCompareViewModel
     {
         if (string.IsNullOrWhiteSpace(BitrateInDir) || !Directory.Exists(BitrateInDir))
         {
-            Status = "Bitrate-Eingabeordner fehlt.";
+            Status = Loc.T("oxco.status.bitrateInMissing");
             return;
         }
 
         if (string.IsNullOrWhiteSpace(BitrateOutDir))
         {
-            Status = "Bitrate-Ausgabeordner fehlt.";
+            Status = Loc.T("oxco.status.bitrateOutMissing");
             return;
         }
 
         PersistSettings();
         IsBusy = true;
-        Status = "Bitrate-Scan läuft...";
+        Status = Loc.T("oxco.status.bitrateScanRunning");
         try
         {
             var settings = BuildBitrateChangerSettings();
@@ -136,7 +136,7 @@ public partial class OxcoCompareViewModel
                 }
 
                 var convertCount = BitrateRows.Count(r => r.Action == "convert");
-                Status = $"Bitrate-Scan: {BitrateRows.Count} Dateien, {convertCount} zum Konvertieren.";
+                Status = Loc.F("oxco.status.bitrateScanDone", BitrateRows.Count, convertCount);
             }
             else
             {
@@ -158,13 +158,13 @@ public partial class OxcoCompareViewModel
     {
         if (string.IsNullOrWhiteSpace(_lastBitrateScanJsonPath) || !File.Exists(_lastBitrateScanJsonPath))
         {
-            Status = "Zuerst Bitrate-Scan ausführen.";
+            Status = Loc.T("oxco.status.runBitrateScanFirst");
             return;
         }
 
         PersistSettings();
         IsBusy = true;
-        Status = "Bitrate-Konvertierung läuft...";
+        Status = Loc.T("oxco.status.bitrateConvertRunning");
         try
         {
             var settings = BuildBitrateChangerSettings();
@@ -178,7 +178,7 @@ public partial class OxcoCompareViewModel
             await RefreshTaggerListCoreAsync(logCount: false);
             Status = result.Success
                 ? result.Message
-                : "Bitrate-Konvertierung mit Fehlern — siehe Log. Originale ggf. manuell prüfen.";
+                : Loc.T("oxco.status.bitrateConvertErrors");
         }
         catch (Exception ex)
         {

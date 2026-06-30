@@ -5,6 +5,11 @@ title Hail Mary — Build
 set "PROJ=%~dp0src\HailMary\HailMary.csproj"
 echo Baue Hail Mary (x64, Debug)...
 echo.
+echo Was passiert hier?
+echo   Die Windows-App wird aus dem Quellcode kompiliert.
+echo   Danach liegt die startbare Datei HailMary.exe im bin-Ordner.
+echo   Fuer reines Nutzen reicht start_hail_mary.bat — build nur nach Aenderungen am Code.
+echo.
 
 dotnet build "%PROJ%" -c Debug -p:Platform=x64
 if errorlevel 1 (

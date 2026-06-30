@@ -44,6 +44,12 @@ public sealed class SettingsService
             return Current.PythonExecutable;
         }
 
+        var fromEnv = Environment.GetEnvironmentVariable("HAIL_MARY_PYTHON");
+        if (!string.IsNullOrWhiteSpace(fromEnv) && File.Exists(fromEnv))
+        {
+            return fromEnv;
+        }
+
         var fromPath = FindOnPath("python.exe") ?? FindOnPath("python3.exe");
         if (!string.IsNullOrWhiteSpace(fromPath))
         {

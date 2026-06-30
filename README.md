@@ -1,83 +1,156 @@
 # OXCO-MEDIA / Hail Mary
 
-Unified **Windows desktop shell** for OXCO media workflows: one WinUI app that hosts video tools, Stash integrations, Oxco compare, sync, and download sorting. Legacy Python GUIs are replaced or wrapped by **bridge jobs** (`bridges/`) launched from the C# host.
+A **Windows desktop app** that brings many OXCO media tools into one place: cut videos, compare (Oxco), adjust bitrate, Stash integration, folder sync, download sorting, and more.
 
-> **Repository:** [github.com/PepegaSan/OXCO-MEDIA](https://github.com/PepegaSan/OXCO-MEDIA)
+> Repository: [github.com/PepegaSan/OXCO-MEDIA](https://github.com/PepegaSan/OXCO-MEDIA)
 
 ---
 
-## Features
+## Before you start
+
+### FFmpeg is required
+
+Most video tools in Hail Mary call **FFmpeg** and **ffprobe** (convert, cut, read metadata). Without FFmpeg, most actions will fail.
+
+- Download: [ffmpeg.org](https://ffmpeg.org/download.html) (Windows builds e.g. from [gyan.dev](https://www.gyan.dev/ffmpeg/builds/))
+- After install, `ffmpeg` and `ffprobe` must be available in a **Command Prompt** (on your PATH)
+- Quick test: run `ffmpeg -version` — if that works, Hail Mary is good to go
+
+### DaVinci Resolve — Free vs. Studio
+
+Some tools talk to **DaVinci Resolve** via its API (timeline, export, batch jobs):
+
+| Tool (examples) | Resolve needed? |
+|-----------------|-----------------|
+| Scene Cutter, Intro Cutter (Resolve export) | Yes |
+| Marker Autocut | Yes |
+| **DaVinci Batch Render** | **Yes — DaVinci Resolve Studio only** |
+| Clip Joiner (Resolve path) | Yes |
+| Oxco (DaVinci export) | Yes |
+
+The **free Resolve version** is enough for some exports, **not for everything** — especially **Batch Render and automated Studio features** require **DaVinci Resolve Studio** (paid). Resolve must be installed; set the API path and `Resolve.exe` in the app **Settings**.
+
+### Python
+
+The app UI is **not Python** — but **Python scripts** run in the background (`bridges/`). You need Python on the machine, or run **`setup_python.bat`** once (see below).
+
+### Stash (optional)
+
+Tools like Stash Cutter or Marker Updater need a running **[Stash](https://github.com/stashapp/stash)** instance — only if you use those features.
+
+---
+
+## Installation (for users)
+
+### Option A — From source (clone the repo)
+
+How to run Hail Mary after cloning from GitHub:
+
+**1. Install prerequisites**
+
+| What | Why |
+|------|-----|
+| **FFmpeg** | Video conversion — used by almost all tools |
+| **.NET 8 SDK** | Only for **building** the app — [dotnet.microsoft.com/download](https://dotnet.microsoft.com/download) |
+| **DaVinci Resolve (Studio)** | Only for Resolve / batch tools |
+
+**2. Clone the repo**
+
+```powershell
+git clone https://github.com/PepegaSan/OXCO-MEDIA.git
+cd OXCO-MEDIA
+```
+
+**3. Set up Python (once)**
+
+Double-click **`setup_python.bat`**
+
+- If **Python is not installed**, the script tries to install it via **winget** (Windows package manager)
+- It creates a **`.venv`** folder and installs required packages (OpenCV, NumPy, Pillow)
+- When you start via `start_hail_mary.bat`, that Python is used automatically
+
+**4. Build the app (once, or after code updates)**
+
+Double-click **`build_hail_mary.bat`**
+
+- Compiles the Windows app from source
+- Output: `HailMary.exe` under `src\HailMary\bin\`
+- **You only need this when the code changed** — not on every launch
+
+**5. Start the app**
+
+Double-click **`start_hail_mary.bat`**
+
+- Launches Hail Mary (builds automatically if the EXE is missing)
+- First run: open **Settings (⚙)** → set **Projects root** (workspace for profiles, sync, etc.)
+- Optionally check Python path and DaVinci paths in Settings
+
+App settings are stored at: `%LOCALAPPDATA%\HailMary\`
+
+---
+
+### Option B — Ready-made release (planned)
+
+For installation without Visual Studio / dotnet:
+
+1. Download **`HailMary-x64.zip`** from [GitHub Releases](https://github.com/PepegaSan/OXCO-MEDIA/releases) (when published)
+2. Extract, e.g. to `C:\Program Files\HailMary\`
+3. Run **`setup_python.bat`** once in that folder
+4. Install **FFmpeg** (see above)
+5. Start **`HailMary.exe`**
+
+A classic setup installer (single `.exe`) can be added later — typically by zipping the release build and wrapping it with Inno Setup.
+
+---
+
+## Batch files explained
+
+| File | Purpose |
+|------|---------|
+| **`setup_python.bat`** | Python + virtual environment (`.venv`) + packages — run **once** after install |
+| **`build_hail_mary.bat`** | **Recompile** the app from source — developers or after updates |
+| **`start_hail_mary.bat`** | **Start** Hail Mary — use this day to day |
+
+---
+
+## Included tools
 
 | Area | Tools |
 |------|--------|
 | **Video** | Scene Cutter, Intro Cutter, Text to Video, Bitrate Changer, Audio Cleaner, Clip Joiner, DaVinci Batch Render |
 | **Stash** | Stash Cutter, Marker Autocut, Marker Updater, Stash Pathfinder |
-| **Oxco** | Compare, bitrate pipeline, autotagger integration |
-| **Workflow** | Daten Sync (Robocopy), DL Sort, Autotagger monitor |
+| **Oxco** | Compare, bitrate pipeline, autotagger |
+| **Workflow** | Daten Sync, DL Sort, Autotagger monitor |
 
 UI language: **German / English** (Settings → Appearance).
 
 ---
 
-## Requirements
+## What’s still needed for a proper public release
 
-### To run a published build
+Checklist if you want others to download and use Hail Mary:
 
-- **Windows 10/11** (x64)
-- **FFmpeg** and **ffprobe** on `PATH`
-- **Python 3.10+** (path configurable in Settings)
-- **DaVinci Resolve** (optional; required for Resolve export paths)
-- Optional Python packages for some tools — see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+| Step | Status / note |
+|------|----------------|
+| Source on GitHub | ✅ done |
+| README with installation | ✅ (this file) |
+| License + third-party notices | ✅ `LICENSE`, `THIRD_PARTY_NOTICES.md` |
+| Repo set to **private** until ready | manual in GitHub Settings |
+| **Release build** (`dotnet publish -c Release`) | manual / GitHub Action |
+| Upload ZIP to **GitHub Releases** | still todo |
+| Optional: **Setup.exe** (Inno Setup) | still todo |
+| Short **changelog** / version number | recommended |
+| Test on a **clean Windows PC** (no dev tools) | strongly recommended |
 
-### To build from source
-
-- [.NET 8 SDK](https://dotnet.microsoft.com/download)
-- Windows SDK / WinUI workload (installed with Visual Studio 2022 or Build Tools)
-- Same runtime deps as above for testing bridges
-
----
-
-## Quick start (development)
-
-```powershell
-git clone https://github.com/PepegaSan/OXCO-MEDIA.git
-cd OXCO-MEDIA
-
-# Build
-dotnet build src\HailMary\HailMary.csproj -c Debug -p:Platform=x64
-
-# Or use the batch helper
-build_hail_mary.bat
-start_hail_mary.bat
-```
-
-Executable (Debug):
-
-`src\HailMary\bin\x64\Debug\net8.0-windows10.0.26100.0\win-x64\HailMary.exe`
-
-### Projects root
-
-Many tools expect a **Projects root** folder (sibling tool repos, configs, sync profiles). On first run, set **Settings → Projects root**, or point `HAIL_MARY_PROJECTS_ROOT` at your workspace when using `start_hail_mary.bat`.
-
-User settings (theme, language, paths) are stored under:
-
-`%LOCALAPPDATA%\HailMary\`
-
----
-
-## Release build (portable folder)
-
-Self-contained publish — no separate Windows App SDK installer for end users:
+Release command (for developers):
 
 ```powershell
 dotnet publish src\HailMary\HailMary.csproj -c Release -p:Platform=x64
 ```
 
-Output:
+Zip this folder for distribution:
 
 `src\HailMary\bin\Release\net8.0-windows10.0.26100.0\win-x64\publish\`
-
-Zip that folder for a portable release, or wrap it with an installer (e.g. Inno Setup). See GitHub Releases when available.
 
 ---
 
@@ -85,41 +158,24 @@ Zip that folder for a portable release, or wrap it with an installer (e.g. Inno 
 
 ```
 OXCO-MEDIA/
-├── src/HailMary/          # WinUI 3 app (C#)
-├── bridges/               # Python bridge jobs + vendor cores
-├── scripts/               # i18n and maintenance scripts
-├── HailMary.sln
-├── build_hail_mary.bat
-├── start_hail_mary.bat
-├── LICENSE
-├── THIRD_PARTY_NOTICES.md
+├── src/HailMary/         # Windows app
+├── bridges/              # Python background jobs
+├── setup_python.bat      # Set up Python
+├── build_hail_mary.bat   # Compile the app
+├── start_hail_mary.bat   # Start the app
+├── requirements.txt      # Python packages for setup_python.bat
 └── README.md
 ```
 
-- **`tools.json`** — tool registry (labels, bridge scripts, groups)
-- **`scripts/ui_messages.json`** — source for UI strings; run `python scripts/apply_i18n.py` after edits
-
 ---
 
-## Configuration
+## License & third parties
 
-| What | Where |
-|------|--------|
-| App settings | In-app ⚙ → General / DaVinci / Stash |
-| Oxco compare defaults | `bridges/vendor/oxco/settings.example.ini` (copy to your projects tree) |
-| i18n | Settings → Language, or edit `scripts/ui_messages.json` |
-
-Do **not** commit personal API keys or local `settings.ini` with secrets. Stash credentials live in local app data, not in the repo.
-
----
-
-## License
-
-- **This repository (Hail Mary shell + vendored bridge code):** [MIT License](LICENSE) — Copyright (c) 2026 PepegaSan
-- **Third-party libraries and external programs:** [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+- **This repository:** [MIT License](LICENSE)
+- **FFmpeg, Resolve, Python packages, NuGet:** [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
 
 ---
 
 ## Disclaimer
 
-This software automates local video and library workflows. You are responsible for complying with licenses of FFmpeg, DaVinci Resolve, Stash, and any other software you connect. No warranty — see LICENSE.
+You are responsible for how you use FFmpeg, DaVinci Resolve, Stash, and other software. No warranty — see LICENSE.

@@ -196,7 +196,7 @@ public sealed partial class OxcoComparePanel : UserControl
         var paths = ViewModel.SelectedDeepfakePaths.ToList();
         if (paths.Count == 0)
         {
-            ViewModel.Status = "Keine Deepfakes ausgewählt.";
+            ViewModel.Status = Loc.T("oxco.status.noDeepfakesSelected");
             return;
         }
 
@@ -242,8 +242,8 @@ public sealed partial class OxcoComparePanel : UserControl
             if (entries.Count > 0)
             {
                 ViewModel.Status = entries.Count == 1
-                    ? "1 Deepfake markiert — Strg+Klick für weitere, dann „→ Bitrate“."
-                    : $"{entries.Count} Deepfakes ausgewählt — „→ Bitrate“ oder Rechtsklick.";
+                    ? Loc.T("oxco.status.deepfakeMarkedSingle")
+                    : Loc.F("oxco.status.deepfakesSelectedMulti", entries.Count);
             }
 
             return;

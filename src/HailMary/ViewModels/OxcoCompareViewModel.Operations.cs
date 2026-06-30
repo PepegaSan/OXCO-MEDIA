@@ -57,7 +57,7 @@ public partial class OxcoCompareViewModel
     {
         _compareCts?.Cancel();
         _batchCompareCts?.Cancel();
-        Status = "Compare wird abgebrochen…";
+        Status = Loc.T("oxco.status.compareAborted");
     }
 
     private bool CanStopCompare() => IsCompareRunning;
@@ -72,7 +72,7 @@ public partial class OxcoCompareViewModel
 
         CanRetryCompare = false;
         IsBusy = true;
-        Status = "Export wird wiederholt…";
+        Status = Loc.T("oxco.status.exportRetrying");
         try
         {
             await RunCompareCoreAsync(retryExportOnly: true);
@@ -116,7 +116,7 @@ public partial class OxcoCompareViewModel
         RebuildDisplayLists();
         SetSelectedDeepfakeEntries([]);
         ClearDeepfakeListSelectionRequested?.Invoke();
-        Status = $"{set.Count} Eintrag/Einträge aus Deepfake-Liste entfernt.";
+        Status = Loc.F("oxco.status.removedFromDeepfakeList", set.Count);
     }
 
     [RelayCommand]
@@ -125,7 +125,7 @@ public partial class OxcoCompareViewModel
         var list = paths?.Where(File.Exists).Distinct(StringComparer.OrdinalIgnoreCase).ToList() ?? [];
         if (list.Count == 0)
         {
-            Status = "Keine Dateien ausgewählt.";
+            Status = Loc.T("oxco.status.noFilesSelected");
             return;
         }
 
@@ -151,7 +151,7 @@ public partial class OxcoCompareViewModel
             if (result.Success)
             {
                 RemoveDeepfakesFromListInternal(list);
-                Status = $"{list.Count} Datei(en) in Papierkorb verschoben.";
+                Status = Loc.F("oxco.status.recycledToTrash", list.Count);
             }
             else
             {
@@ -173,7 +173,7 @@ public partial class OxcoCompareViewModel
     {
         if (string.IsNullOrWhiteSpace(TaggerInDir) || !Directory.Exists(TaggerInDir))
         {
-            Status = "Tagger-Eingabeordner fehlt (Tab Pfade).";
+            Status = Loc.T("oxco.status.taggerInputMissing");
             return;
         }
 
@@ -184,7 +184,7 @@ public partial class OxcoCompareViewModel
         if (!string.IsNullOrEmpty(bitrateInRoot) &&
             string.Equals(taggerRoot, bitrateInRoot, StringComparison.OrdinalIgnoreCase))
         {
-            Status = "Tagger-Eingabe ist gleich Bitrate-Eingabe — nichts zu verschieben.";
+            Status = Loc.T("oxco.status.taggerSameAsBitrate");
             return;
         }
 
@@ -228,11 +228,11 @@ public partial class OxcoCompareViewModel
             if (!string.IsNullOrEmpty(bitrateOutRoot) &&
                 string.Equals(taggerRoot, bitrateOutRoot, StringComparison.OrdinalIgnoreCase))
             {
-                Status = "Konvertierte Dateien liegen bereits im Tagger-Ordner.";
+                Status = Loc.T("oxco.status.alreadyInTaggerFolder");
             }
             else
             {
-                Status = "Keine Dateien zum Verschieben.";
+                Status = Loc.T("oxco.status.nothingToMove");
             }
 
             return;
@@ -260,7 +260,7 @@ public partial class OxcoCompareViewModel
 
         if (pathsToMove.Count == 0 && deleted > 0)
         {
-            Status = $"{deleted} Original(e) aus Bitrate-Eingabe entfernt — konvertierte Dateien liegen im Tagger-Ordner.";
+            Status = Loc.F("oxco.status.originalsRemovedFromBitrate", deleted);
             await RefreshTaggerListCoreAsync(logCount: false);
         }
     }
@@ -280,7 +280,7 @@ public partial class OxcoCompareViewModel
         var list = paths?.Where(File.Exists).Distinct(StringComparer.OrdinalIgnoreCase).ToList() ?? [];
         if (list.Count == 0)
         {
-            Status = "Keine Dateien ausgewählt.";
+            Status = Loc.T("oxco.status.noFilesSelected");
             return;
         }
 
@@ -309,8 +309,8 @@ public partial class OxcoCompareViewModel
         if (moved.Count == 0)
         {
             Status = errors.Count > 0
-                ? $"Verschieben fehlgeschlagen: {errors[0]}"
-                : "Keine Dateien ausgewählt.";
+                ? Loc.F("oxco.status.moveFailed", errors[0])
+                : Loc.T("oxco.status.noFilesSelected");
             return;
         }
 

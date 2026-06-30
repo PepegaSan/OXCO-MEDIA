@@ -194,7 +194,7 @@ public partial class OxcoCompareViewModel : ObservableObject, IToolShellHost, IL
 
         if (!File.Exists(OxcoCompareConfigReader.SettingsIniPath))
         {
-            Status = $"settings.ini fehlt: {OxcoCompareConfigReader.SettingsIniPath}";
+            Status = Loc.F("oxco.status.settingsIniMissing", OxcoCompareConfigReader.SettingsIniPath);
             return;
         }
 

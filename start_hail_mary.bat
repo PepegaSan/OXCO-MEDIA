@@ -7,6 +7,10 @@ set "HAIL_MARY_PROJECTS_ROOT=%ROOT%.."
 set "PROJ=%ROOT%src\HailMary"
 set "EXE=%PROJ%\bin\x64\Debug\net8.0-windows10.0.26100.0\win-x64\HailMary.exe"
 
+if exist "%ROOT%.venv\Scripts\python.exe" (
+    set "HAIL_MARY_PYTHON=%ROOT%.venv\Scripts\python.exe"
+)
+
 echo Hail Mary wird gestartet...
 echo Projects-Root: %HAIL_MARY_PROJECTS_ROOT%
 echo.

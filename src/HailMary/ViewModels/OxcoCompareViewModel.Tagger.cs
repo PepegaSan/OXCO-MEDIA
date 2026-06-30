@@ -230,7 +230,7 @@ public partial class OxcoCompareViewModel
         {
             if (logCount)
             {
-                Status = "Tagger-Quellordner fehlt (Tab Pfade).";
+                Status = Loc.T("oxco.status.taggerSourceMissing");
             }
 
             return;
@@ -254,10 +254,10 @@ public partial class OxcoCompareViewModel
 
         if (logCount)
         {
-            var scope = BrRecursive ? "inkl. Unterordner" : "nur Hauptordner";
+            var scope = BrRecursive ? Loc.T("oxco.scopeRecursive") : Loc.T("oxco.scopeMainOnly");
             Status = files.Count > 0
-                ? $"Autotagger-Liste: {files.Count} .mp4 ({scope})."
-                : $"Autotagger-Liste: keine .mp4 ({scope}).";
+                ? Loc.F("oxco.status.autotaggerList", files.Count, scope)
+                : Loc.F("oxco.status.autotaggerListEmpty", scope);
         }
 
         await Task.CompletedTask;
@@ -281,13 +281,13 @@ public partial class OxcoCompareViewModel
         var outp = TaggerOutDir.Trim();
         if (string.IsNullOrWhiteSpace(inp) || !Directory.Exists(inp))
         {
-            Status = "Tagger: Quell- und Zielordner setzen (Tab Pfade).";
+            Status = Loc.T("oxco.status.taggerPathsMissing");
             return;
         }
 
         if (string.IsNullOrWhiteSpace(outp))
         {
-            Status = "Tagger: Zielordner fehlt (Tab Pfade).";
+            Status = Loc.T("oxco.status.taggerTargetMissing");
             return;
         }
 
@@ -328,11 +328,11 @@ public partial class OxcoCompareViewModel
 
             if (result is null)
             {
-                Status = "Autotagger: Bridge fehlgeschlagen.";
+                Status = Loc.T("oxco.status.autotaggerBridgeFailed");
                 return;
             }
 
-            Status = $"Autotagger fertig: {result.Ok} verschoben, {result.Skipped} übersprungen.";
+            Status = Loc.F("oxco.status.autotaggerDone", result.Ok, result.Skipped);
             await RefreshTaggerListCoreAsync(logCount: false);
             if (result.Ok > 0)
             {
@@ -366,7 +366,7 @@ public partial class OxcoCompareViewModel
             .ToList();
         if (rules.Count == 0)
         {
-            Status = "Keine Tag-Verteilungsregeln — zuerst einrichten.";
+            Status = Loc.T("oxco.status.noTagRouteRules");
             return;
         }
 
@@ -378,11 +378,11 @@ public partial class OxcoCompareViewModel
             var result = await OxcoTaggerBridge.DistributeAsync(outp, rules);
             if (result is null)
             {
-                Status = "Tag-Verteilung: Bridge fehlgeschlagen.";
+                Status = Loc.T("oxco.status.tagDistributionBridgeFailed");
                 return;
             }
 
-            Status = $"Tag-Verteilung: {result.Moved} verschoben, {result.NoMatch} ohne Treffer, {result.Errors} Fehler.";
+            Status = Loc.F("oxco.status.tagDistributionDone", result.Moved, result.NoMatch, result.Errors);
         }
         catch (Exception ex)
         {

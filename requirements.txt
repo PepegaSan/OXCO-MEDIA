@@ -1,0 +1,9 @@
+# Python packages for Hail Mary bridge jobs (optional tools).
+# Install via setup_python.bat into the local .venv folder.
+
+opencv-python
+numpy
+Pillow
+
+# Optional — only needed for Audio Cleaner with DeepFilterNet:
+# deepfilternet

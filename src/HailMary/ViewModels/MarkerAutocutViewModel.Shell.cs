@@ -55,6 +55,12 @@ public partial class MarkerAutocutViewModel
         OnPropertyChanged(nameof(PrimaryActionLabel));
         OnPropertyChanged(nameof(OpenFullGuiLabel));
         OnPropertyChanged(nameof(StatusText));
+        OnPropertyChanged(nameof(PathSortLabel));
+        RebuildDisplayItems();
+        foreach (var row in Markers)
+        {
+            row.NotifyDisplayChanged();
+        }
     }
 
 }

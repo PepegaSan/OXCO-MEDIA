@@ -22,7 +22,7 @@ public sealed partial class ClipJoinerBatchRow : ObservableObject
 
     public IReadOnlyList<string> Files { get; init; } = [];
 
-    public string Summary => $"{OutputName} ({Files.Count} Clips)";
+    public string Summary => Loc.F("clipjoiner.batchSummary", OutputName, Files.Count);
 }
 
 public partial class ClipJoinerViewModel : ObservableObject, IToolShellHost, ILocalizable
@@ -67,9 +67,11 @@ public partial class ClipJoinerViewModel : ObservableObject, IToolShellHost, ILo
     [ObservableProperty] private string _status = Loc.T("common.ready");
     [ObservableProperty] private bool _isBusy;
 
-    public string RunCurrentLabel => "Jetzt zusammenfügen";
+    public string RunCurrentLabel => Loc.T("clipjoiner.runCurrent");
 
-    public string RunBatchLabel => BatchRows.Count > 0 ? $"Batch starten ({BatchRows.Count})" : "Batch starten";
+    public string RunBatchLabel => BatchRows.Count > 0
+        ? Loc.F("clipjoiner.runBatch", BatchRows.Count)
+        : Loc.T("common.startBatch");
 
     partial void OnIsBusyChanged(bool value)
     {
@@ -252,7 +254,7 @@ public partial class ClipJoinerViewModel : ObservableObject, IToolShellHost, ILo
             Files = _clips.ToList(),
         });
         RefreshBatchRows();
-        Status = $"Batch: {name} mit {_clips.Count} Clips hinzugefügt.";
+        Status = Loc.F("clipjoiner.batchAdded", name, _clips.Count);
     }
 
     [RelayCommand]
@@ -316,7 +318,7 @@ public partial class ClipJoinerViewModel : ObservableObject, IToolShellHost, ILo
 
         SaveSettings();
         IsBusy = true;
-        Status = single ? "Zusammenfügen…" : "Batch läuft…";
+        Status = single ? Loc.T("clipjoiner.running") : Loc.T("clipjoiner.batchRunning");
 
         var configPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"hm_clip_joiner_{Guid.NewGuid():N}.json");
         var outputPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"hm_clip_joiner_out_{Guid.NewGuid():N}.json");

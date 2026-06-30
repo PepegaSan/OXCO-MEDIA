@@ -334,7 +334,7 @@ public partial class OxcoCompareViewModel
         {
             if (!silent)
             {
-                Status = "Vorschau: Original-Video fehlt.";
+                Status = Loc.T("oxco.preview.sourceMissing");
             }
 
             PreviewIsLoaded = false;
@@ -349,7 +349,7 @@ public partial class OxcoCompareViewModel
             {
                 if (!silent)
                 {
-                    Status = "Vorschau: Deepfake-Video fehlt (Side-by-Side).";
+                    Status = Loc.T("oxco.preview.deepfakeMissing");
                 }
 
                 return;
@@ -365,7 +365,7 @@ public partial class OxcoCompareViewModel
             {
                 if (!silent)
                 {
-                    Status = "Vorschau: Metadaten konnten nicht gelesen werden (ffprobe/OpenCV).";
+                    Status = Loc.T("oxco.preview.metadataUnreadable");
                 }
 
                 PreviewIsLoaded = false;
@@ -376,7 +376,7 @@ public partial class OxcoCompareViewModel
             PreviewFrameMax = Math.Max(1, probe.FrameCount - 1);
             PreviewFrameIndex = 0;
             PreviewIsLoaded = true;
-            PreviewInfoText = $"{probe.NameA} — {probe.FrameCount} Frames, {probe.Width}×{probe.Height}";
+            PreviewInfoText = Loc.F("oxco.preview.fileInfoDetailed", probe.NameA, probe.FrameCount, probe.Width, probe.Height);
             await RenderPreviewFrameAsync((int)PreviewFrameIndex);
         }
         finally
@@ -496,7 +496,7 @@ public partial class OxcoCompareViewModel
                     : frame.DiffOverThreshold
                         ? Loc.T("oxco.aboveThreshold")
                         : Loc.T("oxco.belowThreshold");
-                PreviewInfoText = $"Frame {frame.FrameIndex} / {Math.Max(0, frame.FrameCount - 1)}";
+                PreviewInfoText = Loc.F("oxco.preview.frameInfo", frame.FrameIndex, Math.Max(0, frame.FrameCount - 1));
                 PreviewImage = bitmap;
             });
         }

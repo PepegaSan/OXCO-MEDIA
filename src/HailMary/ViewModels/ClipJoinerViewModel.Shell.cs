@@ -38,6 +38,9 @@ public partial class ClipJoinerViewModel
         OnPropertyChanged(nameof(PrimaryActionLabel));
         OnPropertyChanged(nameof(OpenFullGuiLabel));
         OnPropertyChanged(nameof(StatusText));
+        OnPropertyChanged(nameof(RunCurrentLabel));
+        OnPropertyChanged(nameof(RunBatchLabel));
+        RefreshBatchRows();
     }
 
 }
