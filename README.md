@@ -99,7 +99,7 @@ For installation without Visual Studio / dotnet:
 4. Install **FFmpeg** (see above)
 5. Start **`HailMary.exe`**
 
-A classic setup installer (single `.exe`) can be added later — typically by zipping the release build and wrapping it with Inno Setup.
+A classic setup installer (single `.exe`) can be built with **`build_installer.bat`** (requires [Inno Setup 6](https://jrsoftware.org/isinfo.php)).
 
 ---
 
@@ -126,6 +126,41 @@ UI language: **German / English** (Settings → Appearance).
 
 ---
 
+## What’s still needed for a proper public release
+
+Checklist if you want others to download and use Hail Mary:
+
+| Step | Status / note |
+|------|----------------|
+| Source on GitHub | ✅ done |
+| README with installation | ✅ (this file) |
+| License + third-party notices | ✅ `LICENSE`, `THIRD_PARTY_NOTICES.md` |
+| Repo set to **private** until ready | manual in GitHub Settings |
+| **Release build** (`dotnet publish -c Release`) | manual / GitHub Action |
+| Upload ZIP to **GitHub Releases** | still todo |
+| Optional: **Setup.exe** (Inno Setup) | `build_installer.bat` |
+| Short **changelog** / version number | recommended |
+| Test on a **clean Windows PC** (no dev tools) | strongly recommended |
+
+Release command (for developers):
+
+```powershell
+dotnet publish src\HailMary\HailMary.csproj -c Release -p:Platform=x64
+```
+
+Zip this folder for distribution:
+
+`src\HailMary\bin\Release\net8.0-windows10.0.26100.0\win-x64\publish\`
+
+**Installer (Inno Setup):**
+
+```powershell
+build_installer.bat
+```
+
+Output: `dist\HailMary-v1.0.0-setup-x64.exe` (version from the built `HailMary.exe`).
+
+---
 ## Project layout
 
 ```
@@ -134,6 +169,7 @@ OXCO-MEDIA/
 ├── bridges/              # Python background jobs
 ├── setup_python.bat      # Set up Python
 ├── build_hail_mary.bat   # Compile the app
+├── build_installer.bat   # Release publish + Inno Setup installer
 ├── start_hail_mary.bat   # Start the app
 ├── requirements.txt      # Python packages for setup_python.bat
 └── README.md

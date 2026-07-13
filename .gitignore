@@ -12,6 +12,7 @@ src/HailMary/obj/
 *.appx
 *.msix
 *.pfx
+dist/
 
 # OS
 Thumbs.db

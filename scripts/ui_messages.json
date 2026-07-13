@@ -1791,6 +1791,14 @@
     "de": "Scan fertig: {0} Dateien, {1} markiert zum Konvertieren",
     "en": "Scan done: {0} files, {1} marked for conversion"
   },
+  "bitrate.rowSelection": {
+    "de": "{0} Dateien gescannt, {1} markiert",
+    "en": "{0} files scanned, {1} marked"
+  },
+  "bitrate.colSaveMb": {
+    "de": "Erspart MB",
+    "en": "Save MB"
+  },
   "bitrate.reason.noSavings": {
     "de": "Keine Einsparung",
     "en": "No savings"

@@ -56,7 +56,8 @@ public static class AppPaths
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null)
         {
-            if (dir.Name.Equals("Hail Mary", StringComparison.OrdinalIgnoreCase))
+            if (dir.Name.Equals("Hail Mary", StringComparison.OrdinalIgnoreCase)
+                && !IsInstalledAppDirectory(dir.FullName))
             {
                 return dir.Parent?.FullName ?? dir.FullName;
             }
@@ -65,13 +66,18 @@ public static class AppPaths
         }
 
         var cwd = new DirectoryInfo(Directory.GetCurrentDirectory());
-        if (cwd.Name.Equals("Hail Mary", StringComparison.OrdinalIgnoreCase))
+        if (cwd.Name.Equals("Hail Mary", StringComparison.OrdinalIgnoreCase)
+            && !IsInstalledAppDirectory(cwd.FullName))
         {
             return cwd.Parent?.FullName ?? cwd.FullName;
         }
 
-        return Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+        return Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
     }
+
+    private static bool IsInstalledAppDirectory(string fullPath) =>
+        fullPath.Contains(@"\Program Files\", StringComparison.OrdinalIgnoreCase)
+        || fullPath.Contains(@"\Program Files (x86)\", StringComparison.OrdinalIgnoreCase);
 
     public static string HailMaryRoot
     {
@@ -94,7 +100,7 @@ public static class AppPaths
                 return cwd.FullName;
             }
 
-            return Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
+            return AppContext.BaseDirectory;
         }
     }
 

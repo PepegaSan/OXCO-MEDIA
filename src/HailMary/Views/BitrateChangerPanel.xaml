@@ -244,53 +244,45 @@
                             </Style>
                         </ListView.ItemContainerStyle>
 
-                        <ListView.HeaderTemplate>
+                        <ListView.Header>
+                            <Grid Padding="4,0,4,6" ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="36" />
+                                    <ColumnDefinition Width="200" />
+                                    <ColumnDefinition Width="88" />
+                                    <ColumnDefinition Width="56" />
+                                    <ColumnDefinition Width="48" />
+                                    <ColumnDefinition Width="56" />
+                                    <ColumnDefinition Width="72" />
+                                    <ColumnDefinition Width="120" />
+                                </Grid.ColumnDefinitions>
 
-                            <DataTemplate>
+                                <TextBlock Grid.Column="0" FontWeight="SemiBold" Text="✓" />
 
-                                <Grid Padding="4,0,4,6" ColumnSpacing="8">
+                                <TextBlock Grid.Column="1" FontWeight="SemiBold" loc:Loc.Key="bitrate.colFile" />
 
-                                    <Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="2" FontWeight="SemiBold" loc:Loc.Key="bitrate.colResolution" />
 
-                                        <ColumnDefinition Width="36" />
+                                <TextBlock Grid.Column="3" FontWeight="SemiBold" loc:Loc.Key="bitrate.colSource" />
 
-                                        <ColumnDefinition Width="200" />
+                                <TextBlock Grid.Column="4" FontWeight="SemiBold" loc:Loc.Key="bitrate.colTarget" />
 
-                                        <ColumnDefinition Width="88" />
+                                <Button
+                                    Grid.Column="5"
+                                    Padding="0"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Command="{x:Bind ViewModel.SortRowsBySaveMbCommand, Mode=OneWay}"
+                                    FontWeight="SemiBold"
+                                    loc:Loc.Key="bitrate.colSaveMb" />
 
-                                        <ColumnDefinition Width="56" />
+                                <TextBlock Grid.Column="6" FontWeight="SemiBold" loc:Loc.Key="bitrate.colAction" />
 
-                                        <ColumnDefinition Width="48" />
-
-                                        <ColumnDefinition Width="56" />
-
-                                        <ColumnDefinition Width="72" />
-
-                                        <ColumnDefinition Width="120" />
-
-                                    </Grid.ColumnDefinitions>
-
-                                    <TextBlock Grid.Column="0" FontWeight="SemiBold" Text="✓" />
-
-                                    <TextBlock Grid.Column="1" FontWeight="SemiBold" loc:Loc.Key="bitrate.colFile" />
-
-                                    <TextBlock Grid.Column="2" FontWeight="SemiBold" loc:Loc.Key="bitrate.colResolution" />
-
-                                    <TextBlock Grid.Column="3" FontWeight="SemiBold" loc:Loc.Key="bitrate.colSource" />
-
-                                    <TextBlock Grid.Column="4" FontWeight="SemiBold" loc:Loc.Key="bitrate.colTarget" />
-
-                                    <TextBlock Grid.Column="5" FontWeight="SemiBold" Text="Save MB" />
-
-                                    <TextBlock Grid.Column="6" FontWeight="SemiBold" loc:Loc.Key="bitrate.colAction" />
-
-                                    <TextBlock Grid.Column="7" FontWeight="SemiBold" loc:Loc.Key="bitrate.colReason" />
-
-                                </Grid>
-
-                            </DataTemplate>
-
-                        </ListView.HeaderTemplate>
+                                <TextBlock Grid.Column="7" FontWeight="SemiBold" loc:Loc.Key="bitrate.colReason" />
+                            </Grid>
+                        </ListView.Header>
 
                         <ListView.ItemTemplate>
 

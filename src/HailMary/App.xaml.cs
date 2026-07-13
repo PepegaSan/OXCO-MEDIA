@@ -48,8 +48,16 @@ public partial class App : Application
             StartupLog.Write($"UnhandledException: {e.Exception}");
             e.Handled = true;
         };
-        InitializeComponent();
-        AppServices.Initialize();
+        try
+        {
+            InitializeComponent();
+            AppServices.Initialize();
+        }
+        catch (Exception ex)
+        {
+            StartupLog.Write($"App ctor FAILED: {ex}");
+            throw;
+        }
         StartupLog.Write("App ctor done");
     }
 
@@ -70,7 +78,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            StartupLog.Write($"OnLaunched FAILED: {ex}");
+            StartupLog.Write($"OnLaunched FAILED: {ex.Message} | {ex.InnerException?.Message}{Environment.NewLine}{ex}");
             throw;
         }
     }

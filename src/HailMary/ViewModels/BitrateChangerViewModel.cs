@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -20,6 +21,8 @@ public sealed partial class BitrateRowViewModel : ObservableObject
     public string TargetKbps { get; init; } = "-";
 
     public string EstSaveMb { get; init; } = "-";
+
+    public double EstSaveMbValue { get; init; }
 
     public string ActionCode { get; init; } = string.Empty;
 
@@ -229,8 +232,10 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
                 var h = row.GetProperty("height").GetInt32();
                 var srcKbps = row.TryGetProperty("source_kbps", out var sk) && sk.ValueKind != JsonValueKind.Null ? sk.GetInt32().ToString() : "-";
                 var tgtKbps = row.TryGetProperty("effective_target_kbps", out var tk) && tk.ValueKind != JsonValueKind.Null ? tk.GetInt32().ToString() : "-";
-                var saveMb = row.TryGetProperty("estimated_saved_bytes", out var sb) && sb.ValueKind != JsonValueKind.Null
-                    ? $"{sb.GetInt64() / (1024.0 * 1024.0):F1}" : "-";
+                var saveBytes = row.TryGetProperty("estimated_saved_bytes", out var sb) && sb.ValueKind != JsonValueKind.Null
+                    ? sb.GetInt64() : 0L;
+                var saveMb = saveBytes > 0
+                    ? $"{saveBytes / (1024.0 * 1024.0):F1}" : "-";
                 var actionCode = row.GetProperty("action").GetString() ?? "";
                 var reasonRaw = row.GetProperty("reason").GetString() ?? "";
                 var scanRow = new BitrateRowViewModel
@@ -241,16 +246,16 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
                     SourceKbps = srcKbps,
                     TargetKbps = tgtKbps,
                     EstSaveMb = saveMb,
+                    EstSaveMbValue = saveBytes / (1024.0 * 1024.0),
                     ActionCode = actionCode,
                     ReasonRaw = reasonRaw,
                     IsIncluded = string.Equals(actionCode, "convert", StringComparison.OrdinalIgnoreCase),
                 };
                 scanRow.ApplyLocalization();
-                Rows.Add(scanRow);
+                AddScanRow(scanRow);
             }
 
-            var convertCount = Rows.Count(r => r.IsIncluded && r.ActionCode == "convert");
-            Status = Loc.F("bitrate.scanDone", Rows.Count, convertCount);
+            UpdateSelectionStatus();
         }
         finally
         {
@@ -279,7 +284,7 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
         try
         {
             var includedPaths = Rows
-                .Where(r => r.IsIncluded && string.Equals(r.Action, "convert", StringComparison.OrdinalIgnoreCase))
+                .Where(r => r.IsIncluded && string.Equals(r.ActionCode, "convert", StringComparison.OrdinalIgnoreCase))
                 .Select(r => r.Path)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
             if (includedPaths.Count == 0)
@@ -381,7 +386,7 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
     {
         foreach (var row in Rows)
         {
-            if (string.Equals(row.Action, "convert", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(row.ActionCode, "convert", StringComparison.OrdinalIgnoreCase))
             {
                 row.IsIncluded = included;
             }
@@ -390,6 +395,48 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
                 row.IsIncluded = false;
             }
         }
+
+        UpdateSelectionStatus();
+    }
+
+    [RelayCommand]
+    private void SortRowsBySaveMb()
+    {
+        if (Rows.Count <= 1)
+        {
+            return;
+        }
+
+        var sorted = Rows.OrderByDescending(r => r.EstSaveMbValue).ToList();
+        Rows.Clear();
+        foreach (var row in sorted)
+        {
+            Rows.Add(row);
+        }
+    }
+
+    private void AddScanRow(BitrateRowViewModel row)
+    {
+        row.PropertyChanged += OnRowPropertyChanged;
+        Rows.Add(row);
+    }
+
+    private void OnRowPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(BitrateRowViewModel.IsIncluded))
+        {
+            UpdateSelectionStatus();
+        }
+    }
+
+    private void UpdateSelectionStatus()
+    {
+        if (Rows.Count == 0 || IsBusy)
+        {
+            return;
+        }
+
+        Status = Loc.F("bitrate.rowSelection", Rows.Count, Rows.Count(r => r.IsIncluded));
     }
 
     [RelayCommand]
