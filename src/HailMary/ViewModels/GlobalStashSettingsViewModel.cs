@@ -68,7 +68,7 @@ public sealed partial class GlobalStashSettingsViewModel : ObservableObject, ISt
         {
             var version = await _client.PingAsync();
             StashConnectionSync.BroadcastConnected(version);
-            Status = $"Verbunden — Stash {version}";
+            Status = Loc.F("stash.connectedWithVersion", version);
         }
         catch (Exception ex)
         {
@@ -80,6 +80,6 @@ public sealed partial class GlobalStashSettingsViewModel : ObservableObject, ISt
     private void SaveSettings()
     {
         Persist();
-        Status = "Stash-Einstellungen gespeichert.";
+        Status = Loc.T("stash.settingsSaved");
     }
 }

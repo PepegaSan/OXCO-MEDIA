@@ -193,8 +193,8 @@ public partial class StashPathfinderViewModel : SessionAwareViewModel, IToolShel
             }
 
             Status = scenes.Count == 0
-                ? "Keine Treffer — Suchbegriff ändern oder Stash prüfen."
-                : $"{scenes.Count} Treffer.";
+                ? Loc.T("stash.noResultsHint")
+                : Loc.F("stash.resultCount", scenes.Count);
         }
         catch (Exception ex)
         {
@@ -246,7 +246,7 @@ public partial class StashPathfinderViewModel : SessionAwareViewModel, IToolShel
                       SelectedResult?.SceneId);
         if (sid is null)
         {
-            Status = read.Error ?? "Keine Szenen-ID erkannt.";
+            Status = read.Error ?? Loc.T("stash.noSceneIdRecognized");
             return;
         }
 
@@ -277,7 +277,7 @@ public partial class StashPathfinderViewModel : SessionAwareViewModel, IToolShel
             var scene = await _client.GetSceneAsync(sceneId);
             _loadedScene = scene;
             var mapped = MapPath(scene.Path);
-            LoadedSummary = $"Geladen: {scene.SceneId} | {scene.Title} | {mapped}";
+            LoadedSummary = Loc.F("stash.loadedSummary", scene.SceneId, scene.Title, mapped);
             AppServices.Session.SetStashSceneId(scene.SceneId);
 
             var existing = Results.FirstOrDefault(r => r.SceneId == scene.SceneId);
@@ -454,7 +454,7 @@ public partial class StashPathfinderViewModel : SessionAwareViewModel, IToolShel
             SelectedResult.Title,
             SelectedResult.Date,
             SelectedResult.RemotePath);
-        LoadedSummary = $"Auswahl: {SelectedResult.SceneId} | {SelectedResult.Title} | {SelectedResult.MappedPath}";
+        LoadedSummary = Loc.F("stash.selectionSummary", SelectedResult.SceneId, SelectedResult.Title, SelectedResult.MappedPath);
         AppServices.Session.SetStashSceneId(SelectedResult.SceneId);
         Status = Loc.T("stash.resultAdopted");
     }

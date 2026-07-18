@@ -1,4 +1,4 @@
-"""Import helpers for the Sub text-to-video tool (overlay_core)."""
+"""Import helpers for Text-to-Video (overlay_core) — vendored first, Sub fallback."""
 from __future__ import annotations
 
 import os
@@ -6,15 +6,26 @@ import sys
 from pathlib import Path
 from typing import Any, Optional
 
+BRIDGE_DIR = Path(__file__).resolve().parent
+VENDOR_DIR = BRIDGE_DIR / "vendor" / "text_to_video"
+
 
 def sub_dir() -> Path:
+    """Resolve the directory that contains overlay_core.py."""
+    if (VENDOR_DIR / "overlay_core.py").is_file():
+        return VENDOR_DIR
+
     root = os.environ.get("HAIL_MARY_PROJECTS_ROOT", "").strip()
-    if not root:
-        raise RuntimeError("HAIL_MARY_PROJECTS_ROOT fehlt")
-    sub = Path(root).expanduser().resolve() / "Sub"
-    if not (sub / "overlay_core.py").is_file():
-        raise RuntimeError(f"Sub-Tool nicht gefunden: {sub}")
-    return sub
+    if root:
+        legacy = Path(root).expanduser().resolve() / "Sub"
+        if (legacy / "overlay_core.py").is_file():
+            return legacy
+
+    raise RuntimeError(
+        "Text-to-Video core not found. Expected vendored "
+        f"bridges/vendor/text_to_video/overlay_core.py"
+        + (f" or {{ProjectsRoot}}/Sub (ProjectsRoot={root})" if root else "")
+    )
 
 
 def ensure_sub_imports() -> None:

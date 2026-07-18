@@ -42,7 +42,7 @@ public partial class TextToVideoViewModel
     {
         if (string.IsNullOrWhiteSpace(EditorSegment.Text.Trim()))
         {
-            Status = "Bitte Text eingeben.";
+            Status = Loc.T("texttovideo.status.textRequired");
             return;
         }
 
@@ -60,7 +60,9 @@ public partial class TextToVideoViewModel
         UpdateSegmentEditorChrome();
         PersistSettings();
         SchedulePreviewRefresh();
-        Status = isExisting ? $"Abschnitt {_selectedSegmentIndex + 1} gespeichert." : "Abschnitt hinzugefügt.";
+        Status = isExisting
+            ? Loc.F("texttovideo.status.segmentSaved", _selectedSegmentIndex + 1)
+            : Loc.T("texttovideo.status.segmentAdded");
     }
 
     [RelayCommand]
@@ -68,7 +70,7 @@ public partial class TextToVideoViewModel
     {
         if (_selectedSegmentIndex < 0 || _selectedSegmentIndex >= Segments.Count)
         {
-            Status = "Bitte einen Abschnitt in der Liste auswählen.";
+            Status = Loc.T("texttovideo.status.selectSegment");
             return;
         }
 
@@ -90,7 +92,7 @@ public partial class TextToVideoViewModel
         UpdateSegmentEditorChrome();
         PersistSettings();
         SchedulePreviewRefresh();
-        Status = "Abschnitt gelöscht.";
+        Status = Loc.T("texttovideo.status.segmentDeleted");
     }
 
     [RelayCommand]

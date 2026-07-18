@@ -547,7 +547,7 @@ public partial class DlSortViewModel : ObservableObject, IToolShellHost, ILocali
         var ok = AppServices.MonitorRunner.Start("dl_sort_monitor_job.py",
             ["--config-dir", DlSortConfigReader.ConfigDirectory]);
         MonitorRunning = ok;
-        Status = ok ? "DL Sort Monitor gestartet." : "Monitor-Start fehlgeschlagen.";
+        Status = ok ? Loc.T("dlsort.monitorStarted") : Loc.T("dlsort.monitorStartFailed");
     }
 
     [RelayCommand]

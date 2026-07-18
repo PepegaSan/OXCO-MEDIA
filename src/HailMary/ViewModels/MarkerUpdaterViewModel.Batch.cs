@@ -44,7 +44,7 @@ public partial class MarkerUpdaterViewModel
 
     [ObservableProperty] private bool _batchRemoveAlsoDeleteFromStash;
 
-    [ObservableProperty] private string _batchResultsSummary = "Treffer: 0";
+    [ObservableProperty] private string _batchResultsSummary = Loc.F("markerupdater.batchResults", 0);
 
     [ObservableProperty] private MarkerBatchSceneRowViewModel? _selectedBatchMatch;
 
@@ -67,7 +67,7 @@ public partial class MarkerUpdaterViewModel
         IsBusy = true;
         Status = Loc.T("markerupdater.batchSearchRunning");
         BatchMatches.Clear();
-        BatchResultsSummary = "Treffer: 0";
+        BatchResultsSummary = Loc.F("markerupdater.batchResults", 0);
         try
         {
             await EnsureStashReachableAsync();
@@ -79,22 +79,24 @@ public partial class MarkerUpdaterViewModel
                 var tagName = ResolveExistingTagName(BatchSearchTagName);
                 if (tagName is null)
                 {
-                    Status = "Tag nicht in Stash gefunden — Dropdown oder exakten Namen verwenden.";
+                    Status = Loc.T("markerupdater.batchTagNotFound");
                     return;
                 }
 
                 scenes = await _client.FindScenesByTagNameAsync(tagName);
                 Status = scenes.Count == 0
-                    ? "Keine Treffer — Tag prüfen oder anderen Suchmodus wählen."
-                    : $"{scenes.Count} Treffer (Filter: Tag: {tagName}).";
+                    ? Loc.T("markerupdater.batchNoResultsTag")
+                    : Loc.F("markerupdater.batchResultsTagFilter", scenes.Count, tagName);
             }
             else
             {
                 scenes = await _client.FindScenesWithTagsAsync(BatchSearchText);
-                var terms = string.IsNullOrWhiteSpace(BatchSearchText) ? "alle Dateien" : BatchSearchText.Trim();
+                var terms = string.IsNullOrWhiteSpace(BatchSearchText)
+                    ? Loc.T("markerupdater.batchFilterAllFiles")
+                    : BatchSearchText.Trim();
                 Status = scenes.Count == 0
-                    ? "Keine Treffer — Suchbegriffe ändern oder ohne Filter alle Szenen laden."
-                    : $"{scenes.Count} Treffer (Filter: {terms}).";
+                    ? Loc.T("markerupdater.batchNoResultsPath")
+                    : Loc.F("markerupdater.batchResultsPathFilter", scenes.Count, terms);
             }
 
             foreach (var scene in scenes)
@@ -102,7 +104,7 @@ public partial class MarkerUpdaterViewModel
                 BatchMatches.Add(ToBatchRow(scene));
             }
 
-            BatchResultsSummary = $"Treffer: {scenes.Count}";
+            BatchResultsSummary = Loc.F("markerupdater.batchResults", scenes.Count);
         }
         catch (Exception ex)
         {
@@ -127,7 +129,9 @@ public partial class MarkerUpdaterViewModel
         var targets = GetBatchTargetScenes();
         if (targets.Count == 0)
         {
-            Status = BatchScopeSelectedOnly ? "Keine Zeilen ausgewählt." : "Keine Treffer.";
+            Status = BatchScopeSelectedOnly
+                ? Loc.T("markerupdater.batchNoRowsSelected")
+                : Loc.T("stash.noResults");
             return;
         }
 
@@ -160,7 +164,7 @@ public partial class MarkerUpdaterViewModel
                 updated++;
             }
 
-            Status = $"Tag „{tagName}“ bei {updated} Szenen hinzugefügt.";
+            Status = Loc.F("markerupdater.batchTagAdded", tagName, updated);
             await BatchSearchAsync();
         }
         catch (Exception ex)
@@ -179,14 +183,16 @@ public partial class MarkerUpdaterViewModel
         var tagName = ResolveExistingTagName(BatchRemoveTagName);
         if (tagName is null)
         {
-            Status = "Tag nicht in Stash gefunden — Dropdown oder exakten Namen verwenden.";
+            Status = Loc.T("markerupdater.batchTagNotFound");
             return;
         }
 
         var targets = GetBatchTargetScenes();
         if (targets.Count == 0)
         {
-            Status = BatchScopeSelectedOnly ? "Keine Zeilen ausgewählt." : "Keine Treffer.";
+            Status = BatchScopeSelectedOnly
+                ? Loc.T("markerupdater.batchNoRowsSelected")
+                : Loc.T("stash.noResults");
             return;
         }
 
@@ -199,9 +205,9 @@ public partial class MarkerUpdaterViewModel
         }
 
         var confirmMessage = BatchRemoveAlsoDeleteFromStash
-            ? $"Tag „{tagName}“ wird bei {affected} Szenen abgenommen UND danach endgültig aus Stash gelöscht! Fortfahren?"
-            : $"Tag „{tagName}“ wirklich bei {affected} Treffer-Szenen abnehmen (nur Szene-Listen, Tag bleibt in Stash)?";
-        if (ConfirmAsync is not null && !await ConfirmAsync("Batch", confirmMessage))
+            ? Loc.F("markerupdater.batchRemoveAndDeleteConfirm", tagName, affected)
+            : Loc.F("markerupdater.batchRemoveOnlyConfirm", tagName, affected);
+        if (ConfirmAsync is not null && !await ConfirmAsync(Loc.T("markerupdater.batchConfirmTitle"), confirmMessage))
         {
             return;
         }
@@ -227,7 +233,7 @@ public partial class MarkerUpdaterViewModel
                 updated++;
             }
 
-            Status = $"Tag bei {updated} Treffer-Szenen abgenommen (Szene-Tags).";
+            Status = Loc.F("markerupdater.batchTagRemovedFromScenes", updated);
 
             if (BatchRemoveAlsoDeleteFromStash
                 && _tagNameToId.TryGetValue(tagName, out var tagId))
@@ -240,7 +246,7 @@ public partial class MarkerUpdaterViewModel
                     AllTagNames.Remove(existing);
                 }
 
-                Status = $"Tag „{tagName}“ wurde aus Stash gelöscht.";
+                Status = Loc.F("markerupdater.batchTagDeletedFromStash", tagName);
             }
 
             await BatchSearchAsync();
@@ -267,12 +273,12 @@ public partial class MarkerUpdaterViewModel
 
         if (!_tagNameToId.TryGetValue(tagName, out var tagId))
         {
-            Status = "Tag-ID konnte nicht ermittelt werden.";
+            Status = Loc.T("markerupdater.tagIdUnknown");
             return;
         }
 
         if (ConfirmAsync is not null
-            && !await ConfirmAsync("Tag in Stash löschen", $"Globalen Tag „{tagName}“ wirklich aus Stash löschen?"))
+            && !await ConfirmAsync(Loc.T("markerupdater.batchDeleteGlobalTitle"), Loc.F("markerupdater.batchDeleteGlobalConfirm", tagName)))
         {
             return;
         }
@@ -290,7 +296,7 @@ public partial class MarkerUpdaterViewModel
             }
 
             BatchDeleteGlobalTagName = string.Empty;
-            Status = $"Globaler Tag gelöscht: {tagName}";
+            Status = Loc.F("markerupdater.batchGlobalTagDeleted", tagName);
         }
         catch (Exception ex)
         {

@@ -7,7 +7,7 @@ namespace HailMary.ViewModels;
 public partial class TextToVideoViewModel
 {
     public string BatchExportLabel =>
-        BatchRows.Count > 0 ? $"Batch exportieren ({SelectedBatchCount})" : "Batch exportieren";
+        BatchRows.Count > 0 ? Loc.F("common.batchExportWithCount", SelectedBatchCount) : Loc.T("common.batchExport");
 
     public int SelectedBatchCount => BatchRows.Count(r => r.IsSelected);
 
@@ -39,7 +39,9 @@ public partial class TextToVideoViewModel
             .ToList();
 
         AddBatchPaths(paths);
-        Status = paths.Count > 0 ? $"{paths.Count} Videos aus Ordner hinzugefügt." : "Keine Videos im Ordner.";
+        Status = paths.Count > 0
+            ? Loc.F("texttovideo.status.batchVideosFromFolder", paths.Count)
+            : Loc.T("texttovideo.status.noVideosInFolder");
     }
 
     [RelayCommand]
@@ -47,7 +49,7 @@ public partial class TextToVideoViewModel
     {
         BatchRows.Clear();
         NotifyBatchChanged();
-        Status = "Batch-Liste geleert.";
+        Status = Loc.T("texttovideo.status.batchListCleared");
     }
 
     [RelayCommand]
@@ -80,7 +82,7 @@ public partial class TextToVideoViewModel
         var rows = BatchRows.Where(r => r.IsSelected).ToList();
         if (rows.Count == 0)
         {
-            Status = "Keine Videos in der Batch-Liste.";
+            Status = Loc.T("texttovideo.status.noVideosInBatch");
             return;
         }
 
@@ -126,13 +128,13 @@ public partial class TextToVideoViewModel
                 var row = rows[i];
                 if (!File.Exists(row.Path))
                 {
-                    row.Status = "Datei fehlt";
+                    row.Status = Loc.T("texttovideo.status.fileMissing");
                     fail++;
                     continue;
                 }
 
-                row.Status = "Export…";
-                Status = $"Batch {i + 1}/{rows.Count}: {row.FileName}";
+                row.Status = Loc.T("texttovideo.status.exporting");
+                Status = Loc.F("texttovideo.status.batchProgress", i + 1, rows.Count, row.FileName);
 
                 var output = Path.Combine(outDir, Path.GetFileNameWithoutExtension(row.Path) + "_text" + ext);
                 var config = TextToVideoBridge.BuildExportConfig(
@@ -163,12 +165,12 @@ public partial class TextToVideoViewModel
             OnPropertyChanged(nameof(LastFfmpegOutput));
             OnPropertyChanged(nameof(HasLastFfmpegOutput));
             Status = fail == 0
-                ? $"Batch abgeschlossen: {ok} exportiert nach {outDir}."
-                : $"Batch: {ok} OK, {fail} fehlgeschlagen.";
+                ? Loc.F("texttovideo.status.batchDone", ok, outDir)
+                : Loc.F("texttovideo.status.batchDoneWithErrors", ok, fail);
         }
         catch (OperationCanceledException)
         {
-            Status = "Batch-Export abgebrochen.";
+            Status = Loc.T("texttovideo.status.batchExportCancelled");
         }
         finally
         {
@@ -196,7 +198,7 @@ public partial class TextToVideoViewModel
         NotifyBatchChanged();
         if (added > 0)
         {
-            Status = $"{added} Video(s) zur Batch-Liste hinzugefügt.";
+            Status = Loc.F("texttovideo.status.batchVideosAdded", added);
         }
     }
 

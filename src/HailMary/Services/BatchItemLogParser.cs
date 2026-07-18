@@ -31,12 +31,25 @@ public static class BatchItemLogParser
         return !string.IsNullOrWhiteSpace(path) && !string.IsNullOrWhiteSpace(status);
     }
 
-    public static string ToDisplayStatus(string bridgeStatus) => bridgeStatus switch
-    {
-        "running" => "Läuft…",
-        "done" => "Fertig",
-        "failed" => "Fehler",
-        "cancelled" => "Abgebrochen",
-        _ => bridgeStatus,
-    };
+    public static string NormalizeStatusCode(string bridgeStatus) =>
+        bridgeStatus.Trim().ToLowerInvariant() switch
+        {
+            "running" => "running",
+            "done" => "done",
+            "failed" => "failed",
+            "cancelled" or "canceled" or "aborted" => "cancelled",
+            "pending" => "pending",
+            _ => bridgeStatus.Trim().ToLowerInvariant(),
+        };
+
+    public static string ToDisplayStatus(string bridgeStatus) =>
+        NormalizeStatusCode(bridgeStatus) switch
+        {
+            "running" => Loc.T("davincibatch.itemRunning"),
+            "done" => Loc.T("davincibatch.itemDone"),
+            "failed" => Loc.T("davincibatch.itemError"),
+            "cancelled" => Loc.T("davincibatch.itemAborted"),
+            "pending" => Loc.T("davincibatch.itemPending"),
+            _ => bridgeStatus,
+        };
 }

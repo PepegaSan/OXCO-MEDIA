@@ -79,7 +79,7 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
         get
         {
             var included = BatchFiles.Count(e => e.IsIncluded);
-            return included > 1 ? $"Batch starten ({included})" : "Ausführen";
+            return included > 1 ? Loc.F("intro.runBatch", included) : Loc.T("intro.run");
         }
     }
 
@@ -269,7 +269,7 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
         ReloadPresets(IntroCutterSettingsReader.Load().Presets);
         SelectedLengthPreset = name;
         PresetNameToSave = name;
-        Status = $"Preset '{name}' gespeichert ({intro:0.##}s / {outro:0.##}s)";
+        Status = Loc.F("intro.presetSaved", name, intro, outro);
     }
 
     [RelayCommand]
@@ -287,7 +287,7 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
         SelectedLengthPreset = settings.SelectedPreset;
         IntroSec = settings.IntroSec.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
         OutroSec = settings.OutroSec.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
-        Status = $"Preset '{name}' gelöscht";
+        Status = Loc.F("intro.presetDeleted", name);
     }
 
     [RelayCommand]
@@ -303,8 +303,8 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
         if (files.Count == 0)
         {
             Status = _batchEntries.Count > 0
-                ? "Keine Videos zum Schnitt markiert — bitte anhaken"
-                : "Keine Videos — Datei(en) oder Ordner importieren";
+                ? Loc.T("intro.noVideosMarked")
+                : Loc.T("intro.noVideosImport");
             AppServices.Log.Error("Intro Cutter: keine markierte Eingabe");
             return;
         }
@@ -316,7 +316,7 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
         }
 
         IsRunning = true;
-        Status = files.Count > 1 ? $"Batch 0/{files.Count}…" : Loc.T("common.running");
+        Status = files.Count > 1 ? Loc.F("intro.batchStarting", files.Count) : Loc.T("common.running");
 
         var outDir = GetEffectiveOutputDir();
         IntroCutterSettingsReader.SaveRunSettings(
@@ -333,7 +333,7 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
                 var input = files[i];
                 var label = Path.GetFileName(input);
                 UiDispatcher.Run(() => Status = files.Count > 1
-                    ? $"Batch {i + 1}/{files.Count}: {label}"
+                    ? Loc.F("intro.runningBatch", i + 1, files.Count, label)
                     : Loc.T("common.running"));
                 AppServices.Log.Info($"--- {label} ---");
 
@@ -350,9 +350,9 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
             var ok = failed == 0;
             UiDispatcher.Run(() => Status = ok
                 ? files.Count > 1
-                    ? $"Batch fertig — {files.Count} Videos"
+                    ? Loc.F("intro.batchDone", files.Count)
                     : Loc.T("common.done")
-                : "Abgebrochen — siehe Log");
+                : Loc.T("intro.abortedSeeLog"));
         }
         finally
         {
@@ -393,7 +393,7 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
     private void OpenFullGui()
     {
         var result = AppServices.Launcher.Launch(_tool);
-        Status = result.Success ? "Volles GUI gestartet" : "Start fehlgeschlagen";
+        Status = result.Success ? Loc.T("intro.fullGuiStarted") : Loc.T("intro.fullGuiFailed");
     }
 
     private void ReloadPresets(IReadOnlyList<IntroCutterSettingsReader.IntroOutroPreset> presets)
@@ -416,13 +416,13 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
         MainBarWeight = Math.Max(0.001, main);
         OutroBarWeight = Math.Max(0.001, outro);
 
-        IntroBarLabel = $"Intro {intro:0.##}s";
-        MainBarLabel = main > 0 ? $"Inhalt {main:0.#}s" : Loc.T("intro.mainBarEmpty");
-        OutroBarLabel = $"Outro {outro:0.##}s";
+        IntroBarLabel = Loc.F("intro.introBarWithTime", intro);
+        MainBarLabel = main > 0 ? Loc.F("intro.mainBarWithTime", main) : Loc.T("intro.mainBarEmpty");
+        OutroBarLabel = Loc.F("intro.outroBarWithTime", outro);
 
         if (_durationSeconds > 0)
         {
-            CutSummary = $"Gesamt {FormatTime(_durationSeconds)} | behalten {FormatTime(main)}";
+            CutSummary = Loc.F("intro.cutSummaryTimes", FormatTime(_durationSeconds), FormatTime(main));
         }
         else
         {

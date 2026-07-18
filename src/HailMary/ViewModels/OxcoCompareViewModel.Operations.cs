@@ -192,7 +192,8 @@ public partial class OxcoCompareViewModel
         var pathsToMove = new List<string>();
         var sourcesToDelete = new List<string>();
 
-        foreach (var row in BitrateRows.Where(r => r.Action == "convert"))
+        foreach (var row in BitrateRows.Where(r =>
+                     string.Equals(r.ActionCode, "convert", StringComparison.OrdinalIgnoreCase)))
         {
             var outputPath = OxcoBitratePathHelper.ResolveConvertedOutputPath(
                 row.Path, BitrateInDir, BitrateOutDir, suffix, BrOutputMp4);
@@ -218,7 +219,9 @@ public partial class OxcoCompareViewModel
             }
         }
 
-        foreach (var row in BitrateRows.Where(r => r.Action != "convert" && File.Exists(r.Path)))
+        foreach (var row in BitrateRows.Where(r =>
+                     !string.Equals(r.ActionCode, "convert", StringComparison.OrdinalIgnoreCase)
+                     && File.Exists(r.Path)))
         {
             pathsToMove.Add(row.Path);
         }

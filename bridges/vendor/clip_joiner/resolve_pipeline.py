@@ -48,19 +48,72 @@ def default_davinci_api_path() -> str:
     return ""
 
 
-def resolve_davinci_api_path(configured: str = "") -> str:
-    """Konfiguriert → Oxco settings.ini → Standard."""
-    cfg = (configured or "").strip()
-    if cfg:
-        return cfg
-    oxco_ini = Path.home() / "Projects" / "Oxco" / "settings.ini"
-    if oxco_ini.is_file():
+def _read_davinci_api_from_ini(ini_path: Path) -> str:
+    if not ini_path.is_file():
+        return ""
+    try:
         cp = configparser.ConfigParser()
-        cp.read(oxco_ini, encoding="utf-8")
+        cp.read(ini_path, encoding="utf-8")
         if cp.has_option("PATHS", "davinci_api_path"):
             v = cp.get("PATHS", "davinci_api_path").strip()
             if v:
                 return v.replace("\\", "/")
+    except (OSError, configparser.Error):
+        pass
+    return ""
+
+
+def _read_davinci_api_from_hail_mary_settings() -> str:
+    """Hail Mary app settings: %LOCALAPPDATA%\\HailMary\\settings.json."""
+    local = os.environ.get("LOCALAPPDATA", "").strip()
+    if not local:
+        return ""
+    settings = Path(local) / "HailMary" / "settings.json"
+    if not settings.is_file():
+        return ""
+    try:
+        import json
+
+        data = json.loads(settings.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, TypeError):
+        return ""
+    davinci = data.get("Davinci") or data.get("davinci") or {}
+    if isinstance(davinci, dict):
+        for key in ("ApiModulesPath", "apiModulesPath", "davinci_api_path"):
+            v = str(davinci.get(key) or "").strip()
+            if v:
+                return v.replace("\\", "/")
+    for key in ("DavinciApiPath", "davinci_api_path"):
+        v = str(data.get(key) or "").strip()
+        if v:
+            return v.replace("\\", "/")
+    return ""
+
+
+def resolve_davinci_api_path(configured: str = "") -> str:
+    """Konfiguriert → Hail Mary settings → ProjectsRoot/Oxco → vendored Oxco → Standard."""
+    cfg = (configured or "").strip()
+    if cfg:
+        return cfg
+
+    from_hm = _read_davinci_api_from_hail_mary_settings()
+    if from_hm:
+        return from_hm
+
+    candidates: list[Path] = []
+    projects_root = os.environ.get("HAIL_MARY_PROJECTS_ROOT", "").strip()
+    if projects_root:
+        candidates.append(Path(projects_root).expanduser() / "Oxco" / "settings.ini")
+
+    # Vendored Oxco next to this package: bridges/vendor/oxco/settings.ini
+    vendor_oxco = Path(__file__).resolve().parent.parent / "oxco" / "settings.ini"
+    candidates.append(vendor_oxco)
+
+    for ini in candidates:
+        v = _read_davinci_api_from_ini(ini)
+        if v:
+            return v
+
     return default_davinci_api_path()
 
 

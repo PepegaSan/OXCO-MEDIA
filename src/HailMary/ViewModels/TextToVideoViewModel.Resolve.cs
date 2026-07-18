@@ -42,14 +42,14 @@ public partial class TextToVideoViewModel
         var src = UseLastFfmpegForResolve && HasLastFfmpegOutput ? LastFfmpegOutput : VideoPath;
         if (string.IsNullOrWhiteSpace(src) || !File.Exists(src))
         {
-            Status = "Keine gültige Videodatei. Video laden oder zuerst mit FFmpeg exportieren.";
+            Status = Loc.T("texttovideo.status.noValidVideo");
             return;
         }
 
         var preset = DavinciPreset.Trim();
         if (string.IsNullOrWhiteSpace(preset))
         {
-            Status = "Bitte einen DaVinci-Render-Preset angeben.";
+            Status = Loc.T("texttovideo.status.davinciPresetRequired");
             return;
         }
 
@@ -63,7 +63,7 @@ public partial class TextToVideoViewModel
         var token = _exportCts.Token;
 
         IsBusy = true;
-        Status = "DaVinci: Verbindung wird aufgebaut…";
+        Status = Loc.T("texttovideo.status.davinciConnecting");
         try
         {
             var config = TextToVideoBridge.BuildResolveConfig(src, outDir, preset, CollectSettings());
@@ -78,7 +78,7 @@ public partial class TextToVideoViewModel
         }
         catch (OperationCanceledException)
         {
-            Status = "DaVinci-Export abgebrochen.";
+            Status = Loc.T("texttovideo.status.davinciExportCancelled");
         }
         finally
         {

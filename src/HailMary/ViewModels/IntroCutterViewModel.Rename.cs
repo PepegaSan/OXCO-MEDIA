@@ -17,8 +17,8 @@ public partial class IntroCutterViewModel
         if (folders.Count == 0)
         {
             Status = OutputBesideSource
-                ? "Keine Quellordner — bitte Videos importieren."
-                : "Ausgabe-Ordner fehlt — bitte setzen oder „Neben Quelle“ aktivieren.";
+                ? Loc.T("intro.noSourceFolders")
+                : Loc.T("intro.noOutputFolder");
             return;
         }
 
@@ -28,7 +28,7 @@ public partial class IntroCutterViewModel
         }
 
         IsRunning = true;
-        Status = previewOnly ? "Vorschau Umbenennen…" : "Suffix wird entfernt…";
+        Status = previewOnly ? Loc.T("intro.renamePreview") : Loc.T("intro.renameApplying");
 
         try
         {

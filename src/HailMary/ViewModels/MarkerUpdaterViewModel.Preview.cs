@@ -19,7 +19,7 @@ public partial class MarkerUpdaterViewModel
 
     [ObservableProperty] private double _sliderMaximum = 1;
 
-    [ObservableProperty] private string _markerMarks = "Start: —   Ende: —";
+    [ObservableProperty] private string _markerMarks = Loc.T("markerupdater.markerMarksEmpty");
 
     [ObservableProperty] private double _fineStepSeconds = 10;
 
@@ -84,8 +84,8 @@ public partial class MarkerUpdaterViewModel
         }
 
         _pendingMarkStart = clamped;
-        MarkerMarks = $"Start: {TimecodeHelper.FormatDisplay(clamped)}   Ende: —";
-        Status = $"Marker-Start bei {TimecodeHelper.FormatDisplay(clamped)} gesetzt.";
+        MarkerMarks = Loc.F("markerupdater.markerMarksStart", TimecodeHelper.FormatDisplay(clamped));
+        Status = Loc.F("markerupdater.markerStartSet", TimecodeHelper.FormatDisplay(clamped));
     }
 
     public void MarkOutAt(double seconds)
@@ -106,9 +106,12 @@ public partial class MarkerUpdaterViewModel
                     ?? (SelectedMarker is not null && TryParseSeconds(SelectedMarker.SecondsText, out var existing)
                         ? existing
                         : 0);
-        MarkerMarks = $"Start: {TimecodeHelper.FormatDisplay(start)}   Ende: {TimecodeHelper.FormatDisplay(clamped)}";
+        MarkerMarks = Loc.F(
+            "markerupdater.markerMarksStartEnd",
+            TimecodeHelper.FormatDisplay(start),
+            TimecodeHelper.FormatDisplay(clamped));
         _pendingMarkStart = null;
-        Status = $"Marker-Ende bei {TimecodeHelper.FormatDisplay(clamped)} gesetzt.";
+        Status = Loc.F("markerupdater.markerEndSet", TimecodeHelper.FormatDisplay(clamped));
     }
 
     public void NudgePosition(double deltaSeconds)

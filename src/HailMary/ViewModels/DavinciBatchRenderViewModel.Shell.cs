@@ -38,6 +38,11 @@ public partial class DavinciBatchRenderViewModel
         OnPropertyChanged(nameof(PrimaryActionLabel));
         OnPropertyChanged(nameof(OpenFullGuiLabel));
         OnPropertyChanged(nameof(StatusText));
+        OnPropertyChanged(nameof(BatchButtonLabel));
+        foreach (var row in QueueRows)
+        {
+            row.RefreshDisplayStatus();
+        }
     }
 
 }

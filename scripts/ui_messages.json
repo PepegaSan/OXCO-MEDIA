@@ -3403,6 +3403,18 @@
     "de": "Monitor-Start fehlgeschlagen.",
     "en": "Monitor start failed."
   },
+  "autotagger.categoriesQueued": {
+    "de": "{0} Kategorie(n) zur Warteschlange hinzugefügt.",
+    "en": "{0} categor(ies) added to the queue."
+  },
+  "autotagger.inputFolderMissing": {
+    "de": "Eingabeordner fehlt.",
+    "en": "Input folder is missing."
+  },
+  "autotagger.queueEmptyForExisting": {
+    "de": "Warteschlange leer — vorhandene Dateien können nicht verarbeitet werden.",
+    "en": "Queue is empty — existing files cannot be processed."
+  },
   "autotagger.monitorStopped": {
     "de": "Monitor gestoppt.",
     "en": "Monitor stopped."
@@ -4166,5 +4178,245 @@
   "oxco.preview.frameInfo": {
     "de": "Frame {0} / {1}",
     "en": "Frame {0} / {1}"
+  },
+  "common.exportCancelled": {
+    "de": "Export abgebrochen.",
+    "en": "Export cancelled."
+  },
+  "common.batchExportWithCount": {
+    "de": "Batch exportieren ({0})",
+    "en": "Export batch ({0})"
+  },
+  "texttovideo.status.textRequired": {
+    "de": "Bitte Text eingeben.",
+    "en": "Please enter text."
+  },
+  "texttovideo.status.segmentSaved": {
+    "de": "Abschnitt {0} gespeichert.",
+    "en": "Segment {0} saved."
+  },
+  "texttovideo.status.segmentAdded": {
+    "de": "Abschnitt hinzugefügt.",
+    "en": "Segment added."
+  },
+  "texttovideo.status.selectSegment": {
+    "de": "Bitte einen Abschnitt in der Liste auswählen.",
+    "en": "Please select a segment in the list."
+  },
+  "texttovideo.status.segmentDeleted": {
+    "de": "Abschnitt gelöscht.",
+    "en": "Segment deleted."
+  },
+  "texttovideo.status.pasteFailed": {
+    "de": "Einfügen fehlgeschlagen: {0}",
+    "en": "Paste failed: {0}"
+  },
+  "texttovideo.status.styleApplied": {
+    "de": "Stil „{0}“ angewendet.",
+    "en": "Style \"{0}\" applied."
+  },
+  "texttovideo.status.noSrtCues": {
+    "de": "Keine Untertitel in der SRT-Datei gefunden.",
+    "en": "No subtitles found in the SRT file."
+  },
+  "texttovideo.status.srtImported": {
+    "de": "{0} Untertitel aus SRT importiert.",
+    "en": "{0} subtitles imported from SRT."
+  },
+  "texttovideo.status.noValidVideo": {
+    "de": "Keine gültige Videodatei. Video laden oder zuerst mit FFmpeg exportieren.",
+    "en": "No valid video file. Load a video or export with FFmpeg first."
+  },
+  "texttovideo.status.davinciPresetRequired": {
+    "de": "Bitte einen DaVinci-Render-Preset angeben.",
+    "en": "Please specify a DaVinci render preset."
+  },
+  "texttovideo.status.davinciConnecting": {
+    "de": "DaVinci: Verbindung wird aufgebaut…",
+    "en": "DaVinci: connecting…"
+  },
+  "texttovideo.status.davinciExportCancelled": {
+    "de": "DaVinci-Export abgebrochen.",
+    "en": "DaVinci export cancelled."
+  },
+  "texttovideo.status.batchVideosFromFolder": {
+    "de": "{0} Videos aus Ordner hinzugefügt.",
+    "en": "{0} videos added from folder."
+  },
+  "texttovideo.status.noVideosInFolder": {
+    "de": "Keine Videos im Ordner.",
+    "en": "No videos in folder."
+  },
+  "texttovideo.status.batchListCleared": {
+    "de": "Batch-Liste geleert.",
+    "en": "Batch list cleared."
+  },
+  "texttovideo.status.noVideosInBatch": {
+    "de": "Keine Videos in der Batch-Liste.",
+    "en": "No videos in the batch list."
+  },
+  "texttovideo.status.fileMissing": {
+    "de": "Datei fehlt",
+    "en": "File missing"
+  },
+  "texttovideo.status.exporting": {
+    "de": "Export…",
+    "en": "Exporting…"
+  },
+  "texttovideo.status.batchProgress": {
+    "de": "Batch {0}/{1}: {2}",
+    "en": "Batch {0}/{1}: {2}"
+  },
+  "texttovideo.status.batchDone": {
+    "de": "Batch abgeschlossen: {0} exportiert nach {1}.",
+    "en": "Batch finished: {0} exported to {1}."
+  },
+  "texttovideo.status.batchDoneWithErrors": {
+    "de": "Batch: {0} OK, {1} fehlgeschlagen.",
+    "en": "Batch: {0} OK, {1} failed."
+  },
+  "texttovideo.status.batchExportCancelled": {
+    "de": "Batch-Export abgebrochen.",
+    "en": "Batch export cancelled."
+  },
+  "texttovideo.status.batchVideosAdded": {
+    "de": "{0} Video(s) zur Batch-Liste hinzugefügt.",
+    "en": "{0} video(s) added to batch list."
+  },
+  "markerupdater.batchTagNotFound": {
+    "de": "Tag nicht in Stash gefunden — Dropdown oder exakten Namen verwenden.",
+    "en": "Tag not found in Stash — use dropdown or exact name."
+  },
+  "markerupdater.batchNoResultsTag": {
+    "de": "Keine Treffer — Tag prüfen oder anderen Suchmodus wählen.",
+    "en": "No results — check tag or choose another search mode."
+  },
+  "markerupdater.batchResultsTagFilter": {
+    "de": "{0} Treffer (Filter: Tag: {1}).",
+    "en": "{0} results (filter: tag: {1})."
+  },
+  "markerupdater.batchNoResultsPath": {
+    "de": "Keine Treffer — Suchbegriffe ändern oder ohne Filter alle Szenen laden.",
+    "en": "No results — change search terms or load all scenes without filter."
+  },
+  "markerupdater.batchResultsPathFilter": {
+    "de": "{0} Treffer (Filter: {1}).",
+    "en": "{0} results (filter: {1})."
+  },
+  "markerupdater.batchNoRowsSelected": {
+    "de": "Keine Zeilen ausgewählt.",
+    "en": "No rows selected."
+  },
+  "markerupdater.batchFilterAllFiles": {
+    "de": "alle Dateien",
+    "en": "all files"
+  },
+  "markerupdater.batchConfirmTitle": {
+    "de": "Batch",
+    "en": "Batch"
+  },
+  "markerupdater.batchRemoveAndDeleteConfirm": {
+    "de": "Tag „{0}“ wird bei {1} Szenen abgenommen UND danach endgültig aus Stash gelöscht! Fortfahren?",
+    "en": "Tag \"{0}\" will be removed from {1} scenes AND then permanently deleted from Stash! Continue?"
+  },
+  "markerupdater.batchRemoveOnlyConfirm": {
+    "de": "Tag „{0}“ wirklich bei {1} Treffer-Szenen abnehmen (nur Szene-Listen, Tag bleibt in Stash)?",
+    "en": "Really remove tag \"{0}\" from {1} matching scenes (scene lists only, tag stays in Stash)?"
+  },
+  "markerupdater.batchTagRemovedFromScenes": {
+    "de": "Tag bei {0} Treffer-Szenen abgenommen (Szene-Tags).",
+    "en": "Tag removed from {0} matching scenes (scene tags)."
+  },
+  "markerupdater.batchTagDeletedFromStash": {
+    "de": "Tag „{0}“ wurde aus Stash gelöscht.",
+    "en": "Tag \"{0}\" was deleted from Stash."
+  },
+  "markerupdater.tagIdUnknown": {
+    "de": "Tag-ID konnte nicht ermittelt werden.",
+    "en": "Tag ID could not be determined."
+  },
+  "markerupdater.batchDeleteGlobalTitle": {
+    "de": "Tag in Stash löschen",
+    "en": "Delete tag in Stash"
+  },
+  "markerupdater.batchDeleteGlobalConfirm": {
+    "de": "Globalen Tag „{0}“ wirklich aus Stash löschen?",
+    "en": "Really delete global tag \"{0}\" from Stash?"
+  },
+  "markerupdater.batchGlobalTagDeleted": {
+    "de": "Globaler Tag gelöscht: {0}",
+    "en": "Global tag deleted: {0}"
+  },
+  "markerupdater.cleanupConfirmTitle": {
+    "de": "Bereinigung",
+    "en": "Cleanup"
+  },
+  "markerupdater.cleanupConfirmClamp": {
+    "de": "{0} Marker auf Videolänge kürzen?",
+    "en": "Trim {0} markers to video length?"
+  },
+  "markerupdater.cleanupConfirmDelete": {
+    "de": "{0} Marker wirklich löschen?",
+    "en": "Really delete {0} markers?"
+  },
+  "markerupdater.markerMarksEmpty": {
+    "de": "Start: —   Ende: —",
+    "en": "Start: —   End: —"
+  },
+  "markerupdater.markerMarksStart": {
+    "de": "Start: {0}   Ende: —",
+    "en": "Start: {0}   End: —"
+  },
+  "markerupdater.markerMarksStartEnd": {
+    "de": "Start: {0}   Ende: {1}",
+    "en": "Start: {0}   End: {1}"
+  },
+  "markerupdater.markerStartSet": {
+    "de": "Marker-Start bei {0} gesetzt.",
+    "en": "Marker start set at {0}."
+  },
+  "markerupdater.markerEndSet": {
+    "de": "Marker-Ende bei {0} gesetzt.",
+    "en": "Marker end set at {0}."
+  },
+  "intro.renamePreview": {
+    "de": "Vorschau Umbenennen…",
+    "en": "Rename preview…"
+  },
+  "intro.renameApplying": {
+    "de": "Suffix wird entfernt…",
+    "en": "Removing suffix…"
+  },
+  "intro.batchStarting": {
+    "de": "Batch 0/{0}…",
+    "en": "Batch 0/{0}…"
+  },
+  "intro.introBarWithTime": {
+    "de": "Intro {0:0.##}s",
+    "en": "Intro {0:0.##}s"
+  },
+  "intro.mainBarWithTime": {
+    "de": "Inhalt {0:0.#}s",
+    "en": "Content {0:0.#}s"
+  },
+  "intro.outroBarWithTime": {
+    "de": "Outro {0:0.##}s",
+    "en": "Outro {0:0.##}s"
+  },
+  "intro.cutSummaryTimes": {
+    "de": "Gesamt {0} | behalten {1}",
+    "en": "Total {0} | keep {1}"
+  },
+  "stash.settingsSaved": {
+    "de": "Stash-Einstellungen gespeichert.",
+    "en": "Stash settings saved."
+  },
+  "stash.connectedWithVersion": {
+    "de": "Verbunden — Stash {0}",
+    "en": "Connected — Stash {0}"
+  },
+  "scenecutter.sceneError": {
+    "de": "Szene {0}: {1}",
+    "en": "Scene {0}: {1}"
   }
 }

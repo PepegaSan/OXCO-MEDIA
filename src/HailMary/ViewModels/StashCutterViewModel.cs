@@ -165,7 +165,7 @@ public partial class StashCutterViewModel : SceneCutterViewModel, IToolShellHost
 
             Status = scenes.Count == 0
                 ? Loc.T("stash.noResults")
-                : $"{scenes.Count} Treffer.";
+                : Loc.F("stash.resultCount", scenes.Count);
         }
         catch (Exception ex)
         {
@@ -217,7 +217,7 @@ public partial class StashCutterViewModel : SceneCutterViewModel, IToolShellHost
                       SelectedResult?.SceneId);
         if (sid is null)
         {
-            Status = read.Error ?? "Keine Szenen-ID erkannt.";
+            Status = read.Error ?? Loc.T("stash.noSceneIdRecognized");
             return;
         }
 
@@ -281,7 +281,7 @@ public partial class StashCutterViewModel : SceneCutterViewModel, IToolShellHost
             _loadedScene = scene;
             var resolved = StashPathResolver.Resolve(scene.Path, CurrentPathMap());
             var mapped = resolved.ResolvedPath;
-            LoadedSummary = $"Geladen: {scene.SceneId} | {scene.Title} | {mapped}";
+            LoadedSummary = Loc.F("stash.loadedSummary", scene.SceneId, scene.Title, mapped);
             AppServices.Session.SetStashSceneId(scene.SceneId);
 
             if (resolved.FileExists && !string.IsNullOrWhiteSpace(mapped))
@@ -291,7 +291,7 @@ public partial class StashCutterViewModel : SceneCutterViewModel, IToolShellHost
             }
             else if (!string.IsNullOrWhiteSpace(mapped))
             {
-                Status = $"Szene geladen, aber Datei nicht gefunden: {mapped}";
+                Status = Loc.F("stashcutter.fileNotFound", mapped);
             }
             else
             {

@@ -803,7 +803,7 @@ public partial class OxcoCompareViewModel
         new()
         {
             ["export_dir"] = CompareExportDir,
-            ["language"] = "de",
+            ["language"] = AppServices.Localization.Language,
             ["buffer_seconds"] = double.Parse(FilterBuffer.Replace(',', '.'), System.Globalization.CultureInfo.InvariantCulture),
             ["pixel_noise"] = int.Parse(FilterNoise),
             ["changed_pixels"] = int.Parse(FilterPixel),

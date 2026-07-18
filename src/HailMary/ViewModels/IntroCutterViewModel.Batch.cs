@@ -170,9 +170,9 @@ public partial class IntroCutterViewModel : IVideoBatchHost
         var included = _batchEntries.Count(e => e.IsIncluded);
         BatchSummary = _batchEntries.Count switch
         {
-            0 => "Keine Videos",
-            1 => included > 0 ? "1 Video — zum Schnitt markiert" : "1 Video — nicht markiert",
-            _ => $"{_batchEntries.Count} Videos — {included} zum Schnitt markiert",
+            0 => Loc.T("intro.batchSummaryNoVideos"),
+            1 => included > 0 ? Loc.T("intro.batchSummaryOneMarked") : Loc.T("intro.batchSummaryOneUnmarked"),
+            _ => Loc.F("intro.batchSummaryMany", _batchEntries.Count, included),
         };
     }
 

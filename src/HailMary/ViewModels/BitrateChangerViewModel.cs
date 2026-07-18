@@ -367,7 +367,7 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
             Status = previewOnly
                 ? result.Message
                 : string.IsNullOrWhiteSpace(result.Message)
-                    ? "Suffix entfernt."
+                    ? Loc.T("bitrate.suffixRemoved")
                     : result.Message;
         }
         finally

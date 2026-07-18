@@ -446,7 +446,7 @@ public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
         {
             if (!scene.TryApplyTimes(out var error))
             {
-                throw new InvalidOperationException($"Szene {scene.Number}: {error}");
+                throw new InvalidOperationException(Loc.F("scenecutter.sceneError", scene.Number, error));
             }
         }
 

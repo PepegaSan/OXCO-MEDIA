@@ -22,7 +22,7 @@ public partial class TextToVideoViewModel
             var text = await content.GetTextAsync();
             if (string.IsNullOrWhiteSpace(text))
             {
-                Status = "Zwischenablage ist leer.";
+                Status = Loc.T("texttovideo.status.clipboardEmpty");
                 return;
             }
 
@@ -32,7 +32,7 @@ public partial class TextToVideoViewModel
         }
         catch (Exception ex)
         {
-            Status = $"Einfügen fehlgeschlagen: {ex.Message}";
+            Status = Loc.F("texttovideo.status.pasteFailed", ex.Message);
         }
     }
 
@@ -49,7 +49,7 @@ public partial class TextToVideoViewModel
         var h = _videoHeight > 0 ? _videoHeight : 1080;
         preset.Apply(EditorSegment, w, h);
         SchedulePreviewRefresh();
-        Status = $"Stil „{preset.Label}“ angewendet.";
+        Status = Loc.F("texttovideo.status.styleApplied", preset.Label);
     }
 
     [RelayCommand]
@@ -64,7 +64,7 @@ public partial class TextToVideoViewModel
         var cues = SrtParser.ParseFile(SrtPath);
         if (cues.Count == 0)
         {
-            Status = "Keine Untertitel in der SRT-Datei gefunden.";
+            Status = Loc.T("texttovideo.status.noSrtCues");
             return;
         }
 
@@ -92,6 +92,6 @@ public partial class TextToVideoViewModel
 
         PersistSettings();
         SchedulePreviewRefresh();
-        Status = $"{cues.Count} Untertitel aus SRT importiert.";
+        Status = Loc.F("texttovideo.status.srtImported", cues.Count);
     }
 }

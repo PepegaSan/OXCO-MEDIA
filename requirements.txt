@@ -4,6 +4,7 @@
 opencv-python
 numpy
 Pillow
+watchdog
 
 # Optional — only needed for Audio Cleaner with DeepFilterNet:
 # deepfilternet

@@ -122,7 +122,9 @@ public partial class OxcoCompareViewModel
                     var saveMb = row.TryGetProperty("estimated_saved_bytes", out var sb) && sb.ValueKind != JsonValueKind.Null
                         ? $"{sb.GetInt64() / (1024.0 * 1024.0):F1}"
                         : "-";
-                    BitrateRows.Add(new BitrateRowViewModel
+                    var actionCode = row.GetProperty("action").GetString() ?? "";
+                    var reasonRaw = row.GetProperty("reason").GetString() ?? "";
+                    var scanRow = new BitrateRowViewModel
                     {
                         Path = path,
                         FileName = Path.GetFileName(path),
@@ -130,12 +132,16 @@ public partial class OxcoCompareViewModel
                         SourceKbps = srcKbps,
                         TargetKbps = tgtKbps,
                         EstSaveMb = saveMb,
-                        Action = row.GetProperty("action").GetString() ?? "",
-                        Reason = row.GetProperty("reason").GetString() ?? "",
-                    });
+                        ActionCode = actionCode,
+                        ReasonRaw = reasonRaw,
+                        IsIncluded = string.Equals(actionCode, "convert", StringComparison.OrdinalIgnoreCase),
+                    };
+                    scanRow.ApplyLocalization();
+                    BitrateRows.Add(scanRow);
                 }
 
-                var convertCount = BitrateRows.Count(r => r.Action == "convert");
+                var convertCount = BitrateRows.Count(r =>
+                    string.Equals(r.ActionCode, "convert", StringComparison.OrdinalIgnoreCase));
                 Status = Loc.F("oxco.status.bitrateScanDone", BitrateRows.Count, convertCount);
             }
             else
@@ -194,7 +200,7 @@ public partial class OxcoCompareViewModel
     {
         var suffix = string.IsNullOrWhiteSpace(BrSuffix) ? "_bitrate" : BrSuffix.Trim();
         OxcoBitrateCleanup.DeleteSourcesAfterConvert(
-            BitrateRows.Select(r => new BitrateConvertRow { Path = r.Path, Action = r.Action }),
+            BitrateRows.Select(r => new BitrateConvertRow { Path = r.Path, Action = r.ActionCode }),
             BitrateInDir,
             BitrateOutDir,
             suffix,
@@ -208,7 +214,7 @@ public partial class OxcoCompareViewModel
         var remaining = new List<BitrateRowViewModel>();
         foreach (var row in BitrateRows)
         {
-            if (row.Action == "convert")
+            if (string.Equals(row.ActionCode, "convert", StringComparison.OrdinalIgnoreCase))
             {
                 var outputPath = OxcoBitratePathHelper.ResolveConvertedOutputPath(
                     row.Path, BitrateInDir, BitrateOutDir, suffix, BrOutputMp4);

@@ -10,7 +10,7 @@ public partial class TextToVideoViewModel
     {
         if (!HasVideo || string.IsNullOrWhiteSpace(VideoPath))
         {
-            Status = "Bitte zuerst ein Video laden.";
+            Status = Loc.T("texttovideo.status.loadVideoFirst");
             return;
         }
 
@@ -55,7 +55,7 @@ public partial class TextToVideoViewModel
         }
         catch (OperationCanceledException)
         {
-            Status = "Export abgebrochen.";
+            Status = Loc.T("common.exportCancelled");
         }
         finally
         {

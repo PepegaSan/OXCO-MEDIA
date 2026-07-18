@@ -194,7 +194,7 @@ public partial class AutotaggerViewModel : ObservableObject, IToolShellHost, ILo
             cat.IsSelected = false;
         }
 
-        Status = $"{selected.Count} Kategorie(n) zur Warteschlange hinzugefuegt.";
+        Status = Loc.F("autotagger.categoriesQueued", selected.Count);
     }
 
     [RelayCommand]
@@ -257,13 +257,13 @@ public partial class AutotaggerViewModel : ObservableObject, IToolShellHost, ILo
     {
         if (string.IsNullOrWhiteSpace(InputFolder) || !Directory.Exists(InputFolder))
         {
-            Status = "Eingabeordner fehlt.";
+            Status = Loc.T("autotagger.inputFolderMissing");
             return;
         }
 
         if (ProcessExisting && Queue.Count == 0)
         {
-            Status = "Warteschlange leer — vorhandene Dateien koennen nicht verarbeitet werden.";
+            Status = Loc.T("autotagger.queueEmptyForExisting");
             return;
         }
 
@@ -278,7 +278,7 @@ public partial class AutotaggerViewModel : ObservableObject, IToolShellHost, ILo
         var ok = AppServices.MonitorRunner.Start("autotagger_monitor_job.py",
             ["--config-json", AutotaggerConfigReader.MonitorConfigPath]);
         MonitorRunning = ok;
-        Status = ok ? "Autotagger Monitor gestartet." : "Monitor-Start fehlgeschlagen.";
+        Status = ok ? Loc.T("autotagger.monitorStarted") : Loc.T("autotagger.monitorStartFailed");
     }
 
     [RelayCommand]

@@ -15,7 +15,7 @@ public sealed partial class MarkerCleanupRowViewModel : ObservableObject
     {
         get
         {
-            var title = string.IsNullOrWhiteSpace(Source.SceneTitle) ? "(ohne Titel)" : Source.SceneTitle;
+            var title = string.IsNullOrWhiteSpace(Source.SceneTitle) ? Loc.T("markerupdater.noTitle") : Source.SceneTitle;
             if (title.Length > 40)
             {
                 title = title[..40];
@@ -60,14 +60,14 @@ public partial class MarkerUpdaterViewModel
         CleanupIsScanning = true;
         CleanupClampItems.Clear();
         CleanupDeleteItems.Clear();
-        CleanupStatus = "Scanne Szenen… (Seite 1)";
+        CleanupStatus = Loc.F("markerupdater.cleanupScanning", 1);
         Status = CleanupStatus;
         try
         {
             await EnsureStashReachableAsync();
             var progress = new Progress<int>(page =>
             {
-                CleanupStatus = $"Scanne Szenen… (Seite {page})";
+                CleanupStatus = Loc.F("markerupdater.cleanupScanning", page);
                 Status = CleanupStatus;
             });
             var items = await _client.FindOverflowingMarkersAsync(progress);
@@ -99,7 +99,7 @@ public partial class MarkerUpdaterViewModel
                     .Concat(CleanupDeleteItems.Select(r => r.Source.SceneId))
                     .Distinct(StringComparer.Ordinal)
                     .Count();
-                CleanupStatus = $"{total} ungültige Marker in {sceneCount} Szenen gefunden.";
+                CleanupStatus = Loc.F("markerupdater.cleanupFound", total, sceneCount);
             }
 
             Status = CleanupStatus;
@@ -151,7 +151,7 @@ public partial class MarkerUpdaterViewModel
         }
 
         if (ConfirmAsync is not null
-            && !await ConfirmAsync("Bereinigung", $"{targets.Count} Marker auf Videolänge kürzen?"))
+            && !await ConfirmAsync(Loc.T("markerupdater.cleanupConfirmTitle"), Loc.F("markerupdater.cleanupConfirmClamp", targets.Count)))
         {
             return;
         }
@@ -168,7 +168,7 @@ public partial class MarkerUpdaterViewModel
         }
 
         if (ConfirmAsync is not null
-            && !await ConfirmAsync("Bereinigung", $"{CleanupClampItems.Count} Marker auf Videolänge kürzen?"))
+            && !await ConfirmAsync(Loc.T("markerupdater.cleanupConfirmTitle"), Loc.F("markerupdater.cleanupConfirmClamp", CleanupClampItems.Count)))
         {
             return;
         }
@@ -194,7 +194,7 @@ public partial class MarkerUpdaterViewModel
                     item.Duration,
                     item.PrimaryTagId);
                 clamped++;
-                CleanupStatus = $"Kürze… {i + 1}/{total}";
+                CleanupStatus = Loc.F("markerupdater.cleanupClamping", i + 1, total);
                 Status = CleanupStatus;
             }
 
@@ -203,7 +203,7 @@ public partial class MarkerUpdaterViewModel
                 CleanupClampItems.Remove(row);
             }
 
-            CleanupStatus = $"{clamped} Marker auf Videolänge gekürzt.";
+            CleanupStatus = Loc.F("markerupdater.cleanupClamped", clamped);
             Status = CleanupStatus;
         }
         catch (Exception ex)
@@ -228,7 +228,7 @@ public partial class MarkerUpdaterViewModel
         }
 
         if (ConfirmAsync is not null
-            && !await ConfirmAsync("Bereinigung", $"{targets.Count} Marker wirklich löschen?"))
+            && !await ConfirmAsync(Loc.T("markerupdater.cleanupConfirmTitle"), Loc.F("markerupdater.cleanupConfirmDelete", targets.Count)))
         {
             return;
         }
@@ -245,7 +245,7 @@ public partial class MarkerUpdaterViewModel
         }
 
         if (ConfirmAsync is not null
-            && !await ConfirmAsync("Bereinigung", $"{CleanupDeleteItems.Count} Marker wirklich löschen?"))
+            && !await ConfirmAsync(Loc.T("markerupdater.cleanupConfirmTitle"), Loc.F("markerupdater.cleanupConfirmDelete", CleanupDeleteItems.Count)))
         {
             return;
         }
@@ -265,7 +265,7 @@ public partial class MarkerUpdaterViewModel
             {
                 await _client.DeleteMarkerAsync(targets[i].MarkerId);
                 deleted++;
-                CleanupStatus = $"Lösche… {i + 1}/{total}";
+                CleanupStatus = Loc.F("markerupdater.cleanupDeleting", i + 1, total);
                 Status = CleanupStatus;
             }
 
@@ -274,7 +274,7 @@ public partial class MarkerUpdaterViewModel
                 CleanupDeleteItems.Remove(row);
             }
 
-            CleanupStatus = $"{deleted} Marker gelöscht.";
+            CleanupStatus = Loc.F("markerupdater.cleanupDeleted", deleted);
             Status = CleanupStatus;
         }
         catch (Exception ex)

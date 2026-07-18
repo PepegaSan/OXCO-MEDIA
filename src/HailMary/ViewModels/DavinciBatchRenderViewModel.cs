@@ -13,8 +13,19 @@ public sealed partial class DavinciBatchRenderQueueRow : ObservableObject
 
     public string FileName => System.IO.Path.GetFileName(Path);
 
+    public string StatusCode { get; set; } = "pending";
+
     [ObservableProperty]
     private string _status = Loc.T("davincibatch.itemPending");
+
+    public void ApplyStatusCode(string bridgeStatus)
+    {
+        StatusCode = BatchItemLogParser.NormalizeStatusCode(bridgeStatus);
+        Status = BatchItemLogParser.ToDisplayStatus(StatusCode);
+    }
+
+    public void RefreshDisplayStatus() =>
+        Status = BatchItemLogParser.ToDisplayStatus(StatusCode);
 }
 
 public partial class DavinciBatchRenderViewModel : ObservableObject, IToolShellHost, ILocalizable
@@ -50,7 +61,9 @@ public partial class DavinciBatchRenderViewModel : ObservableObject, IToolShellH
     [ObservableProperty] private string _status = Loc.T("common.ready");
     [ObservableProperty] private bool _isBusy;
 
-    public string BatchButtonLabel => QueueRows.Count > 0 ? $"Batch starten ({QueueRows.Count})" : "Batch starten";
+    public string BatchButtonLabel => QueueRows.Count > 0
+        ? Loc.F("davincibatch.batchButton", QueueRows.Count)
+        : Loc.T("davincibatch.batchButtonEmpty");
 
     partial void OnIsBusyChanged(bool value)
     {
@@ -124,7 +137,7 @@ public partial class DavinciBatchRenderViewModel : ObservableObject, IToolShellH
         if (added)
         {
             RefreshQueueRows();
-            Status = $"{_queue.Count} Video(s) in der Warteschlange.";
+            Status = Loc.F("davincibatch.queueCount", _queue.Count);
         }
         else
         {
@@ -195,7 +208,7 @@ public partial class DavinciBatchRenderViewModel : ObservableObject, IToolShellH
             }
         }
 
-        row.Status = BatchItemLogParser.ToDisplayStatus(bridgeStatus);
+        row.ApplyStatusCode(bridgeStatus);
     }
 
     private void ApplyBatchResultsFromJson(JsonElement items)
@@ -224,27 +237,27 @@ public partial class DavinciBatchRenderViewModel : ObservableObject, IToolShellH
 
     private string BuildBatchSummary(bool cancelled)
     {
-        var done = QueueRows.Count(r => r.Status == Loc.T("common.done"));
-        var failed = QueueRows.Count(r => r.Status == Loc.T("common.error"));
-        var aborted = QueueRows.Count(r => r.Status == Loc.T("common.aborted"));
-        var pending = QueueRows.Count(r => r.Status == Loc.T("davincibatch.itemPending"));
+        var done = QueueRows.Count(r => r.StatusCode == "done");
+        var failed = QueueRows.Count(r => r.StatusCode == "failed");
+        var aborted = QueueRows.Count(r => r.StatusCode == "cancelled");
+        var pending = QueueRows.Count(r => r.StatusCode is "pending" or "running");
 
         if (cancelled)
         {
             if (done > 0 || failed > 0)
             {
-                return $"Batch abgebrochen — {done} fertig, {failed} fehlgeschlagen, {aborted + pending} ausstehend.";
+                return Loc.F("davincibatch.batchAbortedDetail", done, failed, aborted + pending);
             }
 
-            return "Batch abgebrochen.";
+            return Loc.T("davincibatch.batchAborted");
         }
 
         if (failed == 0)
         {
-            return $"Batch fertig — {done} ok.";
+            return Loc.F("davincibatch.batchDone", done);
         }
 
-        return $"Batch fertig — {done} ok, {failed} fehlgeschlagen.";
+        return Loc.F("davincibatch.batchDoneWithErrors", done, failed);
     }
 
     private void NotifyQueueEditCommands()
@@ -355,7 +368,7 @@ public partial class DavinciBatchRenderViewModel : ObservableObject, IToolShellH
         Status = Loc.T("davincibatch.running");
         foreach (var row in QueueRows)
         {
-            row.Status = Loc.T("davincibatch.itemPending");
+            row.ApplyStatusCode("pending");
         }
 
         AppServices.JobProgress.BeginBatch(_queue.Count, "Batch-Render");

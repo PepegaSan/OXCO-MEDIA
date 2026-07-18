@@ -118,7 +118,7 @@ public partial class MarkerUpdaterViewModel : SessionAwareViewModel, IToolShellH
     public bool ShowLocalFileMissing => HasLoadedScene && !LocalFileExists;
 
     public string LocalFileMissingHint => ShowLocalFileMissing
-        ? "Datei nicht lokal gefunden — in Einstellungen NAS-Pfad (z. B. H:\\VideoStash) prüfen."
+        ? Loc.T("markerupdater.localFileMissing")
         : string.Empty;
 
     partial void OnHasLoadedSceneChanged(bool value)
@@ -190,7 +190,7 @@ public partial class MarkerUpdaterViewModel : SessionAwareViewModel, IToolShellH
         var resolved = StashPathResolver.Resolve(scene.Path, CurrentPathMap());
         HasLoadedScene = true;
         LoadedSceneId = scene.SceneId;
-        LoadedSceneTitle = string.IsNullOrWhiteSpace(scene.Title) ? "(ohne Titel)" : scene.Title;
+        LoadedSceneTitle = string.IsNullOrWhiteSpace(scene.Title) ? Loc.T("markerupdater.noTitle") : scene.Title;
         StashFilePath = resolved.StashPath;
         ResolvedLocalPath = resolved.ResolvedPath;
         LocalFileExists = resolved.FileExists;
@@ -277,7 +277,7 @@ public partial class MarkerUpdaterViewModel : SessionAwareViewModel, IToolShellH
                 Results.Add(ToRow(scene));
             }
 
-            Status = scenes.Count == 0 ? "Keine Treffer." : $"{scenes.Count} Treffer.";
+            Status = scenes.Count == 0 ? Loc.T("stash.noResults") : Loc.F("stash.resultCount", scenes.Count);
             _navigateBySearchResults = scenes.Count > 0;
         }
         catch (Exception ex)
@@ -331,7 +331,7 @@ public partial class MarkerUpdaterViewModel : SessionAwareViewModel, IToolShellH
                       SelectedResult?.SceneId);
         if (sid is null)
         {
-            Status = read.Error ?? "Keine Szenen-ID erkannt.";
+            Status = read.Error ?? Loc.T("stash.noSceneIdRecognized");
             return;
         }
 
@@ -413,8 +413,8 @@ public partial class MarkerUpdaterViewModel : SessionAwareViewModel, IToolShellH
             if (adjacentId is null)
             {
                 Status = delta < 0
-                    ? "Keine vorherige Szene (Stash-ID)."
-                    : "Keine nächste Szene (Stash-ID).";
+                    ? Loc.T("markerupdater.noPrevScene")
+                    : Loc.T("markerupdater.noNextScene");
                 return;
             }
 
@@ -521,8 +521,8 @@ public partial class MarkerUpdaterViewModel : SessionAwareViewModel, IToolShellH
             }
 
             Status = LocalFileExists
-                ? $"Szene geladen — {SceneTags.Count} Tag(s), {Markers.Count} Marker. Video: {PathSourceLabel}"
-                : $"Szene geladen — {SceneTags.Count} Tag(s), {Markers.Count} Marker. Video nicht gefunden (Pfad-Mapping prüfen).";
+                ? Loc.F("markerupdater.sceneLoadedWithVideo", SceneTags.Count, Markers.Count, PathSourceLabel)
+                : Loc.F("markerupdater.sceneLoadedNoVideo", SceneTags.Count, Markers.Count);
             CreateMarkerAtSelectedTagCommand.NotifyCanExecuteChanged();
         }
         catch (Exception ex)
@@ -681,7 +681,7 @@ public partial class MarkerUpdaterViewModel : SessionAwareViewModel, IToolShellH
     {
         if (_loadedScene is null)
         {
-            Status = "Keine Szene geladen.";
+            Status = Loc.T("markerupdater.noSceneLoaded");
             return;
         }
 
@@ -724,7 +724,7 @@ public partial class MarkerUpdaterViewModel : SessionAwareViewModel, IToolShellH
     {
         if (_loadedScene is null)
         {
-            Status = "Keine Szene geladen.";
+            Status = Loc.T("markerupdater.noSceneLoaded");
             return;
         }
 
