@@ -125,13 +125,66 @@ public partial class MarkerAutocutViewModel
         return true;
     }
 
-    private IEnumerable<MarkerAutocutRowViewModel> SortedMarkers(IEnumerable<MarkerAutocutRowViewModel> rows) =>
-        PathSortMode switch
+    private static double StartSecondsValue(MarkerAutocutRowViewModel row) =>
+        TimecodeHelper.TryParseFlexible(row.Source.StartSeconds, out var sec, out _)
+            ? sec
+            : 0;
+
+    /// <summary>
+    /// Dateireihenfolge je nach Pfad-Sort; innerhalb jeder Datei immer früh → spät.
+    /// </summary>
+    private IEnumerable<MarkerAutocutRowViewModel> SortedMarkers(IEnumerable<MarkerAutocutRowViewModel> rows)
+    {
+        var list = rows as IList<MarkerAutocutRowViewModel> ?? rows.ToList();
+        return PathSortMode switch
         {
-            MarkerPathSortMode.Asc => rows.OrderBy(r => r.ResolvedFilePath, StringComparer.OrdinalIgnoreCase),
-            MarkerPathSortMode.Desc => rows.OrderByDescending(r => r.ResolvedFilePath, StringComparer.OrdinalIgnoreCase),
-            _ => rows,
+            MarkerPathSortMode.Asc => list
+                .OrderBy(r => r.ResolvedFilePath, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(StartSecondsValue)
+                .ThenBy(r => r.Source.MarkerTitle, StringComparer.OrdinalIgnoreCase),
+            MarkerPathSortMode.Desc => list
+                .OrderByDescending(r => r.ResolvedFilePath, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(StartSecondsValue)
+                .ThenBy(r => r.Source.MarkerTitle, StringComparer.OrdinalIgnoreCase),
+            _ => ChronologicalWithinFilesPreserveOrder(list),
         };
+    }
+
+    /// <summary>
+    /// Dateireihenfolge wie zuerst gesehen (Stash/Export), Marker pro Datei chronologisch.
+    /// </summary>
+    private static List<MarkerAutocutRowViewModel> ChronologicalWithinFilesPreserveOrder(
+        IEnumerable<MarkerAutocutRowViewModel> rows)
+    {
+        var fileOrder = new List<string>();
+        var byFile = new Dictionary<string, List<MarkerAutocutRowViewModel>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var row in rows)
+        {
+            var key = row.ResolvedFilePath ?? string.Empty;
+            if (!byFile.TryGetValue(key, out var bucket))
+            {
+                bucket = [];
+                byFile[key] = bucket;
+                fileOrder.Add(key);
+            }
+
+            bucket.Add(row);
+        }
+
+        var result = new List<MarkerAutocutRowViewModel>();
+        foreach (var fp in fileOrder)
+        {
+            result.AddRange(
+                byFile[fp]
+                    .OrderBy(StartSecondsValue)
+                    .ThenBy(r => r.Source.MarkerTitle, StringComparer.OrdinalIgnoreCase));
+        }
+
+        return result;
+    }
+
+    private bool IsPerFileMode() =>
+        string.Equals(ExportMode, "per_file", StringComparison.OrdinalIgnoreCase);
 
     internal void OnMarkerSelectionChanged(MarkerAutocutRowViewModel row, bool selected)
     {
@@ -164,7 +217,65 @@ public partial class MarkerAutocutViewModel
         SelectedOrderRow = rows.FirstOrDefault();
     }
 
-    internal void OnExportOrderReordered() => RefreshExportOrderHeaders();
+    /// <summary>Alle Export-Zeilen einer Quelldatei (für Auswahl über ▶-Titel).</summary>
+    public IReadOnlyList<MarkerAutocutOrderRowViewModel> ExportOrderRowsForFile(string? filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            return [];
+        }
+
+        return ExportOrder
+            .Where(o => string.Equals(
+                o.Marker.ResolvedFilePath,
+                filePath,
+                StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Per-file: Auswahl auf alle Marker derselben Datei(en) erweitern
+    /// (Klick auf ▶-Titel oder vor dem Verschieben).
+    /// </summary>
+    public IReadOnlyList<MarkerAutocutOrderRowViewModel> ExpandSelectionToWholeFiles(
+        IEnumerable<MarkerAutocutOrderRowViewModel> selected)
+    {
+        if (!IsPerFileMode())
+        {
+            return selected.ToList();
+        }
+
+        var paths = selected
+            .Select(r => r.Marker.ResolvedFilePath ?? string.Empty)
+            .Where(p => p.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        if (paths.Count == 0)
+        {
+            return selected.ToList();
+        }
+
+        var expanded = ExportOrder
+            .Where(o => paths.Contains(o.Marker.ResolvedFilePath ?? string.Empty))
+            .ToList();
+        SetSelectedOrderRows(expanded);
+        return expanded;
+    }
+
+    public bool IsPerFileExportMode => IsPerFileMode();
+
+    internal void OnExportOrderReordered()
+    {
+        if (IsPerFileMode())
+        {
+            // Pro Datei: Schnitte immer chronologisch; Dateireihenfolge aus neuer Liste.
+            NormalizeExportOrderForPerFile();
+            return;
+        }
+
+        RefreshExportOrderHeaders();
+    }
 
     // Re-checking a marker should restore it to its position in the marker list
     // (same order as the left pane) instead of always appending at the bottom.
@@ -190,8 +301,25 @@ public partial class MarkerAutocutViewModel
 
     private void RebuildExportOrderFromSelection()
     {
+        var selected = SortedMarkers(Markers.Where(m => m.IsSelected)).ToList();
+        if (IsPerFileMode())
+        {
+            selected = ChronologicalWithinFilesPreserveOrder(selected);
+        }
+
+        ReplaceExportOrder(selected);
+    }
+
+    private void NormalizeExportOrderForPerFile()
+    {
+        var markers = ExportOrder.Select(o => o.Marker).ToList();
+        ReplaceExportOrder(ChronologicalWithinFilesPreserveOrder(markers));
+    }
+
+    private void ReplaceExportOrder(IEnumerable<MarkerAutocutRowViewModel> markers)
+    {
         ExportOrder.Clear();
-        foreach (var row in SortedMarkers(Markers.Where(m => m.IsSelected)))
+        foreach (var row in markers)
         {
             ExportOrder.Add(new MarkerAutocutOrderRowViewModel { Marker = row });
         }
@@ -234,7 +362,17 @@ public partial class MarkerAutocutViewModel
         }
     }
 
-    partial void OnExportModeChanged(string value) => RefreshExportOrderHeaders();
+    partial void OnExportModeChanged(string value)
+    {
+        if (IsPerFileMode())
+        {
+            NormalizeExportOrderForPerFile();
+        }
+        else
+        {
+            RefreshExportOrderHeaders();
+        }
+    }
 
     partial void OnPathSortModeChanged(MarkerPathSortMode value)
     {
@@ -246,7 +384,7 @@ public partial class MarkerAutocutViewModel
 
     private void ApplyMarkerSort()
     {
-        if (PathSortMode == MarkerPathSortMode.Stash || Markers.Count <= 1)
+        if (Markers.Count <= 1)
         {
             return;
         }
@@ -322,6 +460,13 @@ public partial class MarkerAutocutViewModel
             return;
         }
 
+        if (IsPerFileMode())
+        {
+            ExpandSelectionToWholeFiles(_selectedOrderRows);
+            MoveSelectedFileBlock(direction);
+            return;
+        }
+
         var ordered = _selectedOrderRows
             .OrderBy(r => ExportOrder.IndexOf(r))
             .ToList();
@@ -349,6 +494,13 @@ public partial class MarkerAutocutViewModel
             return;
         }
 
+        if (IsPerFileMode())
+        {
+            ExpandSelectionToWholeFiles(_selectedOrderRows);
+            MoveSelectedFileBlockTo(insertAt);
+            return;
+        }
+
         var ordered = _selectedOrderRows
             .OrderBy(r => ExportOrder.IndexOf(r))
             .ToList();
@@ -367,5 +519,104 @@ public partial class MarkerAutocutViewModel
         }
 
         RefreshExportOrderHeaders();
+    }
+
+    private string? SelectedFilePath()
+    {
+        var first = _selectedOrderRows.OrderBy(r => ExportOrder.IndexOf(r)).FirstOrDefault();
+        return first?.Marker.ResolvedFilePath;
+    }
+
+    private void MoveSelectedFileBlock(int direction)
+    {
+        var path = SelectedFilePath();
+        if (path is null)
+        {
+            return;
+        }
+
+        var fileOrder = ExportOrder
+            .Select(o => o.Marker.ResolvedFilePath ?? string.Empty)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var idx = fileOrder.FindIndex(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase));
+        if (idx < 0)
+        {
+            return;
+        }
+
+        var target = idx + direction;
+        if (target < 0 || target >= fileOrder.Count)
+        {
+            return;
+        }
+
+        (fileOrder[idx], fileOrder[target]) = (fileOrder[target], fileOrder[idx]);
+        ApplyFileOrder(fileOrder);
+    }
+
+    private void MoveSelectedFileBlockTo(int insertAt)
+    {
+        var path = SelectedFilePath();
+        if (path is null)
+        {
+            return;
+        }
+
+        var fileOrder = ExportOrder
+            .Select(o => o.Marker.ResolvedFilePath ?? string.Empty)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var idx = fileOrder.FindIndex(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase));
+        if (idx < 0)
+        {
+            return;
+        }
+
+        fileOrder.RemoveAt(idx);
+        var fileInsert = insertAt <= 0
+            ? 0
+            : Math.Min(fileOrder.Count, Math.Max(0, insertAt >= ExportOrder.Count ? fileOrder.Count : CountFilesBeforeIndex(insertAt)));
+        fileOrder.Insert(Math.Clamp(fileInsert, 0, fileOrder.Count), path);
+        ApplyFileOrder(fileOrder);
+    }
+
+    private int CountFilesBeforeIndex(int markerIndex)
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var count = 0;
+        for (var i = 0; i < Math.Min(markerIndex, ExportOrder.Count); i++)
+        {
+            var fp = ExportOrder[i].Marker.ResolvedFilePath ?? string.Empty;
+            if (seen.Add(fp))
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private void ApplyFileOrder(IReadOnlyList<string> fileOrder)
+    {
+        var byFile = ExportOrder
+            .GroupBy(o => o.Marker.ResolvedFilePath ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.Marker).ToList(), StringComparer.OrdinalIgnoreCase);
+
+        var rebuilt = new List<MarkerAutocutRowViewModel>();
+        foreach (var fp in fileOrder)
+        {
+            if (!byFile.TryGetValue(fp, out var markers))
+            {
+                continue;
+            }
+
+            rebuilt.AddRange(
+                markers
+                    .OrderBy(StartSecondsValue)
+                    .ThenBy(r => r.Source.MarkerTitle, StringComparer.OrdinalIgnoreCase));
+        }
+
+        ReplaceExportOrder(rebuilt);
     }
 }

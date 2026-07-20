@@ -241,12 +241,25 @@ public partial class MarkerAutocutViewModel : ObservableObject, IToolShellHost, 
     [RelayCommand]
     private async Task ExportAsync()
     {
-        var ordered = ExportOrder.Select(o => o.Marker.Source).ToList();
-        if (ordered.Count == 0)
+        var markerRows = ExportOrder.Select(o => o.Marker).ToList();
+        if (markerRows.Count == 0)
         {
             Status = Loc.T("markerautocut.emptyExportOrder");
             return;
         }
+
+        if (IsPerFileMode())
+        {
+            markerRows = ChronologicalWithinFilesPreserveOrder(markerRows);
+        }
+
+        var missingEnd = markerRows.Count(m => string.IsNullOrWhiteSpace(m.Source.EndSeconds));
+        if (missingEnd > 0)
+        {
+            Status = Loc.F("markerautocut.missingEndWarning", missingEnd, MinSegmentSeconds);
+        }
+
+        var ordered = markerRows.Select(m => m.Source).ToList();
 
         PersistSettings();
         IsBusy = true;
