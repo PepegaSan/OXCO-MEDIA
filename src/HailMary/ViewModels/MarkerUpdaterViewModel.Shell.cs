@@ -60,6 +60,7 @@ public partial class MarkerUpdaterViewModel
         OnPropertyChanged(nameof(PrimaryActionLabel));
         OnPropertyChanged(nameof(OpenFullGuiLabel));
         OnPropertyChanged(nameof(StatusText));
+        RefreshQuickPresetUi();
     }
 
 }

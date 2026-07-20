@@ -20,7 +20,7 @@
     <StackPanel HorizontalAlignment="Left" Spacing="8">
         <controls:AspectFitVideoPresenter
             x:Name="VideoSurface"
-            MaxPreviewHeight="560"
+            MaxPreviewHeight="420"
             MinPreviewHeight="120" />
 
         <StackPanel Spacing="6">
@@ -53,8 +53,18 @@
             <Button Click="BtnPlay_Click" loc:Loc.Key="common.play" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
             <Button Click="BtnPause_Click" loc:Loc.Key="common.pause" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
             <Button Click="BtnStop_Click" loc:Loc.Key="common.stopButton" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Click="BtnMarkIn_Click" Content="Mark In (I)" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Click="BtnMarkOut_Click" Content="Mark Out (O)" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
+            <Button Click="BtnMarkIn_Click" Content="In (I)" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
+            <Button Click="BtnMarkOut_Click" Content="Out (O)" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
+            <Button
+                Click="BtnQuickIn_Click"
+                Content="Quick In (⇧I)"
+                IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
+                loc:Loc.ToolTipKey="markerupdater.quickInTooltip" />
+            <Button
+                Click="BtnQuickOut_Click"
+                Content="Quick Out (⇧O)"
+                IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
+                loc:Loc.ToolTipKey="markerupdater.quickOutTooltip" />
         </StackPanel>
 
         <Grid ColumnSpacing="8">
@@ -92,8 +102,78 @@
                 SelectedItem="{x:Bind ViewModel.PlaybackSpeed, Mode=TwoWay}" />
         </Grid>
 
+        <StackPanel Spacing="4">
+            <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.ActiveQuickPresetLabel, Mode=OneWay}" />
+            <ItemsControl ItemsSource="{x:Bind ViewModel.QuickPresets, Mode=OneWay}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="6" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate xmlns:models="using:HailMary.Models" x:DataType="models:MarkerQuickPreset">
+                        <Button
+                            Click="QuickPresetButton_Click"
+                            Content="{x:Bind Display}"
+                            Tag="{x:Bind}" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Expander
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Stretch"
+                IsExpanded="False">
+                <Expander.Header>
+                    <TextBlock loc:Loc.Key="markerupdater.quickManageHeader" />
+                </Expander.Header>
+                <Grid ColumnSpacing="8" RowSpacing="6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="88" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBox
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        loc:Loc.HeaderKey="markerupdater.quickPresetLabel"
+                        Text="{x:Bind ViewModel.NewQuickPresetLabel, Mode=TwoWay}" />
+                    <TextBox
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        loc:Loc.HeaderKey="markerupdater.quickPresetTag"
+                        Text="{x:Bind ViewModel.NewQuickPresetTag, Mode=TwoWay}" />
+                    <TextBox
+                        Grid.Row="0"
+                        Grid.Column="2"
+                        loc:Loc.HeaderKey="markerupdater.quickPresetTitle"
+                        Text="{x:Bind ViewModel.NewQuickPresetTitle, Mode=TwoWay}" />
+                    <ComboBox
+                        Grid.Row="0"
+                        Grid.Column="3"
+                        loc:Loc.HeaderKey="markerupdater.quickPresetSlot"
+                        ItemsSource="{x:Bind ViewModel.QuickPresetSlotChoices, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.NewQuickPresetSlot, Mode=TwoWay}" />
+                    <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" Orientation="Horizontal" Spacing="8">
+                        <Button Command="{x:Bind ViewModel.AddQuickPresetCommand}" loc:Loc.Key="markerupdater.quickPresetAdd" />
+                        <Button
+                            Command="{x:Bind ViewModel.RemoveActiveQuickPresetCommand}"
+                            loc:Loc.Key="markerupdater.quickPresetRemove"
+                            loc:Loc.ToolTipKey="markerupdater.quickPresetRemoveTooltip" />
+                    </StackPanel>
+                </Grid>
+            </Expander>
+        </StackPanel>
+
+        <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="markerupdater.keyboardHint" TextWrapping="WrapWholeWords" />
         <TextBlock
             Style="{StaticResource CaptionTextBlockStyle}"
-            loc:Loc.Key="markerupdater.keyboardHint" />
+            Text="{x:Bind ViewModel.QuickMarkerHint, Mode=OneWay}"
+            TextWrapping="WrapWholeWords" />
     </StackPanel>
 </UserControl>

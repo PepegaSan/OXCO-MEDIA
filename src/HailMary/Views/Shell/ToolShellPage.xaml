@@ -55,13 +55,18 @@
                 <Border
                     x:Name="PreviewHostBorder"
                     Grid.Row="0"
+                    MaxHeight="560"
                     Padding="16,16,16,0"
                     HorizontalAlignment="Left"
                     Visibility="Collapsed">
-                    <ContentControl
-                        x:Name="PreviewHost"
-                        HorizontalAlignment="Left"
-                        HorizontalContentAlignment="Left" />
+                    <ScrollViewer
+                        HorizontalScrollBarVisibility="Disabled"
+                        VerticalScrollBarVisibility="Auto">
+                        <ContentControl
+                            x:Name="PreviewHost"
+                            HorizontalAlignment="Left"
+                            HorizontalContentAlignment="Left" />
+                    </ScrollViewer>
                 </Border>
 
                 <ScrollViewer

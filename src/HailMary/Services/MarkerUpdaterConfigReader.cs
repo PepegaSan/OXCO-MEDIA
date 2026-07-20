@@ -1,4 +1,5 @@
 using System.Text.Json;
+using HailMary.Models;
 
 namespace HailMary.Services;
 
@@ -11,6 +12,30 @@ public sealed class MarkerUpdaterSettings
     public string LastSceneSearch { get; set; } = string.Empty;
 
     public StashPathMapSettings PathMap { get; set; } = new();
+
+    public int DefaultQuickPresetIndex { get; set; }
+
+    public List<MarkerQuickPreset> QuickPresets { get; set; } = [];
+
+    public static List<MarkerQuickPreset> DefaultQuickPresets() =>
+    [
+        new()
+        {
+            Id = "compilation",
+            Label = "Compilation",
+            PrimaryTag = "Compilation",
+            Title = "Compilation",
+            InstantSlot = 1,
+        },
+        new()
+        {
+            Id = "highlight",
+            Label = "Highlight",
+            PrimaryTag = "Highlight",
+            Title = "Highlight",
+            InstantSlot = 2,
+        },
+    ];
 }
 
 public static class MarkerUpdaterConfigReader
@@ -106,6 +131,15 @@ public static class MarkerUpdaterConfigReader
         }
 
         data["marker_player"] = markerPlayer;
+        data["default_quick_preset_index"] = settings.DefaultQuickPresetIndex;
+        data["quick_presets"] = settings.QuickPresets.Select(p => new Dictionary<string, object?>
+        {
+            ["id"] = p.Id,
+            ["label"] = p.Label,
+            ["primaryTag"] = p.PrimaryTag,
+            ["title"] = p.Title,
+            ["instantSlot"] = p.InstantSlot,
+        }).ToList();
 
         Directory.CreateDirectory(ConfigDirectory);
         File.WriteAllText(ConfigPath, JsonSerializer.Serialize(data, JsonOptions));
@@ -129,6 +163,37 @@ public static class MarkerUpdaterConfigReader
                 PathPrefixBackup = GetString(mp, "path_prefix_backup"),
                 UseBackup = mp.TryGetProperty("use_backup", out var ub) && ub.GetBoolean(),
             };
+        }
+
+        if (root.TryGetProperty("default_quick_preset_index", out var dpi) && dpi.TryGetInt32(out var idx))
+        {
+            settings.DefaultQuickPresetIndex = idx;
+        }
+
+        if (root.TryGetProperty("quick_presets", out var qp) && qp.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var el in qp.EnumerateArray())
+            {
+                if (el.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                var slot = 0;
+                if (el.TryGetProperty("instantSlot", out var slotEl) && slotEl.TryGetInt32(out var s))
+                {
+                    slot = s;
+                }
+
+                settings.QuickPresets.Add(new MarkerQuickPreset
+                {
+                    Id = GetString(el, "id"),
+                    Label = GetString(el, "label"),
+                    PrimaryTag = GetString(el, "primaryTag"),
+                    Title = GetString(el, "title"),
+                    InstantSlot = slot,
+                });
+            }
         }
 
         return settings;

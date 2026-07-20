@@ -61,6 +61,7 @@ public partial class MarkerUpdaterViewModel : SessionAwareViewModel, IToolShellH
         StashConnectionSync.SubscribeToGlobalConnect(OnGlobalStashConnected);
         RefreshFromSessionStashId();
         _client.Configure(Endpoint, ApiKey);
+        InitQuickPresets();
     }
 
     private void OnGlobalStashConnected(string version)
@@ -104,7 +105,23 @@ public partial class MarkerUpdaterViewModel : SessionAwareViewModel, IToolShellH
 
     partial void OnPathPrefixBackupChanged(string value) => OnPropertyChanged(nameof(BackupToggleEnabled));
 
-    partial void OnUseBackupChanged(bool value) => OnPropertyChanged(nameof(BackupToggleEnabled));
+    partial void OnUseBackupChanged(bool value)
+    {
+        OnPropertyChanged(nameof(BackupToggleEnabled));
+        if (!HasLoadedScene || string.IsNullOrWhiteSpace(StashFilePath))
+        {
+            return;
+        }
+
+        var resolved = StashPathResolver.Resolve(StashFilePath, CurrentPathMap());
+        ResolvedLocalPath = resolved.ResolvedPath;
+        LocalFileExists = resolved.FileExists;
+        PathSourceLabel = resolved.FileExists ? resolved.SourceLabel : string.Empty;
+        OnPropertyChanged(nameof(ShowLocalFileMissing));
+        OnPropertyChanged(nameof(LocalFileMissingHint));
+        SetVideoPath(resolved);
+        SyncSettings();
+    }
 
     [ObservableProperty] private string _loadedSummary = Loc.T("stash.noSceneLoaded");
     [ObservableProperty] private bool _hasLoadedScene;
@@ -170,6 +187,15 @@ public partial class MarkerUpdaterViewModel : SessionAwareViewModel, IToolShellH
         _settings.ApiKey = ApiKey;
         _settings.LastSceneSearch = SearchText;
         _settings.PathMap = pathMap;
+        _settings.DefaultQuickPresetIndex = ActiveQuickPresetIndex;
+        _settings.QuickPresets = QuickPresets.Select(p => new Models.MarkerQuickPreset
+        {
+            Id = p.Id,
+            Label = p.Label,
+            PrimaryTag = p.PrimaryTag,
+            Title = p.Title,
+            InstantSlot = p.InstantSlot,
+        }).ToList();
         StashConnectionSync.PushToolToCentral(Endpoint, ApiKey, pathMap);
         _client.Configure(Endpoint, ApiKey);
     }
