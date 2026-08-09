@@ -2319,6 +2319,114 @@
     "de": "Batch",
     "en": "Batch"
   },
+  "markerupdater.tabQuick": {
+    "de": "Quick Marker",
+    "en": "Quick Markers"
+  },
+  "markerupdater.quickTabHeader": {
+    "de": "Quick Marker",
+    "en": "Quick Markers"
+  },
+  "markerupdater.quickTabHint": {
+    "de": "Presets wählen und verwalten. Markieren geht in der Vorschau: Quick In (⇧I) / Quick Out (⇧O), Sofort mit ⇧1–9. Umschalt+Bild↑/↓ wechselt das aktive Preset.",
+    "en": "Choose and manage presets. Marking stays in the preview: Quick In (⇧I) / Quick Out (⇧O), instant with ⇧1–9. Shift+PageUp/Down cycles the active preset."
+  },
+  "markerupdater.quickManageHeader": {
+    "de": "Presets verwalten",
+    "en": "Manage presets"
+  },
+  "markerupdater.quickPresetLabel": {
+    "de": "Label",
+    "en": "Label"
+  },
+  "markerupdater.quickPresetTag": {
+    "de": "Primary Tag",
+    "en": "Primary tag"
+  },
+  "markerupdater.quickPresetTitle": {
+    "de": "Marker-Titel",
+    "en": "Marker title"
+  },
+  "markerupdater.quickPresetSlot": {
+    "de": "Slot ⇧",
+    "en": "Slot ⇧"
+  },
+  "markerupdater.quickPresetAdd": {
+    "de": "Preset hinzufügen",
+    "en": "Add preset"
+  },
+  "markerupdater.quickPresetRemove": {
+    "de": "Aktives entfernen",
+    "en": "Remove active"
+  },
+  "markerupdater.quickPresetRemoveTooltip": {
+    "de": "Das aktuell aktive Quick-Preset entfernen",
+    "en": "Remove the currently active quick preset"
+  },
+  "markerupdater.quickNoPreset": {
+    "de": "Kein Quick-Preset",
+    "en": "No quick preset"
+  },
+  "markerupdater.quickActivePreset": {
+    "de": "Aktiv: {0}",
+    "en": "Active: {0}"
+  },
+  "markerupdater.quickKeyboardHint": {
+    "de": "⇧I Quick In · ⇧O Quick Out · ⇧1–9 Sofort-Marker · ⇧Bild↑/↓ Preset",
+    "en": "⇧I Quick In · ⇧O Quick Out · ⇧1–9 instant · ⇧PgUp/Dn preset"
+  },
+  "markerupdater.quickInTooltip": {
+    "de": "Quick-Range Start (Shift+I)",
+    "en": "Quick-range start (Shift+I)"
+  },
+  "markerupdater.quickOutTooltip": {
+    "de": "Quick-Range Ende und Marker erstellen (Shift+O)",
+    "en": "Quick-range end and create marker (Shift+O)"
+  },
+  "markerupdater.quickPresetLabelRequired": {
+    "de": "Label für das Preset eingeben.",
+    "en": "Enter a label for the preset."
+  },
+  "markerupdater.quickSlotTaken": {
+    "de": "Slot {0} ist bereits vergeben.",
+    "en": "Slot {0} is already taken."
+  },
+  "markerupdater.quickPresetSelected": {
+    "de": "Quick-Preset: {0}",
+    "en": "Quick preset: {0}"
+  },
+  "markerupdater.quickPresetAdded": {
+    "de": "Preset hinzugefügt: {0}",
+    "en": "Preset added: {0}"
+  },
+  "markerupdater.quickPresetRemoved": {
+    "de": "Preset entfernt: {0}",
+    "en": "Preset removed: {0}"
+  },
+  "markerupdater.quickInSet": {
+    "de": "Quick In bei {0} ({1})",
+    "en": "Quick In at {0} ({1})"
+  },
+  "markerupdater.quickInRequired": {
+    "de": "Zuerst Quick In setzen (⇧I).",
+    "en": "Set Quick In first (⇧I)."
+  },
+  "markerupdater.quickNoPresetForSlot": {
+    "de": "Kein Preset für diesen Slot.",
+    "en": "No preset for this slot."
+  },
+  "markerupdater.quickNeedVideo": {
+    "de": "Video laden, um Quick Marker zu setzen.",
+    "en": "Load a video to create quick markers."
+  },
+  "markerupdater.quickCreated": {
+    "de": "Quick Marker „{0}“ bei {1} erstellt.",
+    "en": "Quick marker “{0}” created at {1}."
+  },
+  "markerupdater.primaryTagHeader": {
+    "de": "Primary Tag",
+    "en": "Primary tag"
+  },
   "markerupdater.scenePreviewHeader": {
     "de": "Szene & Vorschau",
     "en": "Scene & preview"
@@ -2484,8 +2592,8 @@
     "en": "'Delete tag in Stash' removes the tag entry…"
   },
   "markerupdater.batchDoubleClickHint": {
-    "de": "Doppelklick auf eine Zeile: Szene in Stash öffnen.",
-    "en": "Double-click row: open scene in Stash."
+    "de": "Doppelklick auf eine Zeile: Szene im Editor laden.",
+    "en": "Double-click a row to load the scene in the editor."
   },
   "markerupdater.fineHeader": {
     "de": "Fein",

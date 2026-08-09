@@ -35,7 +35,7 @@ internal static class StashPanelInteraction
         Action<StashSceneRowViewModel> setSelection,
         IAsyncRelayCommand loadCommand)
     {
-        if (FindResultRow(e.OriginalSource) is not StashSceneRowViewModel row)
+        if (FindDataContext<StashSceneRowViewModel>(e.OriginalSource) is not { } row)
         {
             return;
         }
@@ -50,7 +50,8 @@ internal static class StashPanelInteraction
         }
     }
 
-    public static StashSceneRowViewModel? FindResultRow(object? source)
+    public static T? FindDataContext<T>(object? source)
+        where T : class
     {
         if (source is not DependencyObject node)
         {
@@ -59,7 +60,7 @@ internal static class StashPanelInteraction
 
         while (node is not null)
         {
-            if (node is FrameworkElement { DataContext: StashSceneRowViewModel row })
+            if (node is FrameworkElement { DataContext: T row })
             {
                 return row;
             }
@@ -69,4 +70,7 @@ internal static class StashPanelInteraction
 
         return null;
     }
+
+    public static StashSceneRowViewModel? FindResultRow(object? source) =>
+        FindDataContext<StashSceneRowViewModel>(source);
 }

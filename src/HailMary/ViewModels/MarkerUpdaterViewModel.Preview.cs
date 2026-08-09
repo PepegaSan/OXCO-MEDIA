@@ -131,15 +131,18 @@ public partial class MarkerUpdaterViewModel
 
     partial void OnSelectedMarkerChanged(StashMarkerRowViewModel? value)
     {
-        if (value is not null)
+        if (value is null)
         {
-            NewMarkerTitle = value.Title;
-            NewMarkerSeconds = value.SecondsText;
-            NewMarkerEndSeconds = value.EndSecondsText;
-            NewMarkerTagName = value.PrimaryTagName;
+            ClearMarkerEditorFields();
+            return;
         }
 
-        if (value is null || !HasVideo)
+        NewMarkerTitle = value.Title;
+        NewMarkerSeconds = value.SecondsText;
+        NewMarkerEndSeconds = value.EndSecondsText;
+        NewMarkerTagName = value.PrimaryTagName ?? string.Empty;
+
+        if (!HasVideo)
         {
             return;
         }
@@ -148,5 +151,13 @@ public partial class MarkerUpdaterViewModel
         {
             SetPosition(sec);
         }
+    }
+
+    private void ClearMarkerEditorFields()
+    {
+        NewMarkerTitle = string.Empty;
+        NewMarkerSeconds = "0";
+        NewMarkerEndSeconds = string.Empty;
+        NewMarkerTagName = string.Empty;
     }
 }

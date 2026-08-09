@@ -1,3 +1,4 @@
+using HailMary.Models;
 using HailMary.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -20,7 +21,34 @@ public sealed partial class MarkerUpdaterPanel : UserControl
             {
                 ResultsList.SelectedItem = ViewModel.SelectedResult;
             }
+            else if (e.PropertyName == nameof(MarkerUpdaterViewModel.SelectedMarker))
+            {
+                if (!ReferenceEquals(MarkersList.SelectedItem, ViewModel.SelectedMarker))
+                {
+                    MarkersList.SelectedItem = ViewModel.SelectedMarker;
+                }
+
+                SyncPrimaryTagComboText();
+            }
+            else if (e.PropertyName == nameof(MarkerUpdaterViewModel.NewMarkerTagName))
+            {
+                SyncPrimaryTagComboText();
+            }
         };
+    }
+
+    private void SyncPrimaryTagComboText()
+    {
+        var text = ViewModel.NewMarkerTagName ?? string.Empty;
+        if (!string.Equals(PrimaryTagCombo.Text, text, StringComparison.Ordinal))
+        {
+            PrimaryTagCombo.Text = text;
+        }
+
+        if (string.IsNullOrEmpty(text))
+        {
+            PrimaryTagCombo.SelectedItem = null;
+        }
     }
 
     private async Task<bool> ConfirmAsync(string title, string message)
@@ -51,6 +79,14 @@ public sealed partial class MarkerUpdaterPanel : UserControl
     private void MarkersList_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         ViewModel.SelectedMarker = MarkersList.SelectedItem as StashMarkerRowViewModel;
+    }
+
+    private void QuickPresetButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: MarkerQuickPreset preset })
+        {
+            ViewModel.SelectQuickPresetCommand.Execute(preset);
+        }
     }
 
     private void BatchList_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -97,15 +133,23 @@ public sealed partial class MarkerUpdaterPanel : UserControl
             ViewModel.UseSelectedResultCommand);
     }
 
-    private void BatchList_OnDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+    private async void BatchList_OnDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
     {
-        if (BatchList.SelectedItem is not MarkerBatchSceneRowViewModel row)
+        if (StashPanelInteraction.FindDataContext<MarkerBatchSceneRowViewModel>(e.OriginalSource) is not { } row)
         {
             return;
         }
 
+        // Extended selection: SelectedItem is often not the row under the pointer.
+        BatchList.SelectedItem = row;
+        ViewModel.SelectedBatchMatch = row;
         ViewModel.SceneId = row.SceneId;
-        ViewModel.OpenInStashCommand.Execute(null);
+        e.Handled = true;
+
+        if (ViewModel.LoadSceneCommand.CanExecute(null))
+        {
+            await ViewModel.LoadSceneCommand.ExecuteAsync(null);
+        }
     }
 
     private void BatchSelectAll_OnClick(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)

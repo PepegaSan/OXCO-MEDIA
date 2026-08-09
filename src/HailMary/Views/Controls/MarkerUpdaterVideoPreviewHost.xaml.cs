@@ -285,14 +285,6 @@ public sealed partial class MarkerUpdaterVideoPreviewHost : UserControl
     private async void BtnQuickOut_Click(object sender, RoutedEventArgs e) =>
         await ViewModel.QuickMarkOutAndCreateAsync(GetCurrentSeconds());
 
-    private void QuickPresetButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button { Tag: HailMary.Models.MarkerQuickPreset preset })
-        {
-            ViewModel.SelectQuickPresetCommand.Execute(preset);
-        }
-    }
-
     private async void RootHost_KeyDown(object sender, KeyRoutedEventArgs e)
     {
         if (!ViewModel.HasVideo)
