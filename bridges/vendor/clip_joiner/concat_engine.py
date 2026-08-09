@@ -39,6 +39,7 @@ class JoinSettings:
     davinci_preset: str = "YouTube - 1080p"
     davinci_timeout_s: float = 3600.0
     davinci_api_path: str = ""
+    target_fps: float = 0.0
 
 
 def _log(log: Optional[LogFn], msg: str) -> None:
@@ -152,6 +153,7 @@ def concat_ffmpeg(
     output_path: str,
     *,
     encoder: str = "nvidia_h264",
+    target_fps: float = 0.0,
     log: Optional[LogFn] = None,
 ) -> None:
     if not clips:
@@ -228,8 +230,14 @@ def concat_ffmpeg(
             "[outa]",
         ]
         + vparams
-        + ["-c:a", "aac", "-b:a", "256k", output_path]
     )
+    try:
+        from ffmpeg_fps import fps_output_args
+    except ImportError:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+        from ffmpeg_fps import fps_output_args
+    cmd.extend(fps_output_args(target_fps))
+    cmd.extend(["-c:a", "aac", "-b:a", "256k", output_path])
     _run_ffmpeg(cmd, log)
 
 
@@ -356,6 +364,7 @@ def run_job(job: JoinJob, settings: JoinSettings, log: Optional[LogFn] = None) -
             clips,
             ffmpeg_out,
             encoder=settings.ffmpeg_encoder,
+            target_fps=settings.target_fps,
             log=log,
         )
         _log(log, "FFmpeg done.")

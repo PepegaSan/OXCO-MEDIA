@@ -66,6 +66,15 @@
     "enabled": true
   },
   {
+    "id": "perfect_loop",
+    "label": "Perfect Loop",
+    "type": "hybrid",
+    "group": "video",
+    "bridge": "perfect_loop_job.py",
+    "description": "Kurze Videos nahtlos loopen — Seam-Morph und optional beste Abschnittsuche.",
+    "enabled": true
+  },
+  {
     "id": "davinci_batch_render",
     "label": "Davinci Batch Render",
     "type": "hybrid",

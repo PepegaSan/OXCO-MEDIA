@@ -34,6 +34,7 @@ def main() -> int:
         bool(config.get("only_lower", True)),
         config.get("rule_values") or {},
         progress_cb=lambda cur, total: emit_progress_fraction(cur, total, "Scan"),
+        scan_mode=str(config.get("scan_mode") or "bitrate"),
     )
     out = {"rows": rows_to_dicts(rows), "input_folder": input_folder}
     Path(args.output_json).write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")

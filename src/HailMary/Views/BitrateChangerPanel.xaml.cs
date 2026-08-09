@@ -1,4 +1,6 @@
+using HailMary.Services;
 using HailMary.ViewModels;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
 namespace HailMary.Views;
@@ -11,5 +13,32 @@ public sealed partial class BitrateChangerPanel : UserControl
     {
         ViewModel = viewModel;
         InitializeComponent();
+    }
+
+    private async void ScenarioHelp_Click(object sender, RoutedEventArgs e)
+    {
+        var body = new TextBlock
+        {
+            Text = Loc.T("bitrate.scenarioHelpBody"),
+            TextWrapping = TextWrapping.WrapWholeWords,
+            IsTextSelectionEnabled = true,
+        };
+
+        var dialog = new ContentDialog
+        {
+            Title = Loc.T("bitrate.scenarioHelpTitle"),
+            Content = new ScrollViewer
+            {
+                MaxHeight = 480,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                Content = body,
+            },
+            CloseButtonText = Loc.T("common.done"),
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = XamlRoot,
+        };
+
+        await dialog.ShowAsync();
     }
 }

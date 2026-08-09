@@ -117,10 +117,15 @@ A classic setup installer (single `.exe`) can be built with **`build_installer.b
 
 | Area | Tools |
 |------|--------|
-| **Video** | Scene Cutter, Intro Cutter, Text to Video, Bitrate Changer, Audio Cleaner, Clip Joiner, DaVinci Batch Render |
+| **Video** | Scene Cutter, Intro Cutter, Text to Video, Bitrate Changer, Audio Cleaner, Clip Joiner, **Perfect Loop**, DaVinci Batch Render |
 | **Stash** | Stash Cutter, Marker Autocut, Marker Updater, Stash Pathfinder |
 | **Oxco** | Compare, bitrate pipeline, autotagger |
 | **Workflow** | Daten Sync, DL Sort, Autotagger monitor |
+
+Shared encode options on most FFmpeg tools:
+
+- **Target FPS** (`0` = keep source rate) — e.g. convert 120 fps → 30 fps without workarounds
+- Bitrate Changer: **Scan subfolders** checkbox (recursive folder scan)
 
 UI language: **German / English** (Settings → Appearance).
 
@@ -161,19 +166,53 @@ build_installer.bat
 Output: `dist\HailMary-v1.0.0-setup-x64.exe` (version from the built `HailMary.exe`).
 
 ---
+
 ## Project layout
 
 ```
 OXCO-MEDIA/
-├── src/HailMary/         # Windows app
-├── bridges/              # Python background jobs
-├── setup_python.bat      # Set up Python
-├── build_hail_mary.bat   # Compile the app
-├── build_installer.bat   # Release publish + Inno Setup installer
-├── start_hail_mary.bat   # Start the app
-├── requirements.txt      # Python packages for setup_python.bat
+├── src/HailMary/                    # WinUI (.NET 8) desktop app
+│   ├── Assets/
+│   │   ├── tools.json               # Tool registry (ids, bridges, groups)
+│   │   ├── UiStrings.de.json        # German UI strings
+│   │   └── UiStrings.en.json        # English UI strings
+│   ├── ViewModels/                  # Per-tool ViewModels (+ *.Shell.cs)
+│   ├── Views/                       # Tool panels + Shell/
+│   │   └── Controls/                # Shared preview hosts, Scene Cutter UI
+│   └── Services/                    # Job runner, config readers, Stash, i18n
+├── bridges/                         # Python jobs (cwd when a tool runs)
+│   ├── bridge_io.py                 # UTF-8 stdout helpers / progress lines
+│   ├── ffmpeg_fps.py                # Shared optional target-FPS helpers
+│   ├── *_job.py                     # One entry script per hybrid tool
+│   └── vendor/                      # Vendored / inlined tool engines
+│       ├── scene_cutter/
+│       ├── intro_cutter/
+│       ├── bitrate/
+│       ├── clip_joiner/
+│       ├── perfect_loop/            # Seam morph / cut / crossfade loop
+│       ├── audio_clean/
+│       ├── text_to_video/
+│       ├── oxco/
+│       ├── marker_autocut/
+│       ├── davinci_batch_render/
+│       ├── autotagger/
+│       └── dl_sort/
+├── scripts/                         # Dev helpers (i18n checks, etc.)
+├── setup_python.bat                 # Create .venv + pip install requirements
+├── build_hail_mary.bat              # Compile the app
+├── build_installer.bat              # Release publish + Inno Setup installer
+├── start_hail_mary.bat              # Start the app (builds if needed)
+├── requirements.txt                 # Python packages for bridges
+├── LICENSE
+├── THIRD_PARTY_NOTICES.md
 └── README.md
 ```
+
+**Runtime notes**
+
+- UI is C# / WinUI; heavy video work runs as **Python** under `bridges/` via `PythonJobRunner`
+- `tools.json` maps each tool id → bridge script and UI factory case in `HybridPanelFactory`
+- App settings live in `%LOCALAPPDATA%\HailMary\`; per-tool configs often under the **Projects root** you set in Settings
 
 ---
 

@@ -84,6 +84,7 @@ def main() -> int:
             gif_palette_colors=gncol,
             video_width=int(info.width),
             video_height=int(info.height),
+            target_fps=float(cfg.get("target_fps") or 0),
         )
 
         duration = max(0.01, float(info.duration_sec))

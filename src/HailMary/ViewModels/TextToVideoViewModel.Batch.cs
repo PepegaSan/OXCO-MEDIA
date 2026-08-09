@@ -1,3 +1,5 @@
+using System.Collections.Specialized;
+using System.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HailMary.Models;
 using HailMary.Services;
@@ -141,8 +143,8 @@ public partial class TextToVideoViewModel
                     row.Path,
                     output,
                     Segments,
-                    null,
-                    null,
+                    EditorSegment,
+                    SelectedSegmentIndex,
                     settings);
 
                 var result = await TextToVideoBridge.ExportAsync(config, token);
@@ -199,6 +201,35 @@ public partial class TextToVideoViewModel
         if (added > 0)
         {
             Status = Loc.F("texttovideo.status.batchVideosAdded", added);
+        }
+    }
+
+    private void BatchRows_OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.OldItems is not null)
+        {
+            foreach (TextToVideoBatchRow row in e.OldItems)
+            {
+                row.PropertyChanged -= BatchRow_OnPropertyChanged;
+            }
+        }
+
+        if (e.NewItems is not null)
+        {
+            foreach (TextToVideoBatchRow row in e.NewItems)
+            {
+                row.PropertyChanged += BatchRow_OnPropertyChanged;
+            }
+        }
+
+        NotifyBatchChanged();
+    }
+
+    private void BatchRow_OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(TextToVideoBatchRow.IsSelected))
+        {
+            NotifyBatchChanged();
         }
     }
 

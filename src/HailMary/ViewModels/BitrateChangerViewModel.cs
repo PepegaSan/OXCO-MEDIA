@@ -16,6 +16,8 @@ public sealed partial class BitrateRowViewModel : ObservableObject
 
     public string Resolution { get; init; } = string.Empty;
 
+    public string VideoCodec { get; init; } = "-";
+
     public string SourceKbps { get; init; } = "-";
 
     public string TargetKbps { get; init; } = "-";
@@ -49,6 +51,7 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
     private readonly ToolDefinition _tool;
     private BitrateChangerSettings _settings;
     private string? _lastScanJsonPath;
+    private CancellationTokenSource? _jobCts;
 
     public BitrateChangerViewModel(ToolDefinition tool)
     {
@@ -58,11 +61,20 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
         OutputFolder = _settings.OutputFolder;
         Recursive = _settings.Recursive;
         OnlyLower = _settings.OnlyLower;
+        SelectedScanMode = NormalizeScanMode(_settings.ScanMode);
         OutputBesideSource = _settings.OutputBesideSource;
         OutputMp4 = _settings.OutputMp4;
         StripAutobitrateSuffix = _settings.StripAutobitrateSuffix;
         SelectedCodec = _settings.Codec;
+        TargetFps = _settings.TargetFps;
         SelectedAudioMode = _settings.AudioMode;
+        SelectedRateControl = NormalizeRateControl(_settings.RateControl);
+        SelectedCrfPreset = NormalizeCrfPreset(_settings.CrfPreset);
+        CrfValue = ClampCrf(_settings.Crf > 0 ? _settings.Crf : CrfFromPreset(SelectedCrfPreset));
+        ParallelJobs = Math.Clamp(_settings.ParallelJobs <= 0 ? 1 : _settings.ParallelJobs, 1, 8);
+        FfmpegThreads = Math.Clamp(_settings.FfmpegThreads, 0, 64);
+        LowPriority = _settings.LowPriority;
+        SelectedX264Preset = NormalizeX264Preset(_settings.X264Preset);
         Suffix = _settings.Suffix;
         SelectedPostAction = _settings.PostSuccessAction;
         SelectedPreset = _settings.PresetName;
@@ -90,16 +102,213 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
     public IReadOnlyList<string> PresetOptions { get; } =
         ["Standard", "Leicht reduziert", "Reduziert"];
 
+    public IReadOnlyList<string> X264PresetOptions { get; } =
+        ["ultrafast", "superfast", "veryfast", "faster", "fast", "medium"];
+
     [ObservableProperty] private string _inputFolder = string.Empty;
     [ObservableProperty] private string _outputFolder = string.Empty;
     [ObservableProperty] private bool _recursive = true;
     [ObservableProperty] private bool _onlyLower = true;
+    [ObservableProperty] private string _selectedScanMode = "bitrate";
     [ObservableProperty] private bool _outputBesideSource;
+
+    public bool ScanModeIsBitrate
+    {
+        get => SelectedScanMode == "bitrate";
+        set
+        {
+            if (value)
+            {
+                SelectedScanMode = "bitrate";
+            }
+        }
+    }
+
+    public bool ScanModeIsProblemCodecs
+    {
+        get => SelectedScanMode == "problem_codecs";
+        set
+        {
+            if (value)
+            {
+                SelectedScanMode = "problem_codecs";
+            }
+        }
+    }
+
+    public bool ScanModeIsBitrateOrCodecs
+    {
+        get => SelectedScanMode == "bitrate_or_codecs";
+        set
+        {
+            if (value)
+            {
+                SelectedScanMode = "bitrate_or_codecs";
+            }
+        }
+    }
+
+    partial void OnSelectedScanModeChanged(string value)
+    {
+        OnPropertyChanged(nameof(ScanModeIsBitrate));
+        OnPropertyChanged(nameof(ScanModeIsProblemCodecs));
+        OnPropertyChanged(nameof(ScanModeIsBitrateOrCodecs));
+    }
+
     [ObservableProperty] private bool _outputMp4;
     [ObservableProperty] private bool _stripAutobitrateSuffix;
     [ObservableProperty] private string _selectedCodec = "libx264";
+    [ObservableProperty] private double _targetFps;
     [ObservableProperty] private string _selectedAudioMode = "copy";
+    [ObservableProperty] private string _selectedRateControl = "auto";
+    [ObservableProperty] private string _selectedCrfPreset = "balanced";
+    [ObservableProperty] private double _crfValue = 20;
+    [ObservableProperty] private double _parallelJobs = 1;
+    [ObservableProperty] private double _ffmpegThreads = 6;
+    [ObservableProperty] private bool _lowPriority = true;
+    [ObservableProperty] private string _selectedX264Preset = "veryfast";
     [ObservableProperty] private string _suffix = "_bitrate";
+
+    public bool ShowCrfControls =>
+        SelectedRateControl is "crf" or "auto";
+
+    public bool RateControlIsAuto
+    {
+        get => SelectedRateControl == "auto";
+        set
+        {
+            if (value)
+            {
+                SelectedRateControl = "auto";
+            }
+        }
+    }
+
+    public bool RateControlIsBitrate
+    {
+        get => SelectedRateControl == "bitrate";
+        set
+        {
+            if (value)
+            {
+                SelectedRateControl = "bitrate";
+            }
+        }
+    }
+
+    public bool RateControlIsCrf
+    {
+        get => SelectedRateControl == "crf";
+        set
+        {
+            if (value)
+            {
+                SelectedRateControl = "crf";
+            }
+        }
+    }
+
+    public bool CrfPresetIsQuality
+    {
+        get => SelectedCrfPreset == "quality";
+        set
+        {
+            if (value)
+            {
+                SelectedCrfPreset = "quality";
+            }
+        }
+    }
+
+    public bool CrfPresetIsBalanced
+    {
+        get => SelectedCrfPreset == "balanced";
+        set
+        {
+            if (value)
+            {
+                SelectedCrfPreset = "balanced";
+            }
+        }
+    }
+
+    public bool CrfPresetIsCompact
+    {
+        get => SelectedCrfPreset == "compact";
+        set
+        {
+            if (value)
+            {
+                SelectedCrfPreset = "compact";
+            }
+        }
+    }
+
+    public bool CrfPresetIsTiny
+    {
+        get => SelectedCrfPreset == "tiny";
+        set
+        {
+            if (value)
+            {
+                SelectedCrfPreset = "tiny";
+            }
+        }
+    }
+
+    partial void OnSelectedRateControlChanged(string value)
+    {
+        OnPropertyChanged(nameof(RateControlIsAuto));
+        OnPropertyChanged(nameof(RateControlIsBitrate));
+        OnPropertyChanged(nameof(RateControlIsCrf));
+        OnPropertyChanged(nameof(ShowCrfControls));
+    }
+
+    partial void OnSelectedCrfPresetChanged(string value)
+    {
+        var code = NormalizeCrfPreset(value);
+        if (code != value)
+        {
+            SelectedCrfPreset = code;
+            return;
+        }
+
+        OnPropertyChanged(nameof(CrfPresetIsQuality));
+        OnPropertyChanged(nameof(CrfPresetIsBalanced));
+        OnPropertyChanged(nameof(CrfPresetIsCompact));
+        OnPropertyChanged(nameof(CrfPresetIsTiny));
+        CrfValue = CrfFromPreset(code);
+    }
+
+    partial void OnCrfValueChanged(double value)
+    {
+        var clamped = ClampCrf((int)Math.Round(value));
+        if (Math.Abs(clamped - value) > 0.01)
+        {
+            CrfValue = clamped;
+            return;
+        }
+
+        foreach (var preset in new[] { "quality", "balanced", "compact", "tiny" })
+        {
+            if (CrfFromPreset(preset) != clamped)
+            {
+                continue;
+            }
+
+            if (!string.Equals(SelectedCrfPreset, preset, StringComparison.OrdinalIgnoreCase))
+            {
+                _selectedCrfPreset = preset;
+                OnPropertyChanged(nameof(SelectedCrfPreset));
+                OnPropertyChanged(nameof(CrfPresetIsQuality));
+                OnPropertyChanged(nameof(CrfPresetIsBalanced));
+                OnPropertyChanged(nameof(CrfPresetIsCompact));
+                OnPropertyChanged(nameof(CrfPresetIsTiny));
+            }
+
+            break;
+        }
+    }
     [ObservableProperty] private string _selectedPostAction = "keep";
     [ObservableProperty] private string _selectedPreset = Loc.T("bitrate.presetStandard");
     [ObservableProperty] private string _rule2160 = "12000";
@@ -149,11 +358,20 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
         _settings.OutputFolder = OutputFolder;
         _settings.Recursive = Recursive;
         _settings.OnlyLower = OnlyLower;
+        _settings.ScanMode = NormalizeScanMode(SelectedScanMode);
         _settings.OutputBesideSource = OutputBesideSource;
         _settings.OutputMp4 = OutputMp4;
         _settings.StripAutobitrateSuffix = StripAutobitrateSuffix;
         _settings.Codec = SelectedCodec;
+        _settings.TargetFps = TargetFps;
         _settings.AudioMode = SelectedAudioMode;
+        _settings.RateControl = NormalizeRateControl(SelectedRateControl);
+        _settings.CrfPreset = NormalizeCrfPreset(SelectedCrfPreset);
+        _settings.Crf = ClampCrf((int)Math.Round(CrfValue));
+        _settings.ParallelJobs = Math.Clamp((int)Math.Round(ParallelJobs), 1, 8);
+        _settings.FfmpegThreads = Math.Clamp((int)Math.Round(FfmpegThreads), 0, 64);
+        _settings.LowPriority = LowPriority;
+        _settings.X264Preset = NormalizeX264Preset(SelectedX264Preset);
         _settings.Suffix = Suffix;
         _settings.PostSuccessAction = SelectedPostAction;
         _settings.PresetName = SelectedPreset;
@@ -186,6 +404,11 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
     [RelayCommand]
     private async Task ScanAsync()
     {
+        if (IsBusy)
+        {
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(InputFolder) || !Directory.Exists(InputFolder))
         {
             Status = Loc.T("bitrate.inputMissing");
@@ -203,6 +426,7 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
         }
 
         SyncSettings();
+        BeginJobToken();
         IsBusy = true;
         Status = Loc.T("bitrate.scanRunning");
         Rows.Clear();
@@ -214,7 +438,14 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
             await File.WriteAllTextAsync(configPath, BitrateConfigReader.ToJobJson(_settings));
 
             var result = await AppServices.JobRunner.RunBridgeAsync("bitrate_scan_job.py",
-                ["--config-json", configPath, "--output-json", outPath]);
+                ["--config-json", configPath, "--output-json", outPath],
+                _jobCts!.Token);
+
+            if (result.ExitCode == -2)
+            {
+                Status = Loc.T("bitrate.convertCancelled");
+                return;
+            }
 
             if (!result.Success || !File.Exists(outPath))
             {
@@ -230,6 +461,9 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
                 var path = row.GetProperty("path").GetString() ?? "";
                 var w = row.GetProperty("width").GetInt32();
                 var h = row.GetProperty("height").GetInt32();
+                var codec = row.TryGetProperty("video_codec", out var vc) && vc.ValueKind == JsonValueKind.String
+                    ? (vc.GetString() ?? "-")
+                    : "-";
                 var srcKbps = row.TryGetProperty("source_kbps", out var sk) && sk.ValueKind != JsonValueKind.Null ? sk.GetInt32().ToString() : "-";
                 var tgtKbps = row.TryGetProperty("effective_target_kbps", out var tk) && tk.ValueKind != JsonValueKind.Null ? tk.GetInt32().ToString() : "-";
                 var saveBytes = row.TryGetProperty("estimated_saved_bytes", out var sb) && sb.ValueKind != JsonValueKind.Null
@@ -243,6 +477,7 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
                     Path = path,
                     FileName = System.IO.Path.GetFileName(path),
                     Resolution = $"{w}x{h}",
+                    VideoCodec = string.IsNullOrWhiteSpace(codec) ? "-" : codec,
                     SourceKbps = srcKbps,
                     TargetKbps = tgtKbps,
                     EstSaveMb = saveMb,
@@ -259,6 +494,7 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
         }
         finally
         {
+            EndJobToken();
             IsBusy = false;
         }
     }
@@ -266,6 +502,11 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
     [RelayCommand]
     private async Task ConvertAsync()
     {
+        if (IsBusy)
+        {
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(_lastScanJsonPath) || !File.Exists(_lastScanJsonPath))
         {
             Status = Loc.T("bitrate.scanFirst");
@@ -278,6 +519,7 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
         }
 
         SyncSettings();
+        BeginJobToken();
         IsBusy = true;
         Status = Loc.T("bitrate.convertRunning");
 
@@ -311,13 +553,58 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
             var configPath = Path.Combine(Path.GetTempPath(), $"hm_bitrate_cfg_{Guid.NewGuid():N}.json");
             await File.WriteAllTextAsync(configPath, BitrateConfigReader.ToJobJson(_settings));
             var result = await AppServices.JobRunner.RunBridgeAsync("bitrate_convert_job.py",
-                ["--config-json", configPath, "--rows-json", rowsPath]);
-            Status = result.Success ? result.Message : result.Message;
+                ["--config-json", configPath, "--rows-json", rowsPath],
+                _jobCts!.Token);
+            Status = result.ExitCode == -2
+                ? Loc.T("bitrate.convertCancelled")
+                : result.Message;
         }
         finally
         {
+            EndJobToken();
             IsBusy = false;
         }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanStopConversion))]
+    private void StopConversion()
+    {
+        if (_jobCts is null || _jobCts.IsCancellationRequested)
+        {
+            return;
+        }
+
+        Status = Loc.T("bitrate.convertStopping");
+        try
+        {
+            _jobCts.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+            // ignore
+        }
+
+        StopConversionCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(IsStopActionEnabled));
+    }
+
+    private bool CanStopConversion() => IsBusy && _jobCts is { IsCancellationRequested: false };
+
+    private void BeginJobToken()
+    {
+        _jobCts?.Cancel();
+        _jobCts?.Dispose();
+        _jobCts = new CancellationTokenSource();
+        StopConversionCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(IsStopActionEnabled));
+    }
+
+    private void EndJobToken()
+    {
+        _jobCts?.Dispose();
+        _jobCts = null;
+        StopConversionCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(IsStopActionEnabled));
     }
 
     [RelayCommand]
@@ -441,4 +728,49 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
 
     [RelayCommand]
     private void OpenFullGui() => AppServices.Launcher.Launch(_tool);
+
+    private static string NormalizeScanMode(string? mode) =>
+        mode?.Trim().ToLowerInvariant() switch
+        {
+            "problem_codecs" => "problem_codecs",
+            "bitrate_or_codecs" => "bitrate_or_codecs",
+            _ => "bitrate",
+        };
+
+    private static string NormalizeRateControl(string? mode) =>
+        mode?.Trim().ToLowerInvariant() switch
+        {
+            "crf" => "crf",
+            "bitrate" => "bitrate",
+            _ => "auto",
+        };
+
+    private static string NormalizeCrfPreset(string? preset) =>
+        preset?.Trim().ToLowerInvariant() switch
+        {
+            "quality" or "qualitaet" or "qualität" => "quality",
+            "compact" or "kompakt" => "compact",
+            "tiny" or "sehr kompakt" => "tiny",
+            _ => "balanced",
+        };
+
+    private static int CrfFromPreset(string preset) =>
+        NormalizeCrfPreset(preset) switch
+        {
+            "quality" => 18,
+            "compact" => 23,
+            "tiny" => 26,
+            _ => 20,
+        };
+
+    private static int ClampCrf(int value) => Math.Clamp(value, 0, 51);
+
+    private static string NormalizeX264Preset(string? preset)
+    {
+        var normalized = preset?.Trim().ToLowerInvariant();
+        return normalized is "ultrafast" or "superfast" or "veryfast" or "faster" or "fast"
+            or "medium" or "slow" or "slower" or "veryslow"
+            ? normalized
+            : "veryfast";
+    }
 }

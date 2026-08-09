@@ -66,6 +66,8 @@ public partial class AudioCleanerViewModel : ToolIoViewModel, IToolShellHost, IL
 
     [ObservableProperty] private string _selectedVideoCodec = "copy";
 
+    [ObservableProperty] private double _targetFps;
+
     [ObservableProperty] private string _videoBitrateKbps = "4000";
 
     [ObservableProperty] private string _batchSummary = Loc.T("intro.batchSummaryEmpty");
@@ -291,6 +293,8 @@ public partial class AudioCleanerViewModel : ToolIoViewModel, IToolShellHost, IL
         video_bitrate_kbps = int.TryParse(VideoBitrateKbps, out var vb) ? vb : 4000,
 
         video_bitrate_set = true,
+
+        target_fps = TargetFps,
 
     };
 

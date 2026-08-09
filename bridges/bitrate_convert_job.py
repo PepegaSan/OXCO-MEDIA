@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import signal
 import sys
+import threading
 from pathlib import Path
 
 BRIDGE_ROOT = Path(__file__).resolve().parent
@@ -29,13 +31,33 @@ def main() -> int:
         emit("FEHLER: rows ungueltig")
         return 1
 
+    stop_event = threading.Event()
+
+    def _request_stop(*_args) -> None:
+        stop_event.set()
+
+    try:
+        signal.signal(signal.SIGINT, _request_stop)
+        signal.signal(signal.SIGTERM, _request_stop)
+    except Exception:
+        pass
+    if hasattr(signal, "SIGBREAK"):
+        try:
+            signal.signal(signal.SIGBREAK, _request_stop)
+        except Exception:
+            pass
+
     done = convert_rows(
         config,
         rows,
         emit,
         progress_cb=lambda cur, total: emit_progress_fraction(cur, total, "Konvertierung"),
+        stop_event=stop_event,
     )
     emit_progress_end()
+    if done < 0 or stop_event.is_set():
+        emit("Konvertierung abgebrochen")
+        return 130
     emit(f"Konvertierung abgeschlossen: {done} Dateien")
     out_dir = config.get("output_folder", "")
     if out_dir:

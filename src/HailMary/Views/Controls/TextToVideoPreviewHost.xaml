@@ -11,18 +11,55 @@
     mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
 
     <StackPanel Spacing="8">
-        <Grid HorizontalAlignment="Left">
+        <Grid x:Name="PreviewSurface" HorizontalAlignment="Left" Background="Transparent">
             <controls:AspectFitVideoPresenter
                 x:Name="VideoSurface"
-                MaxPreviewHeight="420"
-                MinPreviewHeight="180"
+                MaxPreviewHeight="720"
+                MinPreviewHeight="320"
                 Opacity="0"
                 IsHitTestVisible="False" />
             <controls:AspectFitImagePresenter
                 x:Name="PreviewPresenter"
-                MaxPreviewHeight="420"
-                MinPreviewHeight="180"
-                PointerPressed="PreviewPresenter_OnPointerPressed" />
+                MaxPreviewHeight="720"
+                MinPreviewHeight="320"
+                IsHitTestVisible="False" />
+            <Border
+                x:Name="HitLayer"
+                Background="Transparent"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                PointerPressed="HitLayer_OnPointerPressed"
+                PointerMoved="HitLayer_OnPointerMoved"
+                PointerReleased="HitLayer_OnPointerReleased"
+                PointerCanceled="HitLayer_OnPointerCanceled"
+                PointerCaptureLost="HitLayer_OnPointerCaptureLost" />
+            <Canvas x:Name="OverlayLayer" IsHitTestVisible="False">
+                <Border
+                    x:Name="DragGhost"
+                    Visibility="Collapsed"
+                    Background="#99000000"
+                    Padding="6,2"
+                    CornerRadius="3">
+                    <TextBlock
+                        x:Name="DragGhostText"
+                        Foreground="White"
+                        TextWrapping="NoWrap"
+                        MaxWidth="420"
+                        TextTrimming="CharacterEllipsis" />
+                </Border>
+                <Border
+                    x:Name="PlayGhost"
+                    Visibility="Collapsed"
+                    Background="#99000000"
+                    Padding="6,2"
+                    CornerRadius="3">
+                    <TextBlock
+                        x:Name="PlayGhostText"
+                        Foreground="White"
+                        TextWrapping="Wrap"
+                        MaxWidth="520" />
+                </Border>
+            </Canvas>
         </Grid>
 
         <Grid ColumnSpacing="8">

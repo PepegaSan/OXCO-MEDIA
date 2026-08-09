@@ -6,6 +6,7 @@ namespace HailMary.ViewModels;
 public partial class TextToVideoViewModel
 {
     private CancellationTokenSource? _previewDebounceCts;
+    private int _previewGeneration;
 
     private void UpdateVideoInfoLine()
     {
@@ -75,9 +76,9 @@ public partial class TextToVideoViewModel
         }
     }
 
-    public void SchedulePreviewRefresh()
+    public void SchedulePreviewRefresh(bool immediate = false)
     {
-        if (!HasVideo)
+        if (!HasVideo || IsPreviewPlaying)
         {
             return;
         }
@@ -85,14 +86,19 @@ public partial class TextToVideoViewModel
         _previewDebounceCts?.Cancel();
         _previewDebounceCts = new CancellationTokenSource();
         var token = _previewDebounceCts.Token;
-        _ = DebouncedPreviewAsync(token);
+        var delayMs = immediate ? 0 : 320;
+        _ = DebouncedPreviewAsync(token, delayMs);
     }
 
-    private async Task DebouncedPreviewAsync(CancellationToken token)
+    private async Task DebouncedPreviewAsync(CancellationToken token, int delayMs)
     {
         try
         {
-            await Task.Delay(350, token);
+            if (delayMs > 0)
+            {
+                await Task.Delay(delayMs, token);
+            }
+
             await RefreshPreviewAsync(token);
         }
         catch (OperationCanceledException)
@@ -111,6 +117,7 @@ public partial class TextToVideoViewModel
         _previewCts?.Cancel();
         _previewCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var token = _previewCts.Token;
+        var generation = Interlocked.Increment(ref _previewGeneration);
 
         var config = TextToVideoBridge.BuildPreviewConfig(
             VideoPath,
@@ -123,14 +130,24 @@ public partial class TextToVideoViewModel
         try
         {
             var result = await TextToVideoBridge.RenderPreviewAsync(config, token);
-            if (result is null || token.IsCancellationRequested)
+            if (token.IsCancellationRequested || generation != _previewGeneration)
             {
                 return;
             }
 
+            if (result is null)
+            {
+                // Keep the last good frame; only hint in status when not busy/cancelled.
+                return;
+            }
+
             PreviewImageBytes = result.ImageBytes;
-            _videoWidth = result.Width;
-            _videoHeight = result.Height;
+            // Keep probe dimensions for click mapping — preview PNG may be scaled.
+            if (result.Width > 0 && result.Height > 0 && _videoWidth <= 0)
+            {
+                _videoWidth = result.Width;
+                _videoHeight = result.Height;
+            }
         }
         catch (OperationCanceledException)
         {

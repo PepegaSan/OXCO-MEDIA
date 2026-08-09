@@ -30,18 +30,29 @@ public partial class BitrateChangerViewModel
 
     public object? SettingsContext => null;
 
+    public bool HasStopAction => true;
+
+    public string StopActionLabel => Loc.T("common.stopButton");
+
+    public IRelayCommand? StopActionCommand => StopConversionCommand;
+
+    public bool IsStopActionEnabled => IsBusy;
+
     partial void OnStatusChanged(string value) => OnPropertyChanged(nameof(StatusText));
 
     partial void OnIsBusyChanged(bool value)
     {
         OnPropertyChanged(nameof(IToolShellHost.IsBusy));
         OnPropertyChanged(nameof(IsPrimaryActionEnabled));
+        OnPropertyChanged(nameof(IsStopActionEnabled));
+        StopConversionCommand.NotifyCanExecuteChanged();
     }
 
     public void RefreshLocalization()
     {
         LocalizationNotify.Description(this);
         OnPropertyChanged(nameof(PrimaryActionLabel));
+        OnPropertyChanged(nameof(StopActionLabel));
         OnPropertyChanged(nameof(OpenFullGuiLabel));
         OnPropertyChanged(nameof(StatusText));
         foreach (var row in Rows)

@@ -90,6 +90,9 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
     private string _selectedVideoCodec = "libx264";
 
     [ObservableProperty]
+    private double _targetFps;
+
+    [ObservableProperty]
     private string _videoBitrate = "8M";
 
     [ObservableProperty]
@@ -374,6 +377,12 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
             "--abitrate", AudioBitrate,
             "--preset", RenderPreset,
         };
+
+        if (TargetFps > 0)
+        {
+            args.Add("--target-fps");
+            args.Add(TargetFps.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture));
+        }
 
         if (VideoBitrateAuto)
         {

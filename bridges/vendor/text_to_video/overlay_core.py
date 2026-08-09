@@ -220,6 +220,26 @@ def _ensure_draw_font_basename(work_dir: Path) -> str:
     return name
 
 
+def _load_pil_font(font_path: str, size: int):
+    """Load a TTF/OTF/TTC for Pillow; try a few face indices for collections."""
+    try:
+        from PIL import ImageFont
+    except ImportError:
+        return None
+
+    try:
+        return ImageFont.truetype(font_path, size)
+    except OSError:
+        pass
+
+    for index in range(0, 8):
+        try:
+            return ImageFont.truetype(font_path, size, index=index)
+        except OSError:
+            continue
+    return None
+
+
 def drawtext_visible_at_wallclock(
     time_sec: float,
     t_from: Optional[float],
@@ -450,12 +470,17 @@ def _render_styled_overlay_png(
     use_shear_italic = bool(ov.italic and italic_file is None)
 
     font_path_load = str(italic_file) if italic_file is not None else str(fp_draw)
-    try:
-        font = ImageFont.truetype(font_path_load, sz_hi)
-    except OSError as exc:
+    font = _load_pil_font(font_path_load, sz_hi)
+    if font is None and font_path_load != str(fp_draw):
+        font = _load_pil_font(str(fp_draw), sz_hi)
+    if font is None:
+        # Last resort: system default copied into work_dir
+        fallback_bn = _ensure_draw_font_basename(work_dir)
+        font = _load_pil_font(str(work_dir / fallback_bn), sz_hi)
+    if font is None:
         raise ProbeError(
             f"Schriftdatei konnte nicht geladen werden: {Path(font_path_load).name}"
-        ) from exc
+        )
 
     rgb_base = _hex_to_rgb(ov.fontcolor_hex)
     # Dünne geneigte Glyphen: mehr Kanten-Anteil auf dunklem box → wirkt matschig/dunkler als drawtext.
@@ -589,13 +614,16 @@ def _render_styled_overlay_png(
 def _prepare_segment_font(work_dir: Path, font_path: Optional[str]) -> str:
     """Kopiert Schrift nach *work_dir*, gibt Basisnamen für drawtext/Pillow zurück."""
     if font_path and os.path.isfile(font_path):
-        src = Path(font_path).resolve()
-        suf = src.suffix.lower()
-        if suf not in (".ttf", ".otf", ".ttc"):
-            suf = ".ttf"
-        bn = f"_vtfu_{uuid.uuid4().hex[:12]}{suf}"
-        shutil.copy2(src, work_dir / bn)
-        return bn
+        try:
+            src = Path(font_path).resolve()
+            suf = src.suffix.lower()
+            if suf not in (".ttf", ".otf", ".ttc"):
+                suf = ".ttf"
+            bn = f"_vtfu_{uuid.uuid4().hex[:12]}{suf}"
+            shutil.copy2(src, work_dir / bn)
+            return bn
+        except OSError:
+            pass
 
     return _ensure_draw_font_basename(work_dir)
 
@@ -706,57 +734,86 @@ def build_timed_overlay_vf_parts(
 
         font_bn = _prepare_segment_font(work_dir, ov.font_path)
 
-        use_raster_styles = ov.bold or ov.italic or ov.strike
-        if use_raster_styles:
-            png_bn = _render_styled_overlay_png(
-                work_dir,
-                ov,
-                lines,
-                font_bn,
-                original_font_path=ov.font_path,
-            )
-            lbl = f"st{uuid.uuid4().hex[:10]}"
+        # Custom fonts (esp. .ttc / odd OTFs) are unreliable with FFmpeg drawtext — prefer Pillow.
+        use_raster_styles = bool(ov.bold or ov.italic or ov.strike or ov.font_path)
+        try:
+            if use_raster_styles:
+                png_bn = _render_styled_overlay_png(
+                    work_dir,
+                    ov,
+                    lines,
+                    font_bn,
+                    original_font_path=ov.font_path,
+                )
+                lbl = f"st{uuid.uuid4().hex[:10]}"
+                if preview_wallclock_sec is not None:
+                    enable_sfx = ""
+                else:
+                    enable_sfx = _overlay_enable_suffix(
+                        ov.text_visible_from_sec,
+                        ov.text_visible_to_sec,
+                    )
+                parts.append(f"movie={png_bn}[{lbl}]")
+                parts.append(
+                    f"[in][{lbl}]overlay={int(ov.pos_x)}:{int(ov.pos_y)}{enable_sfx}"
+                )
+                continue
+
             if preview_wallclock_sec is not None:
-                enable_sfx = ""
+                timing = ""
             else:
-                enable_sfx = _overlay_enable_suffix(
+                timing = _drawtext_timing_prefix(
                     ov.text_visible_from_sec,
                     ov.text_visible_to_sec,
                 )
-            parts.append(f"movie={png_bn}[{lbl}]")
-            parts.append(
-                f"[in][{lbl}]overlay={int(ov.pos_x)}:{int(ov.pos_y)}{enable_sfx}"
+
+            fc = hex_to_drawtext_color(ov.fontcolor_hex)
+            sz = max(8, min(int(ov.fontsize), 400))
+            bw = max(0, min(int(ov.box_border_w), 80))
+            dy = _drawtext_line_step_px(ov.fontsize, ov.line_spacing)
+
+            if ov.box_enabled:
+                box_tail = f"box=1:boxcolor=black@0.35:boxborderw={bw}"
+            else:
+                box_tail = "box=0"
+            tail = f"{timing}fontsize={sz}:fontcolor={fc}:{box_tail}"
+
+            for i, line in enumerate(lines):
+                display = line if line.strip() else "\u00a0"
+                fn = f"_vtln_{uuid.uuid4().hex}.txt"
+                (work_dir / fn).write_text(display, encoding="utf-8")
+                y = int(ov.pos_y) + i * dy
+                parts.append(
+                    f"drawtext=fontfile={font_bn}:textfile={fn}:"
+                    f"x={int(ov.pos_x)}:y={y}:{tail}"
+                )
+        except Exception:
+            # Never fail the whole preview/export for one bad font — fall back to system TTF drawtext.
+            font_bn = _ensure_draw_font_basename(work_dir)
+            if preview_wallclock_sec is not None:
+                timing = ""
+            else:
+                timing = _drawtext_timing_prefix(
+                    ov.text_visible_from_sec,
+                    ov.text_visible_to_sec,
+                )
+            fc = hex_to_drawtext_color(ov.fontcolor_hex)
+            sz = max(8, min(int(ov.fontsize), 400))
+            bw = max(0, min(int(ov.box_border_w), 80))
+            dy = _drawtext_line_step_px(ov.fontsize, ov.line_spacing)
+            box_tail = (
+                f"box=1:boxcolor=black@0.35:boxborderw={bw}" if ov.box_enabled else "box=0"
             )
-            continue
-
-        if preview_wallclock_sec is not None:
-            timing = ""
-        else:
-            timing = _drawtext_timing_prefix(
-                ov.text_visible_from_sec,
-                ov.text_visible_to_sec,
-            )
-
-        fc = hex_to_drawtext_color(ov.fontcolor_hex)
-        sz = max(8, min(int(ov.fontsize), 400))
-        bw = max(0, min(int(ov.box_border_w), 80))
-        dy = _drawtext_line_step_px(ov.fontsize, ov.line_spacing)
-
-        if ov.box_enabled:
-            box_tail = f"box=1:boxcolor=black@0.35:boxborderw={bw}"
-        else:
-            box_tail = "box=0"
-        tail = f"{timing}fontsize={sz}:fontcolor={fc}:{box_tail}"
-
-        for i, line in enumerate(lines):
-            display = line if line.strip() else "\u00a0"
-            fn = f"_vtln_{uuid.uuid4().hex}.txt"
-            (work_dir / fn).write_text(display, encoding="utf-8")
-            y = int(ov.pos_y) + i * dy
-            parts.append(
-                f"drawtext=fontfile={font_bn}:textfile={fn}:"
-                f"x={int(ov.pos_x)}:y={y}:{tail}"
-            )
+            tail = f"{timing}fontsize={sz}:fontcolor={fc}:{box_tail}"
+            for i, line in enumerate(lines):
+                display = line if line.strip() else "\u00a0"
+                fn = f"_vtln_{uuid.uuid4().hex}.txt"
+                (work_dir / fn).write_text(display, encoding="utf-8")
+                y = int(ov.pos_y) + i * dy
+                parts.append(
+                    f"drawtext=fontfile={font_bn}:textfile={fn}:"
+                    f"x={int(ov.pos_x)}:y={y}:{tail}"
+                )
 
     return parts
 
@@ -993,6 +1050,7 @@ def build_export_command(
     gif_palette_colors: int = 128,
     video_width: int = 1920,
     video_height: int = 1080,
+    target_fps: float = 0.0,
 ) -> Tuple[List[str], Optional[str]]:
     """Gibt (ffmpeg-Argumentliste, Arbeitsordner) zurück.
 
@@ -1049,6 +1107,15 @@ def build_export_command(
             else:
                 args.extend(["-vf", vf_arg])
         args.extend(["-c:v", encoder, "-b:v", bitrate])
+
+        try:
+            from ffmpeg_fps import fps_output_args
+        except ImportError:
+            import sys
+            from pathlib import Path as _P
+            sys.path.insert(0, str(_P(__file__).resolve().parents[2]))
+            from ffmpeg_fps import fps_output_args
+        args.extend(fps_output_args(target_fps))
 
         if encoder == "libx264":
             args.extend(["-profile:v", "high", "-pix_fmt", "yuv420p"])

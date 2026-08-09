@@ -80,6 +80,9 @@ public sealed partial class ToolActionBar : UserControl
             or nameof(IToolShellHost.StatusText)
             or nameof(IToolShellHost.HasSettings)
             or nameof(IToolShellHost.HasOpenFullGui)
+            or nameof(IToolShellHost.HasStopAction)
+            or nameof(IToolShellHost.StopActionLabel)
+            or nameof(IToolShellHost.IsStopActionEnabled)
             or nameof(IStashToolHost.IsStashConnected)
             or nameof(IStashToolHost.StashConnectionTooltip))
         {
@@ -93,6 +96,8 @@ public sealed partial class ToolActionBar : UserControl
         {
             PrimaryButton.Content = AppServices.Localization.Get("actionBar.start");
             PrimaryButton.IsEnabled = false;
+            StopButton.Visibility = Visibility.Collapsed;
+            StopButton.IsEnabled = false;
             SettingsButton.Visibility = Visibility.Collapsed;
             OverflowButton.Visibility = Visibility.Collapsed;
             StatusTextBlock.Text = string.Empty;
@@ -102,6 +107,10 @@ public sealed partial class ToolActionBar : UserControl
 
         PrimaryButton.Content = _host.PrimaryActionLabel;
         PrimaryButton.IsEnabled = _host.IsPrimaryActionEnabled;
+        var showStop = _host.HasStopAction;
+        StopButton.Visibility = showStop ? Visibility.Visible : Visibility.Collapsed;
+        StopButton.Content = _host.StopActionLabel;
+        StopButton.IsEnabled = showStop && _host.IsStopActionEnabled;
         SettingsButton.Visibility = _host.HasSettings ? Visibility.Visible : Visibility.Collapsed;
         OverflowButton.Visibility = _host.HasOpenFullGui ? Visibility.Visible : Visibility.Collapsed;
         StatusTextBlock.Text = _host.StatusText;
@@ -131,6 +140,16 @@ public sealed partial class ToolActionBar : UserControl
     private async void PrimaryButton_OnClick(object sender, RoutedEventArgs e)
     {
         await TryExecutePrimaryAsync();
+    }
+
+    private void StopButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (_host?.HasStopAction == true
+            && _host.IsStopActionEnabled
+            && _host.StopActionCommand?.CanExecute(null) == true)
+        {
+            _host.StopActionCommand.Execute(null);
+        }
     }
 
     private void SettingsButton_OnClick(object sender, RoutedEventArgs e)

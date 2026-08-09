@@ -138,6 +138,19 @@
 
                     <ComboBox loc:Loc.HeaderKey="audiocleaner.videoCodec" ItemsSource="{x:Bind ViewModel.VideoCodecOptions, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedVideoCodec, Mode=TwoWay}" />
 
+                    <NumberBox
+                        loc:Loc.HeaderKey="common.targetFps"
+                        Minimum="0"
+                        Maximum="240"
+                        SmallChange="1"
+                        LargeChange="5"
+                        SpinButtonPlacementMode="Compact"
+                        Value="{x:Bind ViewModel.TargetFps, Mode=TwoWay}" />
+                    <TextBlock
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        loc:Loc.Key="common.targetFpsHint"
+                        TextWrapping="WrapWholeWords" />
+
                     <TextBox loc:Loc.HeaderKey="audiocleaner.videoBitrate" Text="{x:Bind ViewModel.VideoBitrateKbps, Mode=TwoWay}" />
 
                 </StackPanel>

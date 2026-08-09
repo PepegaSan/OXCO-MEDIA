@@ -41,6 +41,7 @@ public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
         ["libx264", "libx265", "h264_nvenc", "hevc_nvenc"];
 
     [ObservableProperty] private string _selectedCodec = "libx264";
+    [ObservableProperty] private double _targetFps;
     [ObservableProperty] private string _positionDisplay = "00:00:00.000";
     [ObservableProperty] private string _durationDisplay = "00:00:00.000";
     [ObservableProperty] private double _sliderValue;
@@ -52,6 +53,7 @@ public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
     [ObservableProperty] private bool _partialSelectMode;
     [ObservableProperty] private bool _chronologicalSort;
     [ObservableProperty] private bool _safeOutput = true;
+    [ObservableProperty] private bool _replaceOriginalWithCut;
     [ObservableProperty] private bool _autoRemoveExported;
     [ObservableProperty] private bool _useDavinciExport;
     [ObservableProperty] private string _davinciPreset = "YouTube - 1080p";
@@ -357,7 +359,18 @@ public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
                 });
             }
 
-            UiDispatcher.Run(() => Status = result.Success ? Loc.T("audiocleaner.exportDone") : result.Message);
+            UiDispatcher.Run(() =>
+            {
+                if (!result.Success)
+                {
+                    Status = result.Message;
+                    return;
+                }
+
+                Status = ReplaceOriginalWithCut && !UseDavinciExport
+                    ? Loc.T($"{CutterLocPrefix}.replaceOriginalDone")
+                    : Loc.T("audiocleaner.exportDone");
+            });
         }
         finally
         {
@@ -376,15 +389,32 @@ public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
             "--scenes-file", scenesFile,
         };
 
+        if (TargetFps > 0)
+        {
+            args.Add("--target-fps");
+            args.Add(TargetFps.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture));
+        }
+
         if (!SafeOutput)
         {
             args.Add("--no-safe-output");
+        }
+
+        if (ReplaceOriginalWithCut)
+        {
+            args.Add("--replace-original");
         }
 
         var outDir = FfmpegOutputDir.Trim();
         if (string.IsNullOrWhiteSpace(outDir))
         {
             outDir = OptionalOutputDir() ?? string.Empty;
+        }
+
+        // Beim Ersetzen immer neben der Quelle arbeiten, sonst landet der Cut woanders
+        if (ReplaceOriginalWithCut)
+        {
+            outDir = Path.GetDirectoryName(input) ?? string.Empty;
         }
 
         if (!string.IsNullOrWhiteSpace(outDir))

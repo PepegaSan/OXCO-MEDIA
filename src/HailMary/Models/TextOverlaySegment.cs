@@ -47,7 +47,7 @@ public partial class TextOverlaySegment : ObservableObject
                 snippet = snippet[..41] + "…";
             }
 
-            return $"{a} → {b}  |  {(string.IsNullOrWhiteSpace(snippet) ? "(kein Text)" : snippet)}";
+            return $"{a} → {b}  |  {(string.IsNullOrWhiteSpace(snippet) ? Loc.T("texttovideo.noText") : snippet)}";
         }
     }
 
@@ -125,4 +125,25 @@ public partial class TextOverlaySegment : ObservableObject
         Italic = Italic,
         Strike = Strike,
     };
+
+    public void ApplyFrom(TextOverlaySegment source)
+    {
+        Text = source.Text;
+        From = source.From;
+        To = source.To;
+        Fontsize = source.Fontsize;
+        Color = source.Color;
+        PosX = source.PosX;
+        PosY = source.PosY;
+        LineSpacing = source.LineSpacing;
+        BoxBorder = source.BoxBorder;
+        BoxEnabled = source.BoxEnabled;
+        FontPath = source.FontPath;
+        ItalicFontPath = source.ItalicFontPath;
+        Bold = source.Bold;
+        Italic = source.Italic;
+        Strike = source.Strike;
+        // Ensure list bindings refresh even when Text/From/To values were unchanged.
+        OnPropertyChanged(nameof(ListLabel));
+    }
 }

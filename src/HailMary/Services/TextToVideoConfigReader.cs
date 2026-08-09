@@ -18,6 +18,9 @@ public sealed class TextToVideoSettings
 
     public int GifFps { get; set; } = 15;
 
+    /// <summary>0 = Quell-FPS; Ziel-FPS für MP4-Export.</summary>
+    public double TargetFps { get; set; }
+
     public int GifMaxWidth { get; set; } = 720;
 
     public int GifPaletteColors { get; set; } = 128;
@@ -29,6 +32,8 @@ public sealed class TextToVideoSettings
     public string DavinciPreset { get; set; } = "YouTube - 1080p";
 
     public string DavinciOutputDir { get; set; } = string.Empty;
+
+    public bool UseLastFfmpegForResolve { get; set; }
 
     public string ResolveModules { get; set; } = string.Empty;
 
@@ -100,12 +105,14 @@ public static class TextToVideoConfigReader
         data["bitrate"] = settings.Bitrate;
         data["export_container"] = settings.ExportContainer;
         data["gif_fps"] = settings.GifFps;
+        data["target_fps"] = settings.TargetFps;
         data["gif_max_width"] = settings.GifMaxWidth;
         data["gif_palette_colors"] = settings.GifPaletteColors;
         data["audio_copy"] = settings.AudioCopy;
         data["srt_path"] = settings.SrtPath;
         data["davinci_preset"] = settings.DavinciPreset;
         data["davinci_output_dir"] = settings.DavinciOutputDir;
+        data["use_last_ffmpeg_for_resolve"] = settings.UseLastFfmpegForResolve;
         data["resolve_modules"] = settings.ResolveModules;
         data["resolve_dll"] = settings.ResolveDll;
         data["resolve_exe"] = settings.ResolveExe;
@@ -132,12 +139,14 @@ public static class TextToVideoConfigReader
         settings.Bitrate = GetString(root, "bitrate", "5000k");
         settings.ExportContainer = GetString(root, "export_container", "mp4");
         settings.GifFps = GetInt(root, "gif_fps", 15);
+        settings.TargetFps = GetDouble(root, "target_fps", 0);
         settings.GifMaxWidth = GetInt(root, "gif_max_width", 720);
         settings.GifPaletteColors = GetInt(root, "gif_palette_colors", 128);
         settings.AudioCopy = !root.TryGetProperty("audio_copy", out var ac) || ac.ValueKind != JsonValueKind.False;
         settings.SrtPath = GetString(root, "srt_path");
         settings.DavinciPreset = GetString(root, "davinci_preset", "YouTube - 1080p");
         settings.DavinciOutputDir = GetString(root, "davinci_output_dir");
+        settings.UseLastFfmpegForResolve = GetBool(root, "use_last_ffmpeg_for_resolve");
         settings.ResolveModules = GetString(root, "resolve_modules");
         settings.ResolveDll = GetString(root, "resolve_dll");
         settings.ResolveExe = GetString(root, "resolve_exe");
@@ -177,4 +186,22 @@ public static class TextToVideoConfigReader
 
     private static int GetInt(JsonElement el, string name, int fallback) =>
         el.TryGetProperty(name, out var prop) && prop.TryGetInt32(out var v) ? v : fallback;
+
+    private static double GetDouble(JsonElement el, string name, double fallback) =>
+        el.TryGetProperty(name, out var prop) && prop.TryGetDouble(out var v) ? v : fallback;
+
+    private static bool GetBool(JsonElement el, string name, bool fallback = false)
+    {
+        if (!el.TryGetProperty(name, out var prop))
+        {
+            return fallback;
+        }
+
+        return prop.ValueKind switch
+        {
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            _ => prop.TryGetInt32(out var n) ? n != 0 : fallback,
+        };
+    }
 }

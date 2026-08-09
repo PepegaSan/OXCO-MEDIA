@@ -184,6 +184,7 @@ def run_ffmpeg_cut(
     *,
     video_bitrate_auto: bool = False,
     output_dir: Optional[str] = None,
+    target_fps: Optional[float] = None,
     log: LogFn = None,
 ) -> Path:
     if intro_sec < 0 or outro_sec < 0:
@@ -234,6 +235,17 @@ def run_ffmpeg_cut(
     if ext.lower() in (".mp4", ".m4v", ".mov"):
         mov = ["-movflags", "+faststart"]
 
+    try:
+        from ffmpeg_fps import fps_output_args
+    except ImportError:
+        import sys
+        from pathlib import Path as _P
+        sys.path.insert(0, str(_P(__file__).resolve().parents[2]))
+        from ffmpeg_fps import fps_output_args
+
+    # FPS override only when re-encoding (copy can't change rate)
+    fps_args = [] if v_codec.lower() == "copy" else fps_output_args(target_fps)
+
     args = [
         ffmpeg,
         "-hide_banner",
@@ -246,7 +258,7 @@ def run_ffmpeg_cut(
         str(new_dur).replace(",", "."),
         "-map",
         "0:v:0",
-    ] + a_args + v_args + mov + [str(out_path)]
+    ] + a_args + v_args + fps_args + mov + [str(out_path)]
 
     p = subprocess.run(
         args,

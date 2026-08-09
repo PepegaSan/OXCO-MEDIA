@@ -125,17 +125,42 @@
                 <CheckBox loc:Loc.Key="cutter.autoRemoveExported" IsChecked="{x:Bind ViewModel.AutoRemoveExported, Mode=TwoWay}" />
                 <CheckBox loc:Loc.Key="cutter.useDavinciExport" IsChecked="{x:Bind ViewModel.UseDavinciExport, Mode=TwoWay}" />
             </StackPanel>
+            <StackPanel Spacing="4" Visibility="{x:Bind ViewModel.UseDavinciExport, Mode=OneWay, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}">
+                <CheckBox
+                    loc:Loc.Key="cutter.replaceOriginalWithCut"
+                    loc:Loc.ToolTipKey="cutter.replaceOriginalHint"
+                    IsChecked="{x:Bind ViewModel.ReplaceOriginalWithCut, Mode=TwoWay}" />
+                <TextBlock
+                    Style="{StaticResource CaptionTextBlockStyle}"
+                    loc:Loc.Key="cutter.replaceOriginalHint"
+                    TextWrapping="WrapWholeWords" />
+            </StackPanel>
             <StackPanel Orientation="Horizontal" Spacing="12" Visibility="{x:Bind ViewModel.UseDavinciExport, Mode=OneWay, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}">
                 <ComboBox
                     Width="180"
+                    loc:Loc.HeaderKey="common.codec"
                     ItemsSource="{x:Bind ViewModel.CodecOptions, Mode=OneWay}"
                     SelectedItem="{x:Bind ViewModel.SelectedCodec, Mode=TwoWay}" />
+                <NumberBox
+                    Width="120"
+                    loc:Loc.HeaderKey="common.targetFps"
+                    Minimum="0"
+                    Maximum="240"
+                    SmallChange="1"
+                    LargeChange="5"
+                    SpinButtonPlacementMode="Compact"
+                    Value="{x:Bind ViewModel.TargetFps, Mode=TwoWay}" />
                 <TextBox
                     Width="280"
                     loc:Loc.HeaderKey="cutter.ffmpegOutputDir"
                     loc:Loc.PlaceholderKey="cutter.ffmpegOutputDirPlaceholder"
                     Text="{x:Bind ViewModel.FfmpegOutputDir, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             </StackPanel>
+            <TextBlock
+                Style="{StaticResource CaptionTextBlockStyle}"
+                loc:Loc.Key="common.targetFpsHint"
+                TextWrapping="WrapWholeWords"
+                Visibility="{x:Bind ViewModel.UseDavinciExport, Mode=OneWay, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}" />
             <Grid ColumnSpacing="12" Visibility="{x:Bind ViewModel.UseDavinciExport, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />

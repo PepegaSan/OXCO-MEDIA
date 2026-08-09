@@ -26,6 +26,8 @@ public partial class TextToVideoViewModel
 
     partial void OnUseLastFfmpegForResolveChanged(bool value) => PersistSettings();
 
+    partial void OnBatchOutputDirChanged(string value) => PersistSettings();
+
     [RelayCommand]
     private async Task PickDavinciOutputDirAsync()
     {

@@ -45,7 +45,7 @@ public partial class TextToVideoViewModel
                 CollectSettings());
 
             var result = await TextToVideoBridge.ExportAsync(config, token);
-            Status = result.Success ? result.Message : result.Message;
+            Status = result.Message;
             if (result.Success && !string.IsNullOrWhiteSpace(result.OutputPath))
             {
                 AppServices.Session.SetLastOutput(result.OutputPath);

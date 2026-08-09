@@ -36,6 +36,7 @@ public partial class TextToVideoViewModel
     {
         OnPropertyChanged(nameof(IToolShellHost.IsBusy));
         OnPropertyChanged(nameof(IsPrimaryActionEnabled));
+        OnPropertyChanged(nameof(CanInteract));
     }
 
     partial void OnHasVideoChanged(bool value) => OnPropertyChanged(nameof(IsPrimaryActionEnabled));
@@ -48,6 +49,7 @@ public partial class TextToVideoViewModel
         OnPropertyChanged(nameof(OpenFullGuiLabel));
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(SegmentEditorTitle));
+        OnPropertyChanged(nameof(SegmentModeHint));
         OnPropertyChanged(nameof(CommitSegmentLabel));
     }
 

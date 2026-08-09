@@ -134,6 +134,8 @@
 
                             <RowDefinition />
 
+                            <RowDefinition />
+
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="autotagger.foldersHeader" />
@@ -154,9 +156,22 @@
 
                         <ComboBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" ItemsSource="{x:Bind ViewModel.EncoderOptions, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedEncoder, Mode=TwoWay}" />
 
-                        <TextBlock Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" Text="DaVinci Preset" />
+                        <TextBlock Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="common.targetFps" />
 
-                        <TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Bind ViewModel.DavinciPreset, Mode=TwoWay}" />
+                        <NumberBox
+                            Grid.Row="4"
+                            Grid.Column="1"
+                            Grid.ColumnSpan="2"
+                            Minimum="0"
+                            Maximum="240"
+                            SmallChange="1"
+                            LargeChange="5"
+                            SpinButtonPlacementMode="Compact"
+                            Value="{x:Bind ViewModel.TargetFps, Mode=TwoWay}" />
+
+                        <TextBlock Grid.Row="5" Grid.Column="0" VerticalAlignment="Center" Text="DaVinci Preset" />
+
+                        <TextBox Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Bind ViewModel.DavinciPreset, Mode=TwoWay}" />
 
                     </Grid>
 

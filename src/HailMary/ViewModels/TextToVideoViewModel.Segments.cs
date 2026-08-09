@@ -9,11 +9,21 @@ public partial class TextToVideoViewModel
     [RelayCommand]
     private void NewSegment()
     {
+        // Prefer style from the currently selected segment, else the last one.
+        TextOverlaySegment? styleSource = null;
+        if (_selectedSegmentIndex >= 0 && _selectedSegmentIndex < Segments.Count)
+        {
+            styleSource = Segments[_selectedSegmentIndex];
+        }
+        else if (Segments.Count > 0)
+        {
+            styleSource = Segments[^1];
+        }
+
         _selectedSegmentIndex = -1;
         OnPropertyChanged(nameof(SelectedSegmentIndex));
         RequestSegmentListSelection?.Invoke(-1);
 
-        var styleSource = Segments.Count > 0 ? Segments[^1] : EditorSegment;
         var fresh = new TextOverlaySegment();
         if (styleSource is not null)
         {
@@ -46,23 +56,56 @@ public partial class TextToVideoViewModel
             return;
         }
 
-        NormalizeSegmentTimes(EditorSegment);
+        if (!TryValidateAndNormalizeEditorTimes())
+        {
+            return;
+        }
 
         var isExisting = IsEditingExistingSegment;
-        if (!isExisting)
+        if (isExisting)
         {
-            Segments.Add(EditorSegment);
+            // Write draft back onto the list item (keeps list identity, refreshes ListLabel).
+            Segments[_selectedSegmentIndex].ApplyFrom(EditorSegment);
+            // Keep editing a fresh draft copy of the saved segment.
+            EditorSegment = Segments[_selectedSegmentIndex].Clone();
+        }
+        else
+        {
+            var added = EditorSegment.Clone();
+            Segments.Add(added);
             _selectedSegmentIndex = Segments.Count - 1;
             OnPropertyChanged(nameof(SelectedSegmentIndex));
             RequestSegmentListSelection?.Invoke(_selectedSegmentIndex);
+            EditorSegment = added.Clone();
         }
 
         UpdateSegmentEditorChrome();
         PersistSettings();
-        SchedulePreviewRefresh();
+        SchedulePreviewRefresh(immediate: true);
         Status = isExisting
             ? Loc.F("texttovideo.status.segmentSaved", _selectedSegmentIndex + 1)
-            : Loc.T("texttovideo.status.segmentAdded");
+            : Loc.F("texttovideo.status.segmentAddedNumbered", _selectedSegmentIndex + 1);
+    }
+
+    [RelayCommand]
+    private void DuplicateSegment()
+    {
+        if (_selectedSegmentIndex < 0 || _selectedSegmentIndex >= Segments.Count)
+        {
+            Status = Loc.T("texttovideo.status.selectSegment");
+            return;
+        }
+
+        var copy = Segments[_selectedSegmentIndex].Clone();
+        Segments.Insert(_selectedSegmentIndex + 1, copy);
+        _selectedSegmentIndex++;
+        OnPropertyChanged(nameof(SelectedSegmentIndex));
+        RequestSegmentListSelection?.Invoke(_selectedSegmentIndex);
+        EditorSegment = copy.Clone();
+        UpdateSegmentEditorChrome();
+        PersistSettings();
+        SchedulePreviewRefresh();
+        Status = Loc.F("texttovideo.status.segmentDuplicated", _selectedSegmentIndex + 1);
     }
 
     [RelayCommand]
@@ -78,6 +121,7 @@ public partial class TextToVideoViewModel
         if (Segments.Count == 0)
         {
             _selectedSegmentIndex = -1;
+            OnPropertyChanged(nameof(SelectedSegmentIndex));
             RequestSegmentListSelection?.Invoke(-1);
             NewSegment();
         }
@@ -86,7 +130,7 @@ public partial class TextToVideoViewModel
             _selectedSegmentIndex = Math.Min(_selectedSegmentIndex, Segments.Count - 1);
             OnPropertyChanged(nameof(SelectedSegmentIndex));
             RequestSegmentListSelection?.Invoke(_selectedSegmentIndex);
-            EditorSegment = Segments[_selectedSegmentIndex];
+            EditorSegment = Segments[_selectedSegmentIndex].Clone();
         }
 
         UpdateSegmentEditorChrome();

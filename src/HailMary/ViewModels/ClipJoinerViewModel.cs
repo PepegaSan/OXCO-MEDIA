@@ -62,6 +62,7 @@ public partial class ClipJoinerViewModel : ObservableObject, IToolShellHost, ILo
     [ObservableProperty] private string _outputName = "joined";
     [ObservableProperty] private string _selectedMode = "ffmpeg";
     [ObservableProperty] private string _selectedEncoder = "nvidia_h264";
+    [ObservableProperty] private double _targetFps;
     [ObservableProperty] private string _davinciPreset = "YouTube - 1080p";
     [ObservableProperty] private double _davinciTimeoutSeconds = 3600;
     [ObservableProperty] private string _status = Loc.T("common.ready");
@@ -330,6 +331,7 @@ public partial class ClipJoinerViewModel : ObservableObject, IToolShellHost, ILo
                 output_name = OutputName,
                 mode = SelectedMode,
                 ffmpeg_encoder = SelectedEncoder,
+                target_fps = TargetFps,
                 davinci_preset = DavinciPreset,
                 davinci_timeout_s = DavinciTimeoutSeconds,
                 davinci_api_path = DavinciResolvePaths.GetApiModulesPath(),
@@ -341,6 +343,7 @@ public partial class ClipJoinerViewModel : ObservableObject, IToolShellHost, ILo
                 output_name = OutputName,
                 mode = SelectedMode,
                 ffmpeg_encoder = SelectedEncoder,
+                target_fps = TargetFps,
                 davinci_preset = DavinciPreset,
                 davinci_timeout_s = DavinciTimeoutSeconds,
                 davinci_api_path = DavinciResolvePaths.GetApiModulesPath(),

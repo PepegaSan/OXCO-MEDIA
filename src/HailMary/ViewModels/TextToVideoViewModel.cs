@@ -18,8 +18,14 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
     private CancellationTokenSource? _previewCts;
     private CancellationTokenSource? _exportCts;
     private TextOverlaySegment? _editorSegmentSubscribed;
+    private bool _isOverlayDragging;
+    private bool _syncingSelectedFont;
 
     public event Action<int>? RequestSegmentListSelection;
+
+    public IReadOnlyList<WindowsFontChoice> AvailableFonts { get; } = WindowsFontCatalog.GetFonts();
+
+    [ObservableProperty] private WindowsFontChoice? _selectedSystemFont;
 
     public TextToVideoViewModel(ToolDefinition tool)
     {
@@ -30,26 +36,49 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
         Bitrate = settings.Bitrate;
         ExportContainer = settings.ExportContainer;
         GifFps = settings.GifFps;
+        TargetFps = settings.TargetFps;
         GifMaxWidth = settings.GifMaxWidth;
         GifPaletteColors = settings.GifPaletteColors;
         AudioCopy = settings.AudioCopy;
         SrtPath = settings.SrtPath;
         DavinciPreset = settings.DavinciPreset;
         DavinciOutputDir = settings.DavinciOutputDir;
+        UseLastFfmpegForResolve = settings.UseLastFfmpegForResolve;
         BatchOutputDir = string.IsNullOrWhiteSpace(settings.LastVideoDir) ? "" : settings.LastVideoDir;
         TextToVideoConfigReader.ApplyToObservable(settings, Segments);
-        EditorSegment = new TextOverlaySegment();
+        BatchRows.CollectionChanged += BatchRows_OnCollectionChanged;
+
+        if (Segments.Count > 0)
+        {
+            _selectedSegmentIndex = 0;
+            EditorSegment = Segments[0].Clone();
+            RequestSegmentListSelection?.Invoke(0);
+        }
+        else
+        {
+            EditorSegment = new TextOverlaySegment();
+        }
+
+        SyncSelectedFontFromEditor();
+        UpdateSegmentEditorChrome();
     }
 
+    public Func<string, string, Task<bool>>? ConfirmAsync { get; set; }
+
+    public bool CanInteract => !IsBusy;
+
     public bool IsEditingExistingSegment =>
-        _selectedSegmentIndex >= 0
-        && _selectedSegmentIndex < Segments.Count
-        && ReferenceEquals(EditorSegment, Segments[_selectedSegmentIndex]);
+        _selectedSegmentIndex >= 0 && _selectedSegmentIndex < Segments.Count;
 
     public string SegmentEditorTitle =>
         IsEditingExistingSegment
             ? Loc.F("texttovideo.editSegment", _selectedSegmentIndex + 1)
-            : Loc.T("texttovideo.newSegment");
+            : Loc.T("texttovideo.newSegmentTitle");
+
+    public string SegmentModeHint =>
+        IsEditingExistingSegment
+            ? Loc.F("texttovideo.modeEditingHint", _selectedSegmentIndex + 1)
+            : Loc.T("texttovideo.modeNewHint");
 
     public string CommitSegmentLabel =>
         IsEditingExistingSegment ? Loc.T("texttovideo.commitEdit") : Loc.T("texttovideo.commitNew");
@@ -69,10 +98,79 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
         value.PropertyChanged += EditorSegment_PropertyChanged;
         UpdateTimeHints();
         UpdateSegmentEditorChrome();
+        SyncSelectedFontFromEditor();
+    }
+
+    public void ApplySystemFont(WindowsFontChoice choice)
+    {
+        _syncingSelectedFont = true;
+        try
+        {
+            SelectedSystemFont = choice;
+        }
+        finally
+        {
+            _syncingSelectedFont = false;
+        }
+
+        var path = choice.Path ?? string.Empty;
+        if (!string.Equals(EditorSegment.FontPath, path, StringComparison.OrdinalIgnoreCase))
+        {
+            EditorSegment.FontPath = path;
+        }
+        else
+        {
+            SchedulePreviewRefresh();
+        }
+    }
+
+    partial void OnSelectedSystemFontChanged(WindowsFontChoice? value)
+    {
+        if (_syncingSelectedFont || value is null)
+        {
+            return;
+        }
+
+        if (!string.Equals(EditorSegment.FontPath, value.Path, StringComparison.OrdinalIgnoreCase))
+        {
+            EditorSegment.FontPath = value.Path;
+        }
+    }
+
+    private void SyncSelectedFontFromEditor()
+    {
+        _syncingSelectedFont = true;
+        try
+        {
+            var match = WindowsFontCatalog.FindByPath(EditorSegment.FontPath);
+            if (match is not null)
+            {
+                SelectedSystemFont = match;
+            }
+            else if (!string.IsNullOrWhiteSpace(EditorSegment.FontPath))
+            {
+                SelectedSystemFont = new WindowsFontChoice(
+                    System.IO.Path.GetFileName(EditorSegment.FontPath),
+                    EditorSegment.FontPath);
+            }
+            else
+            {
+                SelectedSystemFont = AvailableFonts[0];
+            }
+        }
+        finally
+        {
+            _syncingSelectedFont = false;
+        }
     }
 
     private void EditorSegment_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
+        if (e.PropertyName is nameof(TextOverlaySegment.FontPath))
+        {
+            SyncSelectedFontFromEditor();
+        }
+
         if (e.PropertyName is nameof(TextOverlaySegment.Text)
             or nameof(TextOverlaySegment.From)
             or nameof(TextOverlaySegment.To)
@@ -92,10 +190,75 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
             if (e.PropertyName is nameof(TextOverlaySegment.From) or nameof(TextOverlaySegment.To))
             {
                 UpdateTimeHints();
+                EnsurePlayheadShowsEditorSegment();
+            }
+            else if (e.PropertyName is nameof(TextOverlaySegment.PosX) or nameof(TextOverlaySegment.PosY))
+            {
+                if (_isOverlayDragging)
+                {
+                    return;
+                }
+            }
+            else if (e.PropertyName is nameof(TextOverlaySegment.Text)
+                     or nameof(TextOverlaySegment.Fontsize)
+                     or nameof(TextOverlaySegment.Color)
+                     or nameof(TextOverlaySegment.Bold)
+                     or nameof(TextOverlaySegment.Italic)
+                     or nameof(TextOverlaySegment.Strike)
+                     or nameof(TextOverlaySegment.BoxEnabled)
+                     or nameof(TextOverlaySegment.BoxBorder)
+                     or nameof(TextOverlaySegment.LineSpacing)
+                     or nameof(TextOverlaySegment.FontPath)
+                     or nameof(TextOverlaySegment.ItalicFontPath))
+            {
+                // Timed overlays are invisible outside From/To — jump into range so edits show up.
+                EnsurePlayheadShowsEditorSegment();
             }
 
             SchedulePreviewRefresh();
         }
+    }
+
+    /// <summary>
+    /// If the editor segment is time-bounded and the playhead is outside that window,
+    /// move to the start of the window so preview/export-looking edits are visible.
+    /// </summary>
+    private void EnsurePlayheadShowsEditorSegment()
+    {
+        if (!HasVideo || _probeDurationSec <= 0)
+        {
+            return;
+        }
+
+        var hasFrom = TimeFieldHelper.TryParseSeconds(EditorSegment.From, out var fromSec);
+        var hasTo = TimeFieldHelper.TryParseSeconds(EditorSegment.To, out var toSec);
+        if (!hasFrom && !hasTo)
+        {
+            return;
+        }
+
+        var t = SliderValue;
+        var visible = (!hasFrom || t >= fromSec) && (!hasTo || t <= toSec);
+        if (visible)
+        {
+            return;
+        }
+
+        double target;
+        if (hasFrom && hasTo && toSec > fromSec)
+        {
+            target = fromSec + Math.Min(0.35, (toSec - fromSec) * 0.1);
+        }
+        else if (hasFrom)
+        {
+            target = fromSec;
+        }
+        else
+        {
+            target = Math.Max(0, toSec - 0.35);
+        }
+
+        SetPreviewPosition(Math.Clamp(target, 0, SliderMaximum));
     }
 
     private void UpdateTimeHints()
@@ -108,6 +271,7 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
     {
         OnPropertyChanged(nameof(IsEditingExistingSegment));
         OnPropertyChanged(nameof(SegmentEditorTitle));
+        OnPropertyChanged(nameof(SegmentModeHint));
         OnPropertyChanged(nameof(CommitSegmentLabel));
     }
 
@@ -141,6 +305,8 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
     [ObservableProperty] private string _exportContainer = "mp4";
 
     [ObservableProperty] private int _gifFps = 15;
+
+    [ObservableProperty] private double _targetFps;
 
     [ObservableProperty] private int _gifMaxWidth = 720;
 
@@ -202,7 +368,24 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
         }
     }
 
-    partial void OnSrtPathChanged(string value) => SchedulePreviewRefresh();
+    partial void OnSrtPathChanged(string value)
+    {
+        PersistSettings();
+        SchedulePreviewRefresh();
+    }
+
+    partial void OnCodecChanged(string value) => PersistSettings();
+
+    partial void OnBitrateChanged(string value) => PersistSettings();
+
+    partial void OnGifFpsChanged(int value) => PersistSettings();
+    partial void OnTargetFpsChanged(double value) => PersistSettings();
+
+    partial void OnGifMaxWidthChanged(int value) => PersistSettings();
+
+    partial void OnGifPaletteColorsChanged(int value) => PersistSettings();
+
+    partial void OnAudioCopyChanged(bool value) => PersistSettings();
 
     partial void OnSliderValueChanged(double value)
     {
@@ -210,32 +393,48 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
         SchedulePreviewRefresh();
     }
 
-    partial void OnIsPreviewPlayingChanged(bool value)
-    {
-        if (value)
-        {
-            SchedulePreviewRefresh();
-        }
-    }
-
     public void SetSelectedSegmentIndex(int index)
     {
-        if (index == _selectedSegmentIndex
-            && index >= 0
-            && index < Segments.Count
-            && ReferenceEquals(EditorSegment, Segments[index]))
+        if (index < 0)
+        {
+            // NewSegment already set index to -1 before clearing the list selection.
+            if (_selectedSegmentIndex < 0)
+            {
+                return;
+            }
+
+            // Ignore accidental ListView deselection while editing a saved segment
+            // (collection churn often fires SelectedIndex = -1 briefly).
+            if (_selectedSegmentIndex < Segments.Count)
+            {
+                RequestSegmentListSelection?.Invoke(_selectedSegmentIndex);
+                return;
+            }
+
+            _selectedSegmentIndex = -1;
+            OnPropertyChanged(nameof(SelectedSegmentIndex));
+            UpdateSegmentEditorChrome();
+            return;
+        }
+
+        if (index >= Segments.Count)
+        {
+            return;
+        }
+
+        // Same item already loaded into the editor — keep the in-progress draft.
+        if (index == _selectedSegmentIndex)
         {
             return;
         }
 
         _selectedSegmentIndex = index;
         OnPropertyChanged(nameof(SelectedSegmentIndex));
+        EditorSegment = Segments[index].Clone();
         UpdateSegmentEditorChrome();
-
-        if (index >= 0 && index < Segments.Count)
-        {
-            EditorSegment = Segments[index];
-        }
+        EnsurePlayheadShowsEditorSegment();
+        SchedulePreviewRefresh();
+        Status = Loc.F("texttovideo.status.editingSegment", index + 1);
     }
 
     private static void NormalizeSegmentTimes(TextOverlaySegment segment)
@@ -253,6 +452,36 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
         }
     }
 
+    private bool TryValidateAndNormalizeEditorTimes()
+    {
+        NormalizeSegmentTimes(EditorSegment);
+
+        var hasFrom = TimeFieldHelper.TryParseSeconds(EditorSegment.From, out var fromSec);
+        var hasTo = TimeFieldHelper.TryParseSeconds(EditorSegment.To, out var toSec);
+
+        if (hasFrom && hasTo && toSec <= fromSec)
+        {
+            Status = Loc.T("texttovideo.status.invalidTimeRange");
+            return false;
+        }
+
+        if (_probeDurationSec > 0)
+        {
+            if (hasFrom && fromSec > _probeDurationSec)
+            {
+                EditorSegment.From = TimeFieldHelper.FormatForField(_probeDurationSec);
+                fromSec = _probeDurationSec;
+            }
+
+            if (hasTo && toSec > _probeDurationSec)
+            {
+                EditorSegment.To = TimeFieldHelper.FormatForField(_probeDurationSec);
+            }
+        }
+
+        return true;
+    }
+
     private TextToVideoSettings CollectSettings() => new()
     {
         LastVideoDir = string.IsNullOrWhiteSpace(VideoPath) ? "" : Path.GetDirectoryName(VideoPath) ?? "",
@@ -261,12 +490,14 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
         Bitrate = Bitrate,
         ExportContainer = ExportContainer,
         GifFps = GifFps,
+        TargetFps = TargetFps,
         GifMaxWidth = GifMaxWidth,
         GifPaletteColors = GifPaletteColors,
         AudioCopy = AudioCopy,
         SrtPath = SrtPath,
         DavinciPreset = DavinciPreset,
         DavinciOutputDir = DavinciOutputDir,
+        UseLastFfmpegForResolve = UseLastFfmpegForResolve,
         OverlaySegments = Segments.Select(s => s.Clone()).ToList(),
     };
 
@@ -293,6 +524,17 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
     [RelayCommand]
     private void OpenFullGui() => AppServices.Launcher.Launch(_tool);
 
+    public int PreviewVideoWidth => _videoWidth;
+
+    public int PreviewVideoHeight => _videoHeight;
+
+    public void CancelPendingPreview()
+    {
+        _previewDebounceCts?.Cancel();
+        _previewCts?.Cancel();
+        Interlocked.Increment(ref _previewGeneration);
+    }
+
     public void SetPreviewPosition(double seconds)
     {
         seconds = Math.Clamp(seconds, 0, SliderMaximum);
@@ -304,17 +546,46 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
         SliderValue = seconds;
     }
 
-    public void SetPositionFromPreviewClick(double normalizedX, double normalizedY)
+    public void SetPositionFromPreviewClick(double normalizedX, double normalizedY, bool deferPreviewRefresh = false)
     {
         if (_videoWidth <= 0 || _videoHeight <= 0)
         {
             return;
         }
 
-        EditorSegment.PosX = (int)Math.Clamp(Math.Round(normalizedX * _videoWidth), 0, _videoWidth - 1);
-        EditorSegment.PosY = (int)Math.Clamp(Math.Round(normalizedY * _videoHeight), 0, _videoHeight - 1);
+        var x = (int)Math.Clamp(Math.Round(normalizedX * _videoWidth), 0, _videoWidth - 1);
+        var y = (int)Math.Clamp(Math.Round(normalizedY * _videoHeight), 0, _videoHeight - 1);
+
+        if (deferPreviewRefresh)
+        {
+            _isOverlayDragging = true;
+        }
+
+        EditorSegment.PosX = x;
+        EditorSegment.PosY = y;
+
+        if (!deferPreviewRefresh)
+        {
+            _isOverlayDragging = false;
+            SchedulePreviewRefresh();
+        }
+    }
+
+    public void BeginOverlayPositionDrag() => _isOverlayDragging = true;
+
+    public void EndOverlayPositionDrag()
+    {
+        if (!_isOverlayDragging)
+        {
+            SchedulePreviewRefresh();
+            return;
+        }
+
+        _isOverlayDragging = false;
         SchedulePreviewRefresh();
     }
+
+    public void CancelOverlayPositionDrag() => _isOverlayDragging = false;
 
     public void ApplyPlayheadToFrom() => EditorSegment.From = TimeFieldHelper.FormatForField(SliderValue);
 

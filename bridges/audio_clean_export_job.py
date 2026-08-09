@@ -59,6 +59,13 @@ def main() -> int:
     boost_pct = float(cfg.get("boost_pct", 116.67))
     video_codec = cfg.get("video_codec", "copy")
     video_bitrate_kbps = int(cfg.get("video_bitrate_kbps", 4000))
+    try:
+        from ffmpeg_fps import normalize_target_fps
+    except ImportError:
+        from pathlib import Path as _P
+        sys.path.insert(0, str(_P(__file__).resolve().parent))
+        from ffmpeg_fps import normalize_target_fps
+    target_fps = normalize_target_fps(cfg.get("target_fps"))
 
     boost_db = boost_db_from_percent(boost_pct)
     clean = clean_params_from_simple(
@@ -89,6 +96,7 @@ def main() -> int:
         trim_end=None,
         video_codec=video_codec if is_video else "copy",
         video_bitrate_kbps=video_bitrate_kbps if is_video else 4000,
+        target_fps=target_fps if is_video else None,
     )
 
     emit(f"Export startet: {Path(in_path).name}")

@@ -24,6 +24,7 @@ def build_settings(cfg: dict) -> JoinSettings:
         davinci_preset=str(cfg.get("davinci_preset") or "YouTube - 1080p"),
         davinci_timeout_s=float(cfg.get("davinci_timeout_s") or 3600),
         davinci_api_path=str(cfg.get("davinci_api_path") or ""),
+        target_fps=float(cfg.get("target_fps") or 0),
     )
 
 

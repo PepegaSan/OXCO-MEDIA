@@ -41,8 +41,10 @@ def main() -> int:
     parser.add_argument("--output-dir", default=None)
     parser.add_argument("--safe-output", action="store_true", default=True)
     parser.add_argument("--no-safe-output", action="store_false", dest="safe_output")
+    parser.add_argument("--replace-original", action="store_true", default=False)
     parser.add_argument("--scenes-json", default=None)
     parser.add_argument("--scenes-file", default=None)
+    parser.add_argument("--target-fps", type=float, default=0.0)
     args = parser.parse_args()
 
     try:
@@ -56,7 +58,16 @@ def main() -> int:
 
     out = None
     try:
-        out = export_scenes(src, scenes, args.codec, out_dir, log=emit, safe_output=args.safe_output)
+        out = export_scenes(
+            src,
+            scenes,
+            args.codec,
+            out_dir,
+            log=emit,
+            safe_output=args.safe_output,
+            replace_original=bool(args.replace_original),
+            target_fps=args.target_fps,
+        )
     except Exception as exc:
         emit(f"ERROR: {exc}")
         return 1

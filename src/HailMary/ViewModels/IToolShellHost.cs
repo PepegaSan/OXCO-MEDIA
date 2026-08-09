@@ -27,6 +27,15 @@ public interface IToolShellHost
     IRelayCommand? OpenFullGuiCommand { get; }
 
     object? SettingsContext { get; }
+
+    /// <summary>Optionaler Stop-Button in der Tool-Action-Bar (z.B. laufende Konvertierung).</summary>
+    bool HasStopAction => false;
+
+    string StopActionLabel => "Stop";
+
+    IRelayCommand? StopActionCommand => null;
+
+    bool IsStopActionEnabled => false;
 }
 
 public interface ISplitPaneToolHost

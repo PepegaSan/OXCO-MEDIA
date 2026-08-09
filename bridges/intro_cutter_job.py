@@ -71,6 +71,7 @@ def run_ffmpeg_mode(args: argparse.Namespace) -> int:
             args.abitrate,
             video_bitrate_auto=args.vbitrate_auto,
             output_dir=args.output_dir,
+            target_fps=getattr(args, "target_fps", 0.0),
             log=log,
         )
     except Exception as exc:
@@ -152,6 +153,7 @@ def main() -> int:
     parser.add_argument("--vbitrate-auto", action="store_true")
     parser.add_argument("--acodec", default="aac")
     parser.add_argument("--abitrate", default="192k")
+    parser.add_argument("--target-fps", type=float, default=0.0)
     args = parser.parse_args()
 
     if args.mode == "resolve":

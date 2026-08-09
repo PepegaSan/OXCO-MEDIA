@@ -120,17 +120,7 @@ public sealed class PythonJobRunner
 
             await using var _ = cancellationToken.Register(() =>
             {
-                try
-                {
-                    if (!process.HasExited)
-                    {
-                        process.Kill(entireProcessTree: true);
-                    }
-                }
-                catch
-                {
-                    // ignore
-                }
+                TryKillProcessTree(process);
             });
 
             try
@@ -139,11 +129,18 @@ public sealed class PythonJobRunner
             }
             catch (OperationCanceledException)
             {
+                await EnsureProcessTreeDeadAsync(process);
+                if (!quiet)
+                {
+                    _log.Info("Job abgebrochen — Prozessbaum gestoppt.");
+                }
+
                 return new JobResult { Success = false, ExitCode = -2, Message = "Job abgebrochen." };
             }
 
             if (cancellationToken.IsCancellationRequested)
             {
+                await EnsureProcessTreeDeadAsync(process);
                 return new JobResult { Success = false, ExitCode = -2, Message = "Job abgebrochen." };
             }
 
@@ -172,6 +169,19 @@ public sealed class PythonJobRunner
                 return new JobResult { Success = true, ExitCode = 0, Message = "Job abgeschlossen." };
             }
 
+            // Quiet preview/probe jobs are cancelled often while scrubbing — never surface as a global job failure.
+            if (quiet)
+            {
+                return new JobResult
+                {
+                    Success = false,
+                    ExitCode = exitCode,
+                    Message = stderr.Length > 0
+                        ? stderr.ToString().Trim()
+                        : $"Job fehlgeschlagen (Code {exitCode})",
+                };
+            }
+
             var fail = $"Job fehlgeschlagen (Code {exitCode})";
             LogStderrTail(stderr, asError: true);
             _log.Error(fail);
@@ -189,6 +199,60 @@ public sealed class PythonJobRunner
             {
                 AppServices.JobProgress.EndJob();
             }
+        }
+    }
+
+    private static void TryKillProcessTree(Process process)
+    {
+        try
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+
+        // Fallback: taskkill /T, falls .NET-Kill Kinder (ffmpeg) nicht mitnimmt
+        try
+        {
+            if (!process.HasExited)
+            {
+                using var killer = Process.Start(new ProcessStartInfo
+                {
+                    FileName = "taskkill.exe",
+                    Arguments = $"/PID {process.Id} /T /F",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                });
+                killer?.WaitForExit(4000);
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+    }
+
+    private static async Task EnsureProcessTreeDeadAsync(Process process)
+    {
+        TryKillProcessTree(process);
+        try
+        {
+            if (!process.HasExited)
+            {
+                using var waitCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                await process.WaitForExitAsync(waitCts.Token);
+            }
+        }
+        catch
+        {
+            TryKillProcessTree(process);
         }
     }
 

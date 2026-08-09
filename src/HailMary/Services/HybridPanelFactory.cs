@@ -20,6 +20,7 @@ public static class HybridPanelFactory
         "bitratechanger" => With(new BitrateChangerViewModel(tool), tool, groupId, preview: VideoPreviewKind.None, vm => new BitrateChangerPanel(vm)),
         "audiocleaner" => With(new AudioCleanerViewModel(tool), tool, groupId, preview: VideoPreviewKind.None, vm => new AudioCleanerPanel(vm)),
         "clip_joiner" => With(new ClipJoinerViewModel(tool), tool, groupId, preview: VideoPreviewKind.None, vm => new ClipJoinerPanel(vm)),
+        "perfect_loop" => With(new PerfectLoopViewModel(tool), tool, groupId, preview: VideoPreviewKind.None, vm => new PerfectLoopPanel(vm)),
         "davinci_batch_render" => With(new DavinciBatchRenderViewModel(tool), tool, groupId, preview: VideoPreviewKind.None, vm => new DavinciBatchRenderPanel(vm)),
         "daten_sync" => With(new DatenSyncViewModel(tool), tool, groupId, preview: VideoPreviewKind.None, vm => new DatenSyncPanel(vm)),
         "dl_sort" => With(new DlSortViewModel(tool), tool, groupId, preview: VideoPreviewKind.None, vm => new DlSortPanel(vm)),

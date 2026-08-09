@@ -8,159 +8,242 @@
     xmlns:drop="using:HailMary.Views.Helpers"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="using:HailMary.Models"
-    HorizontalAlignment="Left"
+    HorizontalAlignment="Stretch"
     VerticalAlignment="Top"
     mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
 
-    <ScrollViewer HorizontalContentAlignment="Left" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <StackPanel Style="{StaticResource ToolShellContentPanel}" Spacing="10">
+    <ScrollViewer HorizontalContentAlignment="Stretch" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <ContentControl IsEnabled="{x:Bind ViewModel.CanInteract, Mode=OneWay}" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch">
+        <StackPanel
+            Style="{StaticResource ToolShellContentPanel}"
+            MaxWidth="1280"
+            HorizontalAlignment="Stretch"
+            Spacing="10">
             <TextBlock Text="{x:Bind ViewModel.Description, Mode=OneWay}" TextWrapping="WrapWholeWords" />
             <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.Status, Mode=OneWay}" TextWrapping="WrapWholeWords" />
 
-            <Border Style="{StaticResource ToolShellCard}">
-                <StackPanel Spacing="8">
-                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="common.video" />
-                    <Grid ColumnSpacing="8" drop:VideoDrop.IsEnabled="True" drop:VideoDrop.PathPropertyName="VideoPath">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBox Grid.Column="0" loc:Loc.HeaderKey="texttovideo.videoPath" Text="{x:Bind ViewModel.VideoPath, Mode=TwoWay}" />
-                        <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.PickVideoCommand}" loc:Loc.Key="common.addDots" />
-                    </Grid>
-                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.VideoInfoLine, Mode=OneWay}" />
-                    <controls:TextToVideoPreviewHost ViewModel="{x:Bind ViewModel, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasVideo, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
-                </StackPanel>
-            </Border>
+            <Grid ColumnSpacing="12" RowSpacing="10" HorizontalAlignment="Stretch">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MinWidth="360" />
+                    <ColumnDefinition Width="*" MinWidth="360" />
+                </Grid.ColumnDefinitions>
 
-            <Border Style="{StaticResource ToolShellCard}">
-                <StackPanel Spacing="8">
-                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="texttovideo.segmentsHeader" />
-                    <ListView
-                        x:Name="SegmentList"
-                        MaxHeight="140"
-                        ItemsSource="{x:Bind ViewModel.Segments, Mode=OneWay}"
-                        SelectionChanged="SegmentList_OnSelectionChanged">
-                        <ListView.ItemTemplate>
-                            <DataTemplate x:DataType="models:TextOverlaySegment">
-                                <TextBlock Text="{x:Bind ListLabel}" TextTrimming="CharacterEllipsis" />
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Command="{x:Bind ViewModel.NewSegmentCommand}" loc:Loc.Key="texttovideo.newSegment" />
-                        <Button Command="{x:Bind ViewModel.CommitSegmentCommand}" Content="{x:Bind ViewModel.CommitSegmentLabel, Mode=OneWay}" />
-                        <Button Command="{x:Bind ViewModel.DeleteSegmentCommand}" loc:Loc.Key="common.delete" IsEnabled="{x:Bind ViewModel.IsEditingExistingSegment, Mode=OneWay}" />
+                <Border Grid.Column="0" Style="{StaticResource ToolShellCard}" VerticalAlignment="Top">
+                    <StackPanel Spacing="8">
+                        <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="common.video" />
+                        <Grid ColumnSpacing="8" drop:VideoDrop.IsEnabled="True" drop:VideoDrop.PathPropertyName="VideoPath">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" loc:Loc.HeaderKey="texttovideo.videoPath" Text="{x:Bind ViewModel.VideoPath, Mode=TwoWay}" />
+                            <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.PickVideoCommand}" loc:Loc.Key="common.addDots" />
+                        </Grid>
+                        <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.VideoInfoLine, Mode=OneWay}" />
+                        <controls:TextToVideoPreviewHost ViewModel="{x:Bind ViewModel, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasVideo, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
                     </StackPanel>
-                </StackPanel>
-            </Border>
+                </Border>
 
-            <Border Style="{StaticResource ToolShellCard}">
-                <StackPanel Spacing="8">
-                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" Text="{x:Bind ViewModel.SegmentEditorTitle, Mode=OneWay}" />
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBox
-                            Grid.Column="0"
-                            AcceptsReturn="True"
-                            loc:Loc.HeaderKey="texttovideo.textHeader"
-                            MaxHeight="120"
-                            Text="{x:Bind ViewModel.EditorSegment.Text, Mode=TwoWay}"
-                            TextWrapping="Wrap" />
-                        <Button
-                            Grid.Column="1"
-                            VerticalAlignment="Bottom"
-                            Command="{x:Bind ViewModel.PasteTextCommand}"
-                            loc:Loc.Key="common.insert" />
-                    </Grid>
-                    <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="texttovideo.stylePresets" />
-                        <StackPanel x:Name="StylePresetPanel" Orientation="Horizontal" Spacing="8" />
-                    </StackPanel>
-                    <Grid ColumnSpacing="8" RowSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="120" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition />
-                            <RowDefinition />
-                            <RowDefinition />
-                            <RowDefinition />
-                            <RowDefinition />
-                            <RowDefinition />
-                        </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="texttovideo.fontSize" />
-                        <NumberBox Grid.Row="0" Grid.Column="1" Maximum="200" Minimum="12" Value="{x:Bind ViewModel.EditorSegment.Fontsize, Mode=TwoWay}" />
-                        <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="texttovideo.color" />
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{x:Bind ViewModel.EditorSegment.Color, Mode=TwoWay}" />
-                        <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="texttovideo.position" />
-                        <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                            <NumberBox Width="100" Maximum="20000" Minimum="0" Value="{x:Bind ViewModel.EditorSegment.PosX, Mode=TwoWay}" />
-                            <NumberBox Width="100" Maximum="20000" Minimum="0" Value="{x:Bind ViewModel.EditorSegment.PosY, Mode=TwoWay}" />
-                        </StackPanel>
-                        <TextBlock Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="texttovideo.lineSpacing" />
-                        <NumberBox Grid.Row="3" Grid.Column="1" Maximum="120" Minimum="-120" Value="{x:Bind ViewModel.EditorSegment.LineSpacing, Mode=TwoWay}" />
-                        <TextBlock Grid.Row="4" Grid.Column="0" VerticalAlignment="Top" loc:Loc.Key="texttovideo.timeFromTo" />
-                        <StackPanel Grid.Row="4" Grid.Column="1" Spacing="4">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <StackPanel MinWidth="140" Spacing="2">
-                                    <TextBox loc:Loc.PlaceholderKey="texttovideo.timePlaceholder" Text="{x:Bind ViewModel.EditorSegment.From, Mode=TwoWay}" />
-                                    <TextBlock
-                                        Style="{StaticResource CaptionTextBlockStyle}"
-                                        Text="{x:Bind ViewModel.EditorFromTimeHint, Mode=OneWay}"
-                                        TextWrapping="WrapWholeWords" />
-                                </StackPanel>
-                                <Button VerticalAlignment="Top" Click="InsertFrom_Click" loc:Loc.Key="texttovideo.insertFrom" loc:Loc.ToolTipKey="texttovideo.insertFromTooltip" />
-                                <StackPanel MinWidth="140" Spacing="2">
-                                    <TextBox loc:Loc.PlaceholderKey="texttovideo.timePlaceholder" Text="{x:Bind ViewModel.EditorSegment.To, Mode=TwoWay}" />
-                                    <TextBlock
-                                        Style="{StaticResource CaptionTextBlockStyle}"
-                                        Text="{x:Bind ViewModel.EditorToTimeHint, Mode=OneWay}"
-                                        TextWrapping="WrapWholeWords" />
-                                </StackPanel>
-                                <Button VerticalAlignment="Top" Click="InsertTo_Click" loc:Loc.Key="texttovideo.insertTo" loc:Loc.ToolTipKey="texttovideo.insertToTooltip" />
+                <StackPanel Grid.Column="1" Spacing="10" VerticalAlignment="Top" HorizontalAlignment="Stretch">
+                    <Border Style="{StaticResource ToolShellCard}">
+                        <StackPanel Spacing="8">
+                            <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="texttovideo.segmentsHeader" />
+                            <ListView
+                                x:Name="SegmentList"
+                                MaxHeight="160"
+                                ItemsSource="{x:Bind ViewModel.Segments, Mode=OneWay}"
+                                SelectionChanged="SegmentList_OnSelectionChanged">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="models:TextOverlaySegment">
+                                        <TextBlock Text="{x:Bind ListLabel, Mode=OneWay}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Button
+                                    Width="40"
+                                    Height="36"
+                                    Command="{x:Bind ViewModel.NewSegmentCommand}"
+                                    loc:Loc.ToolTipKey="texttovideo.newSegment">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE710;" />
+                                </Button>
+                                <Button
+                                    Width="40"
+                                    Height="36"
+                                    Command="{x:Bind ViewModel.DuplicateSegmentCommand}"
+                                    IsEnabled="{x:Bind ViewModel.IsEditingExistingSegment, Mode=OneWay}"
+                                    loc:Loc.ToolTipKey="texttovideo.duplicateSegment">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE8C8;" />
+                                </Button>
+                                <Button
+                                    Width="40"
+                                    Height="36"
+                                    Command="{x:Bind ViewModel.DeleteSegmentCommand}"
+                                    IsEnabled="{x:Bind ViewModel.IsEditingExistingSegment, Mode=OneWay}"
+                                    loc:Loc.ToolTipKey="common.delete">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE738;" />
+                                </Button>
+                                <Button
+                                    Width="40"
+                                    Height="36"
+                                    Command="{x:Bind ViewModel.CommitSegmentCommand}"
+                                    ToolTipService.ToolTip="{x:Bind ViewModel.CommitSegmentLabel, Mode=OneWay}">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE8FB;" />
+                                </Button>
                             </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource ToolShellCard}">
+                        <StackPanel Spacing="8">
+                            <TextBlock Style="{StaticResource ToolShellSectionHeader}" Text="{x:Bind ViewModel.SegmentEditorTitle, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                            <TextBlock
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Text="{x:Bind ViewModel.SegmentModeHint, Mode=OneWay}"
+                                TextWrapping="WrapWholeWords"
+                                Opacity="0.85" />
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox
+                                    Grid.Column="0"
+                                    AcceptsReturn="True"
+                                    loc:Loc.HeaderKey="texttovideo.textHeader"
+                                    MaxHeight="100"
+                                    Text="{x:Bind ViewModel.EditorSegment.Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    TextWrapping="Wrap" />
+                                <Button
+                                    Grid.Column="1"
+                                    VerticalAlignment="Bottom"
+                                    Command="{x:Bind ViewModel.PasteTextCommand}"
+                                    loc:Loc.Key="common.insert" />
+                            </Grid>
+                            <StackPanel Spacing="4">
+                                <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="texttovideo.stylePresets" />
+                                <StackPanel x:Name="StylePresetPanel" Orientation="Vertical" Spacing="6" />
+                            </StackPanel>
+                            <NumberBox
+                                loc:Loc.HeaderKey="texttovideo.fontSize"
+                                Maximum="200"
+                                Minimum="12"
+                                Value="{x:Bind ViewModel.EditorSegment.Fontsize, Mode=TwoWay}" />
+                            <TextBox
+                                loc:Loc.HeaderKey="texttovideo.color"
+                                Text="{x:Bind ViewModel.EditorSegment.Color, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="texttovideo.position" />
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <NumberBox Grid.Column="0" Maximum="20000" Minimum="0" Value="{x:Bind ViewModel.EditorSegment.PosX, Mode=TwoWay}" />
+                                <NumberBox Grid.Column="1" Maximum="20000" Minimum="0" Value="{x:Bind ViewModel.EditorSegment.PosY, Mode=TwoWay}" />
+                            </Grid>
+                            <NumberBox
+                                loc:Loc.HeaderKey="texttovideo.lineSpacing"
+                                Maximum="120"
+                                Minimum="-120"
+                                Value="{x:Bind ViewModel.EditorSegment.LineSpacing, Mode=TwoWay}" />
+                            <ComboBox
+                                x:Name="FontCombo"
+                                HorizontalAlignment="Stretch"
+                                loc:Loc.HeaderKey="texttovideo.fontFamily"
+                                IsEditable="False"
+                                IsTextSearchEnabled="True"
+                                SelectionChanged="FontCombo_OnSelectionChanged">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="svc:WindowsFontChoice" xmlns:svc="using:HailMary.Services">
+                                        <TextBlock Text="{x:Bind DisplayName}" TextTrimming="CharacterEllipsis" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="texttovideo.timeFromTo" TextWrapping="WrapWholeWords" />
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox
+                                    Grid.Column="0"
+                                    loc:Loc.PlaceholderKey="texttovideo.timePlaceholder"
+                                    Text="{x:Bind ViewModel.EditorSegment.From, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button
+                                    Grid.Column="1"
+                                    Click="InsertFrom_Click"
+                                    loc:Loc.Key="texttovideo.insertFrom"
+                                    loc:Loc.ToolTipKey="texttovideo.insertFromTooltip" />
+                            </Grid>
+                            <TextBlock
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Text="{x:Bind ViewModel.EditorFromTimeHint, Mode=OneWay}"
+                                TextWrapping="WrapWholeWords" />
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox
+                                    Grid.Column="0"
+                                    loc:Loc.PlaceholderKey="texttovideo.timePlaceholder"
+                                    Text="{x:Bind ViewModel.EditorSegment.To, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button
+                                    Grid.Column="1"
+                                    Click="InsertTo_Click"
+                                    loc:Loc.Key="texttovideo.insertTo"
+                                    loc:Loc.ToolTipKey="texttovideo.insertToTooltip" />
+                            </Grid>
+                            <TextBlock
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Text="{x:Bind ViewModel.EditorToTimeHint, Mode=OneWay}"
+                                TextWrapping="WrapWholeWords" />
                             <TextBlock
                                 Style="{StaticResource CaptionTextBlockStyle}"
                                 loc:Loc.Key="texttovideo.timeFormatHint"
                                 TextWrapping="WrapWholeWords" />
+                            <VariableSizedWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="2" HorizontalChildrenAlignment="Left">
+                                <CheckBox loc:Loc.Key="common.bold" IsChecked="{x:Bind ViewModel.EditorSegment.Bold, Mode=TwoWay}" Margin="0,0,12,4" />
+                                <CheckBox loc:Loc.Key="common.italic" IsChecked="{x:Bind ViewModel.EditorSegment.Italic, Mode=TwoWay}" Margin="0,0,12,4" />
+                                <CheckBox loc:Loc.Key="common.strike" IsChecked="{x:Bind ViewModel.EditorSegment.Strike, Mode=TwoWay}" Margin="0,0,12,4" />
+                                <CheckBox loc:Loc.Key="texttovideo.textBackground" IsChecked="{x:Bind ViewModel.EditorSegment.BoxEnabled, Mode=TwoWay}" Margin="0,0,0,4" />
+                            </VariableSizedWrapGrid>
+                            <VariableSizedWrapGrid
+                                x:Name="ColorPalettePanel"
+                                Orientation="Horizontal"
+                                MaximumRowsOrColumns="8"
+                                ItemWidth="34"
+                                ItemHeight="34"
+                                HorizontalChildrenAlignment="Left" />
+                            <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" loc:Loc.HeaderKey="texttovideo.advancedOptions">
+                                <StackPanel Spacing="8">
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0" loc:Loc.HeaderKey="texttovideo.fontFile" Text="{x:Bind ViewModel.EditorSegment.FontPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.PickFontCommand}" loc:Loc.Key="common.addDots" />
+                                    </Grid>
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0" loc:Loc.HeaderKey="texttovideo.italicFont" Text="{x:Bind ViewModel.EditorSegment.ItalicFontPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.PickItalicFontCommand}" loc:Loc.Key="common.addDots" />
+                                    </Grid>
+                                    <NumberBox
+                                        loc:Loc.HeaderKey="texttovideo.padding"
+                                        Maximum="40"
+                                        Minimum="0"
+                                        Value="{x:Bind ViewModel.EditorSegment.BoxBorder, Mode=TwoWay}" />
+                                </StackPanel>
+                            </Expander>
                         </StackPanel>
-                        <TextBlock Grid.Row="5" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="texttovideo.fontFile" />
-                        <TextBox Grid.Row="5" Grid.Column="1" Text="{x:Bind ViewModel.EditorSegment.FontPath, Mode=TwoWay}" />
-                        <Button Grid.Row="5" Grid.Column="2" Command="{x:Bind ViewModel.PickFontCommand}" loc:Loc.Key="common.addDots" />
-                    </Grid>
-                    <StackPanel Orientation="Horizontal" Spacing="12">
-                        <CheckBox loc:Loc.Key="common.bold" IsChecked="{x:Bind ViewModel.EditorSegment.Bold, Mode=TwoWay}" />
-                        <CheckBox loc:Loc.Key="common.italic" IsChecked="{x:Bind ViewModel.EditorSegment.Italic, Mode=TwoWay}" />
-                        <CheckBox loc:Loc.Key="common.strike" IsChecked="{x:Bind ViewModel.EditorSegment.Strike, Mode=TwoWay}" />
-                        <CheckBox loc:Loc.Key="texttovideo.textBackground" IsChecked="{x:Bind ViewModel.EditorSegment.BoxEnabled, Mode=TwoWay}" />
-                    </StackPanel>
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="120" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="texttovideo.italicFont" />
-                        <TextBox Grid.Column="1" Text="{x:Bind ViewModel.EditorSegment.ItalicFontPath, Mode=TwoWay}" />
-                        <Button Grid.Column="2" Command="{x:Bind ViewModel.PickItalicFontCommand}" loc:Loc.Key="common.addDots" />
-                    </Grid>
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="120" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="texttovideo.padding" />
-                        <NumberBox Grid.Column="1" Maximum="40" Minimum="0" Value="{x:Bind ViewModel.EditorSegment.BoxBorder, Mode=TwoWay}" />
-                    </Grid>
-                    <StackPanel x:Name="ColorPalettePanel" Orientation="Horizontal" Spacing="6" />
+                    </Border>
                 </StackPanel>
-            </Border>
+            </Grid>
 
             <Border Style="{StaticResource ToolShellCard}">
                 <StackPanel Spacing="8">
@@ -229,6 +312,7 @@
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
+                            <RowDefinition />
                         </Grid.RowDefinitions>
                         <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="common.container" />
                         <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{x:Bind ViewModel.ContainerChoices, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.ExportContainer, Mode=TwoWay}" />
@@ -239,7 +323,18 @@
                             <TextBox Width="120" IsEnabled="{x:Bind ViewModel.IsMp4Export, Mode=OneWay}" Text="{x:Bind ViewModel.Bitrate, Mode=TwoWay}" />
                             <Button Command="{x:Bind ViewModel.ApplySourceBitrateCommand}" loc:Loc.Key="bitrate.colSource" IsEnabled="{x:Bind ViewModel.IsMp4Export, Mode=OneWay}" />
                         </StackPanel>
-                        <CheckBox Grid.Row="3" Grid.Column="1" loc:Loc.Key="texttovideo.audioCopyMp4" IsChecked="{x:Bind ViewModel.AudioCopy, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.IsMp4Export, Mode=OneWay}" />
+                        <TextBlock Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="common.targetFps" />
+                        <NumberBox
+                            Grid.Row="3"
+                            Grid.Column="1"
+                            Minimum="0"
+                            Maximum="240"
+                            SmallChange="1"
+                            LargeChange="5"
+                            SpinButtonPlacementMode="Compact"
+                            IsEnabled="{x:Bind ViewModel.IsMp4Export, Mode=OneWay}"
+                            Value="{x:Bind ViewModel.TargetFps, Mode=TwoWay}" />
+                        <CheckBox Grid.Row="4" Grid.Column="1" loc:Loc.Key="texttovideo.audioCopyMp4" IsChecked="{x:Bind ViewModel.AudioCopy, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.IsMp4Export, Mode=OneWay}" />
                     </Grid>
                     <Grid ColumnSpacing="8" RowSpacing="8" Visibility="{x:Bind ViewModel.IsGifExport, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
                         <Grid.ColumnDefinitions>
@@ -282,7 +377,7 @@
                             <RowDefinition />
                         </Grid.RowDefinitions>
                         <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="texttovideo.renderPreset" />
-                        <TextBox Grid.Row="0" Grid.Column="1" PlaceholderText="YouTube - 1080p" Text="{x:Bind ViewModel.DavinciPreset, Mode=TwoWay}" />
+                        <TextBox Grid.Row="0" Grid.Column="1" loc:Loc.PlaceholderKey="texttovideo.presetPlaceholder" Text="{x:Bind ViewModel.DavinciPreset, Mode=TwoWay}" />
                         <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="texttovideo.outputDir" />
                         <Grid Grid.Row="1" Grid.Column="1" ColumnSpacing="8">
                             <Grid.ColumnDefinitions>
@@ -305,5 +400,6 @@
                 </StackPanel>
             </Border>
         </StackPanel>
+        </ContentControl>
     </ScrollViewer>
 </UserControl>

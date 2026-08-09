@@ -1047,6 +1047,30 @@
     "de": "Sichere Ausgabe (_2, _3 …)",
     "en": "Safe output (_2, _3 …)"
   },
+  "scenecutter.replaceOriginalWithCut": {
+    "de": "Original durch Cut ersetzen",
+    "en": "Replace original with cut"
+  },
+  "cutter.replaceOriginalWithCut": {
+    "de": "Original durch Cut ersetzen",
+    "en": "Replace original with cut"
+  },
+  "scenecutter.replaceOriginalHint": {
+    "de": "Nach erfolgreichem FFmpeg-Export wird die Quelldatei gelöscht und durch den Cut ersetzt (gleicher Dateiname).",
+    "en": "After a successful FFmpeg export, the source file is deleted and replaced by the cut (same filename)."
+  },
+  "cutter.replaceOriginalHint": {
+    "de": "Nach erfolgreichem FFmpeg-Export wird die Quelldatei gelöscht und durch den Cut ersetzt (gleicher Dateiname).",
+    "en": "After a successful FFmpeg export, the source file is deleted and replaced by the cut (same filename)."
+  },
+  "scenecutter.replaceOriginalDone": {
+    "de": "Export fertig — Original durch Cut ersetzt.",
+    "en": "Export done — original replaced with cut."
+  },
+  "cutter.replaceOriginalDone": {
+    "de": "Export fertig — Original durch Cut ersetzt.",
+    "en": "Export done — original replaced with cut."
+  },
   "scenecutter.autoRemoveExported": {
     "de": "Exportierte Szenen entfernen",
     "en": "Remove exported scenes"
@@ -1508,8 +1532,8 @@
     "en": "Add segment"
   },
   "texttovideo.commitEdit": {
-    "de": "Änderungen speichern",
-    "en": "Save changes"
+    "de": "Speichern",
+    "en": "Save"
   },
   "texttovideo.textHeader": {
     "de": "Text",
@@ -1538,6 +1562,14 @@
   "texttovideo.fontSize": {
     "de": "Schriftgröße",
     "en": "Font size"
+  },
+  "texttovideo.fontFamily": {
+    "de": "Schriftart",
+    "en": "Font"
+  },
+  "texttovideo.fontDefault": {
+    "de": "Systemstandard",
+    "en": "System default"
   },
   "texttovideo.color": {
     "de": "Farbe (#RRGGBB)",
@@ -1660,8 +1692,8 @@
     "en": "DaVinci Resolve"
   },
   "texttovideo.davinciHint": {
-    "de": "Importiert das Video in Resolve und rendert mit dem angegebenen Preset-Namen (wie im Original-Tool).",
-    "en": "Imports the video into Resolve and renders with the given preset name (like the original tool)."
+    "de": "Resolve rendert nur das Quellvideo (oder den letzten FFmpeg-Output) — ohne Text-Overlay. Overlay-Burn-in bleibt dem FFmpeg-Export vorbehalten.",
+    "en": "Resolve only renders the source video (or the last FFmpeg output) — without text overlays. Burn-in overlays via FFmpeg export only."
   },
   "texttovideo.renderPreset": {
     "de": "Render-Preset",
@@ -1684,8 +1716,8 @@
     "en": "Import into Resolve & render…"
   },
   "texttovideo.previewHint": {
-    "de": "Klick auf die Vorschau setzt X/Y-Position. Während Play: Audio über MediaPlayer, Bild mit Text per FFmpeg.",
-    "en": "Click preview to set X/Y position. During play: audio via MediaPlayer, image with text via FFmpeg."
+    "de": "Pause: genaue FFmpeg-Vorschau. Play: flüssiges Video + Text-Hinweis an der Position (Schrift/Stil exakt erst nach Pause).",
+    "en": "Pause: accurate FFmpeg preview. Play: smooth video + text hint at position (exact font/style after pause)."
   },
   "bitrate.foldersHeader": {
     "de": "Ordner",
@@ -4418,5 +4450,85 @@
   "scenecutter.sceneError": {
     "de": "Szene {0}: {1}",
     "en": "Scene {0}: {1}"
+  },
+  "texttovideo.presetPlaceholder": {
+    "de": "YouTube - 1080p",
+    "en": "YouTube - 1080p"
+  },
+  "texttovideo.noText": {
+    "de": "(kein Text)",
+    "en": "(no text)"
+  },
+  "texttovideo.status.waiting": {
+    "de": "Wartet",
+    "en": "Waiting"
+  },
+  "texttovideo.timeHint.empty": {
+    "de": "Leer = immer sichtbar",
+    "en": "Empty = always visible"
+  },
+  "texttovideo.timeHint.invalid": {
+    "de": "Ungültige Zeit (Sekunden oder h:m:s)",
+    "en": "Invalid time (seconds or h:m:s)"
+  },
+  "texttovideo.time.hours": {
+    "de": "{0} h",
+    "en": "{0} h"
+  },
+  "texttovideo.time.minutes": {
+    "de": "{0} m",
+    "en": "{0} m"
+  },
+  "texttovideo.time.seconds": {
+    "de": "{0} s",
+    "en": "{0} s"
+  },
+  "texttovideo.status.previewFailed": {
+    "de": "Vorschau fehlgeschlagen.",
+    "en": "Preview failed."
+  },
+  "texttovideo.status.invalidTimeRange": {
+    "de": "Endzeit muss nach der Startzeit liegen.",
+    "en": "End time must be after start time."
+  },
+  "texttovideo.status.segmentDuplicated": {
+    "de": "Abschnitt {0} dupliziert.",
+    "en": "Segment {0} duplicated."
+  },
+  "texttovideo.duplicateSegment": {
+    "de": "Duplizieren",
+    "en": "Duplicate"
+  },
+  "texttovideo.advancedOptions": {
+    "de": "Erweiterte Schriftoptionen",
+    "en": "Advanced font options"
+  },
+  "texttovideo.srtImportConfirmTitle": {
+    "de": "SRT importieren?",
+    "en": "Import SRT?"
+  },
+  "texttovideo.srtImportConfirm": {
+    "de": "Es gibt bereits {0} Abschnitt(e). Import ersetzt die aktuelle Liste.",
+    "en": "There are already {0} segment(s). Import replaces the current list."
+  },
+  "texttovideo.newSegmentTitle": {
+    "de": "Neuen Abschnitt anlegen",
+    "en": "Create new segment"
+  },
+  "texttovideo.modeNewHint": {
+    "de": "Entwurf – noch nicht in der Liste. Mit „Abschnitt hinzufügen“ speichern.",
+    "en": "Draft – not in the list yet. Use Add segment to save it."
+  },
+  "texttovideo.modeEditingHint": {
+    "de": "Bearbeite gespeicherten Abschnitt {0}. „Speichern“ übernimmt die Änderungen in die Liste.",
+    "en": "Editing saved segment {0}. Save writes changes into the list."
+  },
+  "texttovideo.status.editingSegment": {
+    "de": "Abschnitt {0} geladen – Änderungen mit Speichern übernehmen.",
+    "en": "Segment {0} loaded – use Save to apply changes."
+  },
+  "texttovideo.status.segmentAddedNumbered": {
+    "de": "Abschnitt {0} hinzugefügt.",
+    "en": "Segment {0} added."
   }
 }

@@ -200,6 +200,9 @@ public static class Loc
             case NumberBox nb:
                 nb.Header = text;
                 break;
+            case Expander exp:
+                exp.Header = text;
+                break;
             case TabViewItem tab:
                 tab.Header = text;
                 break;

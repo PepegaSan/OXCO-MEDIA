@@ -247,14 +247,32 @@ def build_nvenc_mux_queue_opts(codec_id: str, *, use_trim: bool) -> list[str]:
     return []
 
 
-def build_video_encoder_args(codec_id: str, *, video_kbps: int) -> list[str]:
+def build_video_encoder_args(codec_id: str, *, video_kbps: int, target_fps: float | None = None) -> list[str]:
     """Argumente für ``-c:v`` … — Ziel-Bitrate *video_kbps* in kb/s.
 
     Software-Codecs und QSV/AMF nutzen typisch ``-b:v``/``-maxrate``/``-bufsize``.
     NVIDIA-NVENC: schlanke RC-Optionen; dazu ``-bf 0`` (Workaround zu älteren/
     neueren NVENC-Defaults, s. u. a. FFmpeg-Trac #9351 — „bitstream buffer“ /
     Abstürze unter Windows).
+    Optional ``target_fps``: CFR-Ausgabe (0/None = Quellrate).
     """
+    args = _build_video_encoder_args_impl(codec_id, video_kbps=video_kbps)
+    if target_fps and codec_id != "copy":
+        try:
+            from ffmpeg_fps import fps_output_args
+        except ImportError:
+            import sys
+            from pathlib import Path as _P
+
+            sys.path.insert(0, str(_P(__file__).resolve().parents[2]))
+            from ffmpeg_fps import fps_output_args
+
+        args = list(args) + fps_output_args(target_fps)
+    return args
+
+
+def _build_video_encoder_args_impl(codec_id: str, *, video_kbps: int) -> list[str]:
+    """Argumente für ``-c:v`` … — Ziel-Bitrate *video_kbps* in kb/s."""
     b, mx, buf = _vbr_br_args(video_kbps)
     if codec_id == "copy":
         return ["-c:v", "copy"]
@@ -441,7 +459,7 @@ def build_video_encoder_args(codec_id: str, *, video_kbps: int) -> list[str]:
             "-slices",
             "16",
         ]
-    return build_video_encoder_args("h264", video_kbps=video_kbps)
+    return _build_video_encoder_args_impl("h264", video_kbps=video_kbps)
 
 
 def _nowin() -> int:
@@ -572,6 +590,7 @@ def build_export_command(
     trim_end: float | None = None,
     video_codec: str = "copy",
     video_bitrate_kbps: int = 4000,
+    target_fps: float | None = None,
 ) -> list[str]:
     """Erzeugt ffmpeg-Kommando: neuer Ton wird an Video gehängt (``-map [aout]`` + ``-map 0:v``).
 
@@ -606,7 +625,7 @@ def build_export_command(
         eff_v, _ = effective_video_codec(video_codec, use_trim)
         cmd += ["-map", "0:v:0", "-map", "[aout]"]
         cmd += build_nvenc_mux_queue_opts(video_codec, use_trim=use_trim)
-        cmd += build_video_encoder_args(eff_v, video_kbps=video_bitrate_kbps)
+        cmd += build_video_encoder_args(eff_v, video_kbps=video_bitrate_kbps, target_fps=target_fps)
     else:
         cmd += ["-map", "[aout]", "-vn"]
 

@@ -76,6 +76,12 @@ public static class TextToVideoBridge
                 ["--config-json", configPath, "--output-json", outPath],
                 cancellationToken,
                 quiet: true);
+
+            if (cancellationToken.IsCancellationRequested || result.ExitCode == -2)
+            {
+                return null;
+            }
+
             if (!result.Success || !File.Exists(outPath))
             {
                 return null;
@@ -91,6 +97,10 @@ public static class TextToVideoBridge
                 Height = root.GetProperty("height").GetInt32(),
                 DurationSec = root.GetProperty("duration_sec").GetDouble(),
             };
+        }
+        catch (OperationCanceledException)
+        {
+            return null;
         }
         finally
         {
@@ -174,6 +184,8 @@ public static class TextToVideoBridge
             overlay_segments = segList,
             draft_segment = draftObj,
             srt_path = srtPath,
+            width_max = 1600,
+            height_max = 900,
         };
     }
 
@@ -210,6 +222,7 @@ public static class TextToVideoBridge
             codec = settings.Codec,
             bitrate = settings.Bitrate,
             gif_fps = settings.GifFps,
+            target_fps = settings.TargetFps,
             gif_max_width = settings.GifMaxWidth,
             gif_palette_colors = settings.GifPaletteColors,
             audio_copy = settings.AudioCopy,

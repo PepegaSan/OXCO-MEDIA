@@ -53,7 +53,7 @@ public partial class TextToVideoViewModel
     }
 
     [RelayCommand]
-    private void ImportSrtToSegments()
+    private async Task ImportSrtToSegmentsAsync()
     {
         if (string.IsNullOrWhiteSpace(SrtPath) || !File.Exists(SrtPath))
         {
@@ -66,6 +66,17 @@ public partial class TextToVideoViewModel
         {
             Status = Loc.T("texttovideo.status.noSrtCues");
             return;
+        }
+
+        if (Segments.Count > 0 && ConfirmAsync is not null)
+        {
+            var confirmed = await ConfirmAsync(
+                Loc.T("texttovideo.srtImportConfirmTitle"),
+                Loc.F("texttovideo.srtImportConfirm", Segments.Count));
+            if (!confirmed)
+            {
+                return;
+            }
         }
 
         var w = _videoWidth > 0 ? _videoWidth : 1920;
@@ -84,7 +95,7 @@ public partial class TextToVideoViewModel
         OnPropertyChanged(nameof(SelectedSegmentIndex));
         if (_selectedSegmentIndex >= 0)
         {
-            EditorSegment = Segments[_selectedSegmentIndex];
+            EditorSegment = Segments[_selectedSegmentIndex].Clone();
             RequestSegmentListSelection?.Invoke(_selectedSegmentIndex);
         }
 
