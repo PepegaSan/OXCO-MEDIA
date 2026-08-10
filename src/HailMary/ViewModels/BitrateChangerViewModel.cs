@@ -65,7 +65,7 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
         OutputBesideSource = _settings.OutputBesideSource;
         OutputMp4 = _settings.OutputMp4;
         StripAutobitrateSuffix = _settings.StripAutobitrateSuffix;
-        SelectedCodec = _settings.Codec;
+        SelectedCodec = FfmpegEncoderCatalog.LabelFor(FfmpegEncoderCatalog.LibNvencVp9, _settings.Codec);
         TargetFps = _settings.TargetFps;
         SelectedAudioMode = _settings.AudioMode;
         SelectedRateControl = NormalizeRateControl(_settings.RateControl);
@@ -92,7 +92,7 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
     public ObservableCollection<BitrateRowViewModel> Rows { get; } = [];
 
     public IReadOnlyList<string> CodecOptions { get; } =
-        ["libx264", "libx265", "libvpx-vp9", "h264_nvenc", "hevc_nvenc"];
+        FfmpegEncoderCatalog.Labels(FfmpegEncoderCatalog.LibNvencVp9);
 
     public IReadOnlyList<string> AudioModeOptions { get; } = ["copy", "aac_128k"];
 
@@ -157,7 +157,9 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
 
     [ObservableProperty] private bool _outputMp4;
     [ObservableProperty] private bool _stripAutobitrateSuffix;
-    [ObservableProperty] private string _selectedCodec = "libx264";
+    [ObservableProperty] private string _selectedCodec = FfmpegEncoderCatalog.LabelFor(
+        FfmpegEncoderCatalog.LibNvencVp9,
+        "libx264");
     [ObservableProperty] private double _targetFps;
     [ObservableProperty] private string _selectedAudioMode = "copy";
     [ObservableProperty] private string _selectedRateControl = "auto";
@@ -362,7 +364,7 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
         _settings.OutputBesideSource = OutputBesideSource;
         _settings.OutputMp4 = OutputMp4;
         _settings.StripAutobitrateSuffix = StripAutobitrateSuffix;
-        _settings.Codec = SelectedCodec;
+        _settings.Codec = FfmpegEncoderCatalog.IdFor(FfmpegEncoderCatalog.LibNvencVp9, SelectedCodec);
         _settings.TargetFps = TargetFps;
         _settings.AudioMode = SelectedAudioMode;
         _settings.RateControl = NormalizeRateControl(SelectedRateControl);

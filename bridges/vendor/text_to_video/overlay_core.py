@@ -982,13 +982,23 @@ def _preview_scale_filter(wmax: int, hmax: int) -> str:
 
 
 def map_codec_to_lib(codec_label: str) -> str:
+    s = (codec_label or "").strip()
     m = {
+        "libx H.264": "libx264",
+        "libx H.265": "libx265",
+        "VP9 (libvpx)": "libvpx-vp9",
+        "AV1 (SVT)": "libsvtav1",
+        # legacy labels
         "H.264 (libx264)": "libx264",
         "H.265 / HEVC (libx265)": "libx265",
         "VP9 (libvpx-vp9)": "libvpx-vp9",
         "AV1 (libsvtav1)": "libsvtav1",
+        "libx264": "libx264",
+        "libx265": "libx265",
+        "libvpx-vp9": "libvpx-vp9",
+        "libsvtav1": "libsvtav1",
     }
-    return m.get(codec_label, "libx264")
+    return m.get(s, "libx264")
 
 
 def parse_bitrate(s: str) -> str:

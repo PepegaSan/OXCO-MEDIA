@@ -74,7 +74,7 @@ def normalize_segment(raw: dict[str, Any]) -> dict[str, Any]:
         "color": col,
         "px": _i("px", 80, 0, 20000),
         "py": _i("py", 80, 0, 20000),
-        "line_spacing": _i("line_spacing", -12, -120, 120),
+        "line_spacing": _i("line_spacing", 0, -120, 120),
         "box_border": _i("box_border", 3, 0, 40),
         "box_enabled": box_en,
         "font_path": str(raw.get("font_path") or "").strip(),
@@ -126,10 +126,12 @@ def overlays_from_config(segments: list[dict[str, Any]], draft: Optional[dict[st
 
 
 def resolve_encoder(codec_setting: str) -> str:
+    """Map UI label or wire id → ffmpeg -c:v name.
+
+    Important: UI labels like ``libx H.264`` start with ``lib`` but are *not*
+    valid encoder names — always go through ``map_codec_to_lib``.
+    """
     ensure_sub_imports()
     from overlay_core import map_codec_to_lib  # noqa: E402
 
-    s = (codec_setting or "").strip()
-    if s.startswith("lib"):
-        return s
-    return map_codec_to_lib(s)
+    return map_codec_to_lib(codec_setting)

@@ -17,7 +17,8 @@ public static class OxcoBitratePresets
     public static string? PresetKeyFromLabel(string label) =>
         PresetKeys.FirstOrDefault(k => LocalizePresetKey(k) == label);
 
-    public static readonly IReadOnlyList<string> CodecOptions = ["libx264", "libx265", "h264_nvenc", "hevc_nvenc"];
+    public static readonly IReadOnlyList<string> CodecOptions =
+        FfmpegEncoderCatalog.Labels(FfmpegEncoderCatalog.LibAndNvenc);
 
     public static readonly IReadOnlyList<string> AudioOptions = ["copy", "aac_128k"];
 

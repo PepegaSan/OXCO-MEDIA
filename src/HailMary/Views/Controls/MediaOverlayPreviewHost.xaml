@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="HailMary.Views.Controls.MediaOverlayPreviewHost"
+    x:Name="RootHost"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:HailMary.Views.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:loc="using:HailMary.Services"
+    HorizontalAlignment="Left"
+    VerticalAlignment="Top"
+    IsTabStop="True"
+    KeyDown="RootHost_OnKeyDown"
+    mc:Ignorable="d">
+
+    <StackPanel Spacing="8">
+        <Grid x:Name="PreviewSurface" HorizontalAlignment="Left" Background="Transparent">
+            <controls:AspectFitImagePresenter
+                x:Name="PreviewPresenter"
+                MaxPreviewHeight="560"
+                MinPreviewHeight="240"
+                IsHitTestVisible="False" />
+            <Border
+                x:Name="HitLayer"
+                Background="Transparent"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                PointerPressed="HitLayer_OnPointerPressed"
+                PointerMoved="HitLayer_OnPointerMoved"
+                PointerReleased="HitLayer_OnPointerReleased"
+                PointerCanceled="HitLayer_OnPointerCanceled"
+                PointerCaptureLost="HitLayer_OnPointerCaptureLost" />
+            <Canvas x:Name="OverlayLayer" IsHitTestVisible="False">
+                <Border
+                    x:Name="OverlayGhost"
+                    BorderBrush="#FF4FC3F7"
+                    BorderThickness="2"
+                    Background="#334FC3F7"
+                    Visibility="Collapsed" />
+                <Border
+                    x:Name="ResizeHandle"
+                    Width="14"
+                    Height="14"
+                    Background="#FF4FC3F7"
+                    BorderBrush="White"
+                    BorderThickness="1"
+                    Visibility="Collapsed" />
+            </Canvas>
+        </Grid>
+
+        <Grid ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Slider
+                x:Name="TimelineSlider"
+                IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
+                Maximum="{x:Bind ViewModel.SliderMaximum, Mode=OneWay}"
+                Value="{x:Bind ViewModel.SliderValue, Mode=TwoWay}" />
+            <TextBlock
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                FontFamily="Consolas"
+                Text="{x:Bind ViewModel.TimeDisplay, Mode=OneWay}" />
+        </Grid>
+
+        <TextBlock
+            Style="{StaticResource CaptionTextBlockStyle}"
+            Text="{x:Bind ViewModel.LayoutSummary, Mode=OneWay}"
+            FontFamily="Consolas" />
+        <TextBlock
+            Style="{StaticResource CaptionTextBlockStyle}"
+            Text="{x:Bind ViewModel.PreviewHint, Mode=OneWay}"
+            TextWrapping="WrapWholeWords" />
+        <TextBlock
+            Style="{StaticResource CaptionTextBlockStyle}"
+            loc:Loc.Key="mediaoverlay.dragHint"
+            TextWrapping="WrapWholeWords" />
+    </StackPanel>
+</UserControl>

@@ -88,6 +88,7 @@ def main() -> int:
         )
 
         duration = max(0.01, float(info.duration_sec))
+        emit(f"Encoder: {encoder}  bitrate={bitrate}")
         proc = subprocess.Popen(
             cmd,
             stderr=subprocess.PIPE,
@@ -99,11 +100,17 @@ def main() -> int:
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
         assert proc.stderr is not None
+        err_tail: list[str] = []
         for line in proc.stderr:
             t = _parse_time_seconds(line)
             if t is not None:
                 pct = min(100.0, max(0.0, 100.0 * t / duration))
                 emit_progress(pct, "Export")
+            s = line.rstrip()
+            if s:
+                err_tail.append(s)
+                if len(err_tail) > 40:
+                    err_tail = err_tail[-40:]
         code = proc.wait()
         if ff_cwd:
             shutil.rmtree(ff_cwd, ignore_errors=True)
@@ -114,6 +121,8 @@ def main() -> int:
             return 0
 
         emit(f"ERROR: ffmpeg beendete sich mit Code {code}")
+        for line in err_tail[-12:]:
+            emit(f"ERROR: {line}")
         return 1
     except FFmpegNotFoundError as exc:
         emit(f"ERROR: {exc}")

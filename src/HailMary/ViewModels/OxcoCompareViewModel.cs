@@ -116,7 +116,7 @@ public partial class OxcoCompareViewModel : ObservableObject, IToolShellHost, IL
             BrRecursive = BrRecursive,
             BrOnlyLower = BrOnlyLower,
             BrOutputMp4 = BrOutputMp4,
-            BrCodec = BrCodec,
+            BrCodec = FfmpegEncoderCatalog.IdFor(FfmpegEncoderCatalog.LibAndNvenc, BrCodec),
             BrAudio = BrAudio,
             BrDeleteSourceAfterOk = BrDeleteSourceAfterOk,
             BrPreset = OxcoBitratePresets.PresetKeyFromLabel(BrPreset) ?? BrPreset,

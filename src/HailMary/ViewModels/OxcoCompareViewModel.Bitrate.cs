@@ -21,7 +21,9 @@ public partial class OxcoCompareViewModel
 
     [ObservableProperty] private bool _brDeleteSourceAfterOk = true;
 
-    [ObservableProperty] private string _brCodec = "libx264";
+    [ObservableProperty] private string _brCodec = FfmpegEncoderCatalog.LabelFor(
+        FfmpegEncoderCatalog.LibAndNvenc,
+        "libx264");
 
     [ObservableProperty] private string _brAudio = "copy";
 
@@ -47,7 +49,7 @@ public partial class OxcoCompareViewModel
         BrOnlyLower = settings.BrOnlyLower;
         BrOutputMp4 = settings.BrOutputMp4;
         BrDeleteSourceAfterOk = settings.BrDeleteSourceAfterOk;
-        BrCodec = settings.BrCodec;
+        BrCodec = FfmpegEncoderCatalog.LabelFor(FfmpegEncoderCatalog.LibAndNvenc, settings.BrCodec);
         BrAudio = settings.BrAudio;
         BrPreset = OxcoBitratePresets.PresetKeys.Contains(settings.BrPreset)
             ? OxcoBitratePresets.LocalizePresetKey(settings.BrPreset)
@@ -84,7 +86,7 @@ public partial class OxcoCompareViewModel
             Recursive = BrRecursive,
             OnlyLower = BrOnlyLower,
             OutputMp4 = BrOutputMp4,
-            Codec = BrCodec,
+            Codec = FfmpegEncoderCatalog.IdFor(FfmpegEncoderCatalog.LibAndNvenc, BrCodec),
             AudioMode = BrAudio,
             Suffix = string.IsNullOrWhiteSpace(BrSuffix) ? "_bitrate" : BrSuffix.Trim(),
             PostSuccessAction = BrDeleteSourceAfterOk ? "delete_original" : "keep",

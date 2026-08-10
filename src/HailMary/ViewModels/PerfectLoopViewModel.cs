@@ -26,7 +26,7 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILo
     public ObservableCollection<string> BatchFiles { get; } = [];
 
     public IReadOnlyList<string> EncoderOptions { get; } =
-        ["nvidia_h264", "nvidia_hevc", "cpu", "cpu_hevc"];
+        FfmpegEncoderCatalog.Labels(FfmpegEncoderCatalog.SoftHardware);
 
     public IReadOnlyList<string> SeamMethodOptions { get; } =
         ["auto", "cut", "crossfade", "morph"];
@@ -34,7 +34,9 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILo
     [ObservableProperty] private string _outputPath = string.Empty;
     [ObservableProperty] private double _seamSeconds = 0.15;
     [ObservableProperty] private bool _smartTrim;
-    [ObservableProperty] private string _selectedEncoder = "nvidia_h264";
+    [ObservableProperty] private string _selectedEncoder = FfmpegEncoderCatalog.LabelFor(
+        FfmpegEncoderCatalog.SoftHardware,
+        "nvidia_h264");
     [ObservableProperty] private double _targetFps;
     [ObservableProperty] private string _selectedSeamMethod = "auto";
     [ObservableProperty] private string _qualityHint = string.Empty;
@@ -193,7 +195,7 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILo
             seam_method = SelectedSeamMethod,
             smart_trim = SmartTrim,
             min_loop_seconds = 1.5,
-            ffmpeg_encoder = SelectedEncoder,
+            ffmpeg_encoder = FfmpegEncoderCatalog.IdFor(FfmpegEncoderCatalog.SoftHardware, SelectedEncoder),
             target_fps = TargetFps,
             mute_audio = true,
         };
@@ -326,6 +328,7 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILo
         IsBusy = true;
         var outDir = OptionalOutputDir();
         var failed = 0;
+        var encoderId = FfmpegEncoderCatalog.IdFor(FfmpegEncoderCatalog.SoftHardware, SelectedEncoder);
 
         try
         {
@@ -350,7 +353,7 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILo
                     seam_method = SelectedSeamMethod,
                     smart_trim = SmartTrim,
                     min_loop_seconds = 1.5,
-                    ffmpeg_encoder = SelectedEncoder,
+                    ffmpeg_encoder = encoderId,
                     target_fps = TargetFps,
                     mute_audio = true,
                 };

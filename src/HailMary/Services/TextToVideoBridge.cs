@@ -219,7 +219,7 @@ public static class TextToVideoBridge
             draft_segment = draftObj,
             srt_path = settings.SrtPath,
             export_container = settings.ExportContainer,
-            codec = settings.Codec,
+            codec = FfmpegEncoderCatalog.IdFor(FfmpegEncoderCatalog.TextToVideo, settings.Codec),
             bitrate = settings.Bitrate,
             gif_fps = settings.GifFps,
             target_fps = settings.TargetFps,

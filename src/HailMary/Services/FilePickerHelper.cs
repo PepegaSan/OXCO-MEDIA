@@ -54,6 +54,29 @@ public static class FilePickerHelper
         return file?.Path;
     }
 
+    /// <summary>Image or video for Media Overlay (PiP / watermark).</summary>
+    public static async Task<string?> PickImageOrVideoAsync(string? suggestedPath = null)
+    {
+        var picker = new FileOpenPicker();
+        foreach (var ext in new[]
+                 {
+                     ".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif",
+                     ".mp4", ".mkv", ".mov", ".avi", ".webm", ".m4v", ".wmv",
+                 })
+        {
+            picker.FileTypeFilter.Add(ext);
+        }
+
+        InitializePicker(picker);
+        if (!string.IsNullOrWhiteSpace(suggestedPath) && File.Exists(suggestedPath))
+        {
+            picker.SuggestedStartLocation = PickerLocationId.VideosLibrary;
+        }
+
+        var file = await picker.PickSingleFileAsync();
+        return file?.Path;
+    }
+
     public static async Task<string?> PickSrtAsync(string? suggestedPath = null)
     {
         var picker = new FileOpenPicker();

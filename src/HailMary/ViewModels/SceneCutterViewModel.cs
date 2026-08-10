@@ -38,9 +38,11 @@ public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
     public ObservableCollection<SceneEntry> Scenes { get; } = [];
 
     public IReadOnlyList<string> CodecOptions { get; } =
-        ["libx264", "libx265", "h264_nvenc", "hevc_nvenc"];
+        FfmpegEncoderCatalog.Labels(FfmpegEncoderCatalog.LibAndNvenc);
 
-    [ObservableProperty] private string _selectedCodec = "libx264";
+    [ObservableProperty] private string _selectedCodec = FfmpegEncoderCatalog.LabelFor(
+        FfmpegEncoderCatalog.LibAndNvenc,
+        "libx264");
     [ObservableProperty] private double _targetFps;
     [ObservableProperty] private string _positionDisplay = "00:00:00.000";
     [ObservableProperty] private string _durationDisplay = "00:00:00.000";
@@ -385,7 +387,7 @@ public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
         var args = new List<string>
         {
             "--input", input,
-            "--codec", SelectedCodec,
+            "--codec", FfmpegEncoderCatalog.IdFor(FfmpegEncoderCatalog.LibAndNvenc, SelectedCodec),
             "--scenes-file", scenesFile,
         };
 

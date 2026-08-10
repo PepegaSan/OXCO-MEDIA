@@ -19,7 +19,7 @@ public partial class TextOverlaySegment : ObservableObject
 
     [ObservableProperty] private int _posY = 80;
 
-    [ObservableProperty] private int _lineSpacing = -12;
+    [ObservableProperty] private int _lineSpacing;
 
     [ObservableProperty] private int _boxBorder = 3;
 
@@ -85,7 +85,7 @@ public partial class TextOverlaySegment : ObservableObject
         Color = el.TryGetProperty("color", out var c) ? (c.GetString() ?? "FFFFFF").Trim().TrimStart('#') : "FFFFFF",
         PosX = el.TryGetProperty("px", out var px) ? px.GetInt32() : 80,
         PosY = el.TryGetProperty("py", out var py) ? py.GetInt32() : 80,
-        LineSpacing = el.TryGetProperty("line_spacing", out var ls) ? ls.GetInt32() : -12,
+        LineSpacing = el.TryGetProperty("line_spacing", out var ls) ? ls.GetInt32() : 0,
         BoxBorder = el.TryGetProperty("box_border", out var bb) ? bb.GetInt32() : 3,
         BoxEnabled = !el.TryGetProperty("box_enabled", out var be) || be.ValueKind switch
         {

@@ -19,7 +19,9 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
         IntroSec = settings.IntroSec.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
         OutroSec = settings.OutroSec.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
         UseResolve = settings.UseResolve;
-        SelectedVideoCodec = settings.VideoCodec;
+        SelectedVideoCodec = FfmpegEncoderCatalog.LabelFor(
+            FfmpegEncoderCatalog.IntroVideoCodecs,
+            settings.VideoCodec);
         VideoBitrate = settings.VideoBitrate;
         VideoBitrateAuto = settings.VideoBitrateAuto;
         AudioCodec = settings.AudioCodec;
@@ -44,18 +46,7 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
     private string _previewVideoPath = string.Empty;
 
     public IReadOnlyList<string> VideoCodecOptions { get; } =
-    [
-        "libx264",
-        "libx265",
-        "libvpx-vp9",
-        "libsvtav1",
-        "libaom-av1",
-        "h264_nvenc",
-        "hevc_nvenc",
-        "av1_nvenc",
-        "mpeg4",
-        "copy",
-    ];
+        FfmpegEncoderCatalog.Labels(FfmpegEncoderCatalog.IntroVideoCodecs);
 
     public ObservableCollection<string> LengthPresetNames { get; } = [];
 
@@ -87,7 +78,9 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
     private bool _useResolve;
 
     [ObservableProperty]
-    private string _selectedVideoCodec = "libx264";
+    private string _selectedVideoCodec = FfmpegEncoderCatalog.LabelFor(
+        FfmpegEncoderCatalog.IntroVideoCodecs,
+        "libx264");
 
     [ObservableProperty]
     private double _targetFps;
@@ -322,9 +315,10 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
         Status = files.Count > 1 ? Loc.F("intro.batchStarting", files.Count) : Loc.T("common.running");
 
         var outDir = GetEffectiveOutputDir();
-        IntroCutterSettingsReader.SaveRunSettings(
+            IntroCutterSettingsReader.SaveRunSettings(
             intro, outro, SelectedLengthPreset, UseResolve,
-            SelectedVideoCodec, VideoBitrate, VideoBitrateAuto,
+            FfmpegEncoderCatalog.IdFor(FfmpegEncoderCatalog.IntroVideoCodecs, SelectedVideoCodec),
+            VideoBitrate, VideoBitrateAuto,
             AudioCodec, AudioBitrate, RenderPreset, outDir, OutputBesideSource);
 
         var failed = 0;
@@ -371,7 +365,7 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
             "--intro", intro.ToString(System.Globalization.CultureInfo.InvariantCulture),
             "--outro", outro.ToString(System.Globalization.CultureInfo.InvariantCulture),
             "--mode", UseResolve ? "resolve" : "ffmpeg",
-            "--vcodec", SelectedVideoCodec,
+            "--vcodec", FfmpegEncoderCatalog.IdFor(FfmpegEncoderCatalog.IntroVideoCodecs, SelectedVideoCodec),
             "--vbitrate", VideoBitrate,
             "--acodec", AudioCodec,
             "--abitrate", AudioBitrate,

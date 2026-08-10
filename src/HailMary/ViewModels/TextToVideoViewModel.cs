@@ -32,7 +32,7 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
         _tool = tool;
         var settings = TextToVideoConfigReader.Load();
         VideoPath = settings.LastVideoPath;
-        Codec = settings.Codec;
+        Codec = FfmpegEncoderCatalog.LabelFor(FfmpegEncoderCatalog.TextToVideo, settings.Codec);
         Bitrate = settings.Bitrate;
         ExportContainer = settings.ExportContainer;
         GifFps = settings.GifFps;
@@ -192,7 +192,9 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
                 UpdateTimeHints();
                 EnsurePlayheadShowsEditorSegment();
             }
-            else if (e.PropertyName is nameof(TextOverlaySegment.PosX) or nameof(TextOverlaySegment.PosY))
+            else if (e.PropertyName is nameof(TextOverlaySegment.PosX)
+                     or nameof(TextOverlaySegment.PosY)
+                     or nameof(TextOverlaySegment.Fontsize))
             {
                 if (_isOverlayDragging)
                 {
@@ -200,7 +202,6 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
                 }
             }
             else if (e.PropertyName is nameof(TextOverlaySegment.Text)
-                     or nameof(TextOverlaySegment.Fontsize)
                      or nameof(TextOverlaySegment.Color)
                      or nameof(TextOverlaySegment.Bold)
                      or nameof(TextOverlaySegment.Italic)
@@ -213,6 +214,11 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
             {
                 // Timed overlays are invisible outside From/To — jump into range so edits show up.
                 EnsurePlayheadShowsEditorSegment();
+            }
+
+            if (_isOverlayDragging)
+            {
+                return;
             }
 
             SchedulePreviewRefresh();
@@ -282,12 +288,7 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
     public static IReadOnlyList<string> ContainerOptions { get; } = ["mp4", "gif"];
 
     public static IReadOnlyList<string> CodecOptions { get; } =
-    [
-        "H.264 (libx264)",
-        "H.265 / HEVC (libx265)",
-        "VP9 (libvpx-vp9)",
-        "AV1 (libsvtav1)",
-    ];
+        FfmpegEncoderCatalog.Labels(FfmpegEncoderCatalog.TextToVideo);
 
     public static IReadOnlyList<string> ColorPalette { get; } =
     [
@@ -298,7 +299,9 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
 
     [ObservableProperty] private string _videoPath = string.Empty;
 
-    [ObservableProperty] private string _codec = "H.264 (libx264)";
+    [ObservableProperty] private string _codec = FfmpegEncoderCatalog.LabelFor(
+        FfmpegEncoderCatalog.TextToVideo,
+        "libx264");
 
     [ObservableProperty] private string _bitrate = "5000k";
 
@@ -548,44 +551,191 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
 
     public void SetPositionFromPreviewClick(double normalizedX, double normalizedY, bool deferPreviewRefresh = false)
     {
+        if (deferPreviewRefresh)
+        {
+            BeginOverlayPositionDrag();
+            ApplyMoveFromPreview(normalizedX, normalizedY);
+            return;
+        }
+
+        BeginOverlayPositionDrag();
+        ApplyMoveFromPreview(normalizedX, normalizedY);
+        EndOverlayPositionDrag();
+    }
+
+    /// <summary>Rough drawtext/Pillow box in source pixels (prefer slightly large so the frame contains glyphs).</summary>
+    public (int Width, int Height) EstimateEditorOverlayBox()
+    {
+        var seg = EditorSegment;
+        // Same split as overlay_core._overlay_visual_lines (keeps empty lines after Enter).
+        var lines = (seg.Text ?? string.Empty)
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace("\r", "\n", StringComparison.Ordinal)
+            .Split('\n');
+        if (lines.Length == 0)
+        {
+            lines = [""];
+        }
+
+        var fs = Math.Clamp(seg.Fontsize, 8, 400);
+        var ls = Math.Clamp(seg.LineSpacing, -120, 120);
+        var lineStep = Math.Max(4, fs + ls);
+        var lineCount = Math.Max(1, lines.Length);
+        // drawtext y-stack + a little descent so glyphs don't clip the bottom edge
+        var h = fs + (lineCount - 1) * lineStep + Math.Max(2, fs / 6);
+
+        var maxUnits = 1.0;
+        foreach (var line in lines)
+        {
+            maxUnits = Math.Max(maxUnits, EstimateTextWidthUnits(line));
+        }
+
+        // FreeType advances vary a lot by face; keep the base generous, then add font-mismatch slack.
+        var em = seg.Bold ? 0.70 : 0.62;
+        var w = (int)Math.Max(fs * 2.0, Math.Ceiling(maxUnits * fs * em));
+        // ~2.5 glyph widths: WinUI measure ≠ FFmpeg/Pillow face for many fonts
+        w += Math.Max(12, (int)Math.Ceiling(fs * em * 2.5));
+        if (seg.Italic)
+        {
+            w += Math.Max(6, fs / 4);
+        }
+
+        if (seg.BoxEnabled)
+        {
+            // FFmpeg boxborderw pads around the glyph box
+            var bb = Math.Max(0, seg.BoxBorder);
+            w += bb * 2 + Math.Max(8, fs / 6);
+            h += bb * 2 + Math.Max(6, fs / 8);
+        }
+
+        // Pillow raster path (custom font / styles) adds per-line pad + optional shear
+        if (seg.Bold || seg.Italic || seg.Strike || !string.IsNullOrWhiteSpace(seg.FontPath))
+        {
+            w += Math.Max(12, fs / 3);
+            h += Math.Max(6, fs / 8);
+        }
+
+        if (_videoWidth > 0)
+        {
+            w = Math.Min(w, _videoWidth);
+        }
+
+        if (_videoHeight > 0)
+        {
+            h = Math.Min(h, _videoHeight);
+        }
+
+        return (Math.Max(8, w), Math.Max(8, h));
+    }
+
+    private static double EstimateTextWidthUnits(string line)
+    {
+        if (string.IsNullOrEmpty(line))
+        {
+            return 1.0;
+        }
+
+        double units = 0;
+        foreach (var ch in line)
+        {
+            units += ch switch
+            {
+                ' ' or '\t' => 0.33,
+                'i' or 'l' or 'I' or 'j' or 't' or 'f' or 'r' or '\'' or '.' or ',' or ':' or ';' => 0.40,
+                'm' or 'w' or 'M' or 'W' or '@' => 1.35,
+                >= '\u1100' and <= '\u11FF' or >= '\u3040' and <= '\u30FF' or >= '\u4E00' and <= '\u9FFF'
+                    or >= '\uAC00' and <= '\uD7AF' => 1.0,
+                // Most Latin letters ≈ 1em unit (scaled by em factor below)
+                _ => 1.0,
+            };
+        }
+
+        return Math.Max(1.0, units);
+    }
+
+    public void BeginOverlayPositionDrag()
+    {
+        _isOverlayDragging = true;
+        _previewDebounceCts?.Cancel();
+    }
+
+    public void EndOverlayPositionDrag()
+    {
+        _isOverlayDragging = false;
+        SchedulePreviewRefresh(immediate: true);
+    }
+
+    public void CancelOverlayPositionDrag()
+    {
+        _isOverlayDragging = false;
+        SchedulePreviewRefresh(immediate: true);
+    }
+
+    /// <summary>Normalized preview top-left (0–1) → PosX/PosY, clamped so the estimated box stays on screen.</summary>
+    public void ApplyMoveFromPreview(double nx, double ny)
+    {
         if (_videoWidth <= 0 || _videoHeight <= 0)
         {
             return;
         }
 
-        var x = (int)Math.Clamp(Math.Round(normalizedX * _videoWidth), 0, _videoWidth - 1);
-        var y = (int)Math.Clamp(Math.Round(normalizedY * _videoHeight), 0, _videoHeight - 1);
-
-        if (deferPreviewRefresh)
-        {
-            _isOverlayDragging = true;
-        }
-
+        var (w, h) = EstimateEditorOverlayBox();
+        var x = (int)Math.Clamp(Math.Round(nx * _videoWidth), 0, Math.Max(0, _videoWidth - w));
+        var y = (int)Math.Clamp(Math.Round(ny * _videoHeight), 0, Math.Max(0, _videoHeight - h));
         EditorSegment.PosX = x;
         EditorSegment.PosY = y;
-
-        if (!deferPreviewRefresh)
-        {
-            _isOverlayDragging = false;
-            SchedulePreviewRefresh();
-        }
     }
 
-    public void BeginOverlayPositionDrag() => _isOverlayDragging = true;
-
-    public void EndOverlayPositionDrag()
+    /// <summary>SE corner in normalized preview space; box height → Fontsize (line stack matches FFmpeg drawtext).</summary>
+    public void ApplyResizeFromPreview(double nRight, double nBottom)
     {
-        if (!_isOverlayDragging)
+        if (_videoWidth <= 0 || _videoHeight <= 0)
         {
-            SchedulePreviewRefresh();
             return;
         }
 
-        _isOverlayDragging = false;
-        SchedulePreviewRefresh();
+        var left = EditorSegment.PosX / (double)_videoWidth;
+        var top = EditorSegment.PosY / (double)_videoHeight;
+        var newH = Math.Max(8.0, (Math.Clamp(nBottom, 0, 1) - top) * _videoHeight);
+        // Width is only used to keep the SE corner feel; font size is height-driven.
+        _ = Math.Max(8.0, (Math.Clamp(nRight, 0, 1) - left) * _videoWidth);
+
+        var lines = (EditorSegment.Text ?? string.Empty).Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
+        var lineCount = Math.Max(1, lines.Length);
+        if (lineCount == 1 && string.IsNullOrEmpty(lines[0]))
+        {
+            lineCount = 1;
+        }
+
+        var ls = Math.Clamp(EditorSegment.LineSpacing, -120, 120);
+        var boxPad = EditorSegment.BoxEnabled ? Math.Max(0, EditorSegment.BoxBorder) * 2 + 4 : 0;
+        var textH = Math.Max(8.0, newH - boxPad);
+        // textH = fs + (L-1)*(fs+ls)  →  fs = (textH - (L-1)*ls) / L
+        var fs = (textH - (lineCount - 1) * ls) / lineCount;
+        EditorSegment.Fontsize = (int)Math.Clamp(Math.Round(fs), 12, 200);
+
+        var (w, h) = EstimateEditorOverlayBox();
+        EditorSegment.PosX = Math.Clamp(EditorSegment.PosX, 0, Math.Max(0, _videoWidth - w));
+        EditorSegment.PosY = Math.Clamp(EditorSegment.PosY, 0, Math.Max(0, _videoHeight - h));
     }
 
-    public void CancelOverlayPositionDrag() => _isOverlayDragging = false;
+    public void NudgeOverlay(int dxPx, int dyPx, int dFontsize)
+    {
+        if (_videoWidth <= 0 || _videoHeight <= 0)
+        {
+            return;
+        }
+
+        if (dFontsize != 0)
+        {
+            EditorSegment.Fontsize = Math.Clamp(EditorSegment.Fontsize + dFontsize, 12, 200);
+        }
+
+        var (w, h) = EstimateEditorOverlayBox();
+        EditorSegment.PosX = Math.Clamp(EditorSegment.PosX + dxPx, 0, Math.Max(0, _videoWidth - w));
+        EditorSegment.PosY = Math.Clamp(EditorSegment.PosY + dyPx, 0, Math.Max(0, _videoHeight - h));
+        SchedulePreviewRefresh();
+    }
 
     public void ApplyPlayheadToFrom() => EditorSegment.From = TimeFieldHelper.FormatForField(SliderValue);
 

@@ -49,10 +49,7 @@ public partial class AudioCleanerViewModel : ToolIoViewModel, IToolShellHost, IL
 
 
     public IReadOnlyList<string> VideoCodecOptions { get; } =
-
-        ["copy", "libx264", "libx265", "h264_nvenc", "hevc_nvenc"];
-
-
+        FfmpegEncoderCatalog.Labels(FfmpegEncoderCatalog.LibAndNvencWithCopy);
 
     [ObservableProperty] private string _outputPath = string.Empty;
 
@@ -64,7 +61,9 @@ public partial class AudioCleanerViewModel : ToolIoViewModel, IToolShellHost, IL
 
     [ObservableProperty] private string _boostPercent = "116.67";
 
-    [ObservableProperty] private string _selectedVideoCodec = "copy";
+    [ObservableProperty] private string _selectedVideoCodec = FfmpegEncoderCatalog.LabelFor(
+        FfmpegEncoderCatalog.LibAndNvencWithCopy,
+        "copy");
 
     [ObservableProperty] private double _targetFps;
 
@@ -288,7 +287,7 @@ public partial class AudioCleanerViewModel : ToolIoViewModel, IToolShellHost, IL
 
             System.Globalization.CultureInfo.InvariantCulture, out var bp) ? bp : 116.67,
 
-        video_codec = SelectedVideoCodec,
+        video_codec = FfmpegEncoderCatalog.IdFor(FfmpegEncoderCatalog.LibAndNvencWithCopy, SelectedVideoCodec),
 
         video_bitrate_kbps = int.TryParse(VideoBitrateKbps, out var vb) ? vb : 4000,
 

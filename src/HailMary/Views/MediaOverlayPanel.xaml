@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="HailMary.Views.MediaOverlayPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:drop="using:HailMary.Views.Helpers"
+    xmlns:controls="using:HailMary.Views.Controls"
+    xmlns:loc="using:HailMary.Services"
+    HorizontalAlignment="Left"
+    VerticalAlignment="Top"
+    mc:Ignorable="d">
+
+    <ScrollViewer HorizontalContentAlignment="Left" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel Style="{StaticResource ToolShellContentPanel}" Spacing="10">
+
+            <TextBlock Text="{x:Bind ViewModel.Description, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.Status, Mode=OneWay}" />
+            <TextBlock
+                Style="{StaticResource CaptionTextBlockStyle}"
+                Text="{x:Bind ViewModel.VideoInfoLine, Mode=OneWay}" />
+
+            <Border Style="{StaticResource ToolShellCard}">
+                <StackPanel Spacing="8">
+                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="mediaoverlay.previewHeader" />
+                    <controls:MediaOverlayPreviewHost ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource ToolShellCard}">
+                <StackPanel Spacing="8">
+                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="mediaoverlay.mainHeader" />
+                    <Grid ColumnSpacing="8" drop:VideoDrop.AllowFolders="False" drop:VideoDrop.IsEnabled="True">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" loc:Loc.PlaceholderKey="mediaoverlay.mainPlaceholder" Text="{x:Bind ViewModel.InputPath, Mode=TwoWay}" />
+                        <Button Grid.Column="1" VerticalAlignment="Center" Command="{x:Bind ViewModel.PickInputFileCommand}" loc:Loc.Key="common.file" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource ToolShellCard}">
+                <StackPanel Spacing="8">
+                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="mediaoverlay.overlayHeader" />
+                    <Grid
+                        ColumnSpacing="8"
+                        drop:VideoDrop.IsEnabled="True"
+                        drop:VideoDrop.AllowImages="True"
+                        drop:VideoDrop.PathPropertyName="OverlayPath">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" loc:Loc.PlaceholderKey="mediaoverlay.overlayPlaceholder" Text="{x:Bind ViewModel.OverlayPath, Mode=TwoWay}" />
+                        <Button Grid.Column="1" VerticalAlignment="Center" Command="{x:Bind ViewModel.PickOverlayFileCommand}" loc:Loc.Key="common.file" />
+                    </Grid>
+                    <TextBlock
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        loc:Loc.Key="mediaoverlay.overlayHint"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource ToolShellCard}">
+                <StackPanel Spacing="8">
+                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="mediaoverlay.layoutHeader" />
+                    <Grid ColumnSpacing="8" RowSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <NumberBox
+                            Grid.Column="0"
+                            loc:Loc.HeaderKey="mediaoverlay.posX"
+                            Minimum="0"
+                            Maximum="10000"
+                            SmallChange="1"
+                            LargeChange="10"
+                            SpinButtonPlacementMode="Compact"
+                            Value="{x:Bind ViewModel.PosX, Mode=TwoWay}" />
+                        <NumberBox
+                            Grid.Column="1"
+                            loc:Loc.HeaderKey="mediaoverlay.posY"
+                            Minimum="0"
+                            Maximum="10000"
+                            SmallChange="1"
+                            LargeChange="10"
+                            SpinButtonPlacementMode="Compact"
+                            Value="{x:Bind ViewModel.PosY, Mode=TwoWay}" />
+                        <NumberBox
+                            Grid.Column="2"
+                            loc:Loc.HeaderKey="mediaoverlay.widthPercent"
+                            Minimum="1"
+                            Maximum="100"
+                            SmallChange="1"
+                            LargeChange="5"
+                            SpinButtonPlacementMode="Compact"
+                            Value="{x:Bind ViewModel.WidthPercent, Mode=TwoWay}" />
+                    </Grid>
+                    <TextBlock
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        loc:Loc.Key="mediaoverlay.widthPercentHint"
+                        TextWrapping="WrapWholeWords" />
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox
+                            Grid.Column="0"
+                            loc:Loc.HeaderKey="actionBar.start"
+                            loc:Loc.PlaceholderKey="mediaoverlay.timePlaceholder"
+                            Text="{x:Bind ViewModel.StartSecondsText, Mode=TwoWay}" />
+                        <TextBox
+                            Grid.Column="1"
+                            loc:Loc.HeaderKey="common.end"
+                            loc:Loc.PlaceholderKey="mediaoverlay.endPlaceholder"
+                            Text="{x:Bind ViewModel.EndSecondsText, Mode=TwoWay}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource ToolShellCard}">
+                <StackPanel Spacing="8">
+                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="mediaoverlay.audioHeader" />
+                    <CheckBox loc:Loc.Key="mediaoverlay.mainAudio" IsChecked="{x:Bind ViewModel.MainAudio, Mode=TwoWay}" />
+                    <CheckBox
+                        loc:Loc.Key="mediaoverlay.overlayAudio"
+                        IsChecked="{x:Bind ViewModel.OverlayAudio, Mode=TwoWay}"
+                        IsEnabled="{x:Bind ViewModel.OverlayAudioEnabled, Mode=OneWay}" />
+                    <TextBlock
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        Text="{x:Bind ViewModel.OverlayAudioHint, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource ToolShellCard}">
+                <StackPanel Spacing="8">
+                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="mediaoverlay.exportHeader" />
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" loc:Loc.HeaderKey="mediaoverlay.outputDirHeader" Text="{x:Bind ViewModel.OutputDir, Mode=TwoWay}" />
+                        <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.PickOutputDirCommand}" loc:Loc.Key="common.addDots" />
+                    </Grid>
+                    <TextBox loc:Loc.HeaderKey="mediaoverlay.outputPreview" IsReadOnly="True" Text="{x:Bind ViewModel.OutputPath, Mode=OneWay}" />
+                    <ComboBox
+                        loc:Loc.HeaderKey="mediaoverlay.encoderLabel"
+                        ItemsSource="{x:Bind ViewModel.EncoderOptions, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.SelectedEncoder, Mode=TwoWay}" />
+                    <NumberBox
+                        loc:Loc.HeaderKey="common.targetFps"
+                        Minimum="0"
+                        Maximum="240"
+                        SmallChange="1"
+                        LargeChange="5"
+                        SpinButtonPlacementMode="Compact"
+                        Value="{x:Bind ViewModel.TargetFps, Mode=TwoWay}" />
+                    <TextBlock
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        loc:Loc.Key="common.targetFpsHint"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

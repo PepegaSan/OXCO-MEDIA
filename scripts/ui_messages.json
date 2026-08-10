@@ -4638,5 +4638,66 @@
   "texttovideo.status.segmentAddedNumbered": {
     "de": "Abschnitt {0} hinzugefügt.",
     "en": "Segment {0} added."
+  },
+  "mediaoverlay.audioHeader": { "de": "Ton", "en": "Audio" },
+  "mediaoverlay.dragHint": {
+    "de": "Ziehen: verschieben · Ecke unten rechts: Größe · Klick außerhalb: Position setzen · Pfeile: 1 px (Strg=10) · Umschalt+←/→: Breite",
+    "en": "Drag to move · SE corner to resize · click empty to place · arrows: 1 px (Ctrl=10) · Shift+←/→: width"
+  },
+  "mediaoverlay.encoderLabel": { "de": "FFmpeg Encoder", "en": "FFmpeg encoder" },
+  "mediaoverlay.endBeforeStart": {
+    "de": "Ende muss nach dem Start liegen (oder leer = bis Videoende).",
+    "en": "End must be after start (or leave empty for end of video)."
+  },
+  "mediaoverlay.endPlaceholder": { "de": "leer = bis Ende", "en": "empty = until end" },
+  "mediaoverlay.exportDone": { "de": "Overlay-Export fertig", "en": "Overlay export finished" },
+  "mediaoverlay.exportHeader": { "de": "Export", "en": "Export" },
+  "mediaoverlay.exportRunning": { "de": "Overlay wird gerendert…", "en": "Rendering overlay…" },
+  "mediaoverlay.invalidEnd": { "de": "Ungültiges Ende.", "en": "Invalid end time." },
+  "mediaoverlay.invalidStart": { "de": "Ungültiger Start.", "en": "Invalid start time." },
+  "mediaoverlay.layoutHeader": { "de": "Position & Zeitraum", "en": "Position & timing" },
+  "mediaoverlay.layoutSummary": { "de": "X={0} Y={1}  {2}×{3} px  ({4}%)", "en": "X={0} Y={1}  {2}×{3} px  ({4}%)" },
+  "mediaoverlay.mainAudio": { "de": "Ton vom Hauptvideo", "en": "Audio from main video" },
+  "mediaoverlay.mainHeader": { "de": "Hauptvideo", "en": "Main video" },
+  "mediaoverlay.mainPlaceholder": { "de": "Hauptvideo wählen…", "en": "Choose main video…" },
+  "mediaoverlay.noMain": { "de": "Hauptvideo wählen.", "en": "Choose a main video." },
+  "mediaoverlay.noOverlay": { "de": "Overlay (Bild oder Video) wählen.", "en": "Choose an overlay (image or video)." },
+  "mediaoverlay.outputDirHeader": { "de": "Ausgabe-Ordner", "en": "Output folder" },
+  "mediaoverlay.outputPreview": { "de": "Ausgabe", "en": "Output" },
+  "mediaoverlay.overlayAudio": { "de": "Ton vom Overlay-Video", "en": "Audio from overlay video" },
+  "mediaoverlay.overlayAudioHintImage": {
+    "de": "Bilder haben keinen Ton — nur Hauptvideo-Audio möglich.",
+    "en": "Images have no audio — only main video audio is available."
+  },
+  "mediaoverlay.overlayAudioHintVideo": {
+    "de": "Overlay-Ton wird ab dem Startzeitpunkt zugemischt (amix).",
+    "en": "Overlay audio is mixed in from the start time (amix)."
+  },
+  "mediaoverlay.overlayHeader": { "de": "Overlay (Bild / Video)", "en": "Overlay (image / video)" },
+  "mediaoverlay.overlayHint": {
+    "de": "PNG/JPG als Logo/Wasserzeichen oder zweites Video als Picture-in-Picture.",
+    "en": "PNG/JPG as logo/watermark, or a second video as picture-in-picture."
+  },
+  "mediaoverlay.overlayPlaceholder": { "de": "Bild oder Video…", "en": "Image or video…" },
+  "mediaoverlay.posX": { "de": "X (px)", "en": "X (px)" },
+  "mediaoverlay.posY": { "de": "Y (px)", "en": "Y (px)" },
+  "mediaoverlay.previewFailed": { "de": "Vorschau fehlgeschlagen.", "en": "Preview failed." },
+  "mediaoverlay.previewHeader": { "de": "Vorschau", "en": "Preview" },
+  "mediaoverlay.previewHint": {
+    "de": "Vorschau zeigt Overlay immer (auch außerhalb Start/Ende) zum Positionieren.",
+    "en": "Preview always shows the overlay (even outside start/end) for positioning."
+  },
+  "mediaoverlay.probeFailed": { "de": "Video-Analyse fehlgeschlagen.", "en": "Video probe failed." },
+  "mediaoverlay.timePlaceholder": { "de": "Sek. oder mm:ss", "en": "Sec. or mm:ss" },
+  "mediaoverlay.videoInfoLine": { "de": "{0}×{1} · {2}s", "en": "{0}×{1} · {2}s" },
+  "mediaoverlay.widthPercent": { "de": "Breite %", "en": "Width %" },
+  "mediaoverlay.widthPercentHint": {
+    "de": "Breite relativ zum Hauptvideo (Seitenverhältnis bleibt). Per Maus an der Ecke präzise in Pixeln.",
+    "en": "Width relative to the main video (aspect kept). Resize with the corner handle for pixel precision."
+  },
+  "tool.media_overlay.label": { "de": "Media Overlay", "en": "Media Overlay" },
+  "tool.media_overlay.description": {
+    "de": "Bild oder Video über ein Hauptvideo legen (Position, Größe, Zeitraum) — Ton vom Haupt- und/oder Overlay-Clip.",
+    "en": "Place an image or video on top of a main video (position, size, timing) — mix main and/or overlay audio."
   }
 }

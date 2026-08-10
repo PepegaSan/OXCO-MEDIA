@@ -34,6 +34,13 @@ public static class VideoDrop
             typeof(VideoDrop),
             new PropertyMetadata(string.Empty));
 
+    public static readonly DependencyProperty AllowImagesProperty =
+        DependencyProperty.RegisterAttached(
+            "AllowImages",
+            typeof(bool),
+            typeof(VideoDrop),
+            new PropertyMetadata(false));
+
     public static bool GetIsEnabled(DependencyObject obj) => (bool)obj.GetValue(IsEnabledProperty);
 
     public static void SetIsEnabled(DependencyObject obj, bool value) => obj.SetValue(IsEnabledProperty, value);
@@ -41,6 +48,10 @@ public static class VideoDrop
     public static bool GetAllowFolders(DependencyObject obj) => (bool)obj.GetValue(AllowFoldersProperty);
 
     public static void SetAllowFolders(DependencyObject obj, bool value) => obj.SetValue(AllowFoldersProperty, value);
+
+    public static bool GetAllowImages(DependencyObject obj) => (bool)obj.GetValue(AllowImagesProperty);
+
+    public static void SetAllowImages(DependencyObject obj, bool value) => obj.SetValue(AllowImagesProperty, value);
 
     public static string GetPathPropertyName(DependencyObject obj) => (string)obj.GetValue(PathPropertyNameProperty);
 
@@ -70,7 +81,8 @@ public static class VideoDrop
         {
             e.AcceptedOperation = DataPackageOperation.Copy;
             e.DragUIOverride.IsCaptionVisible = true;
-            e.DragUIOverride.Caption = "Video ablegen";
+            var allowImages = sender is DependencyObject d && GetAllowImages(d);
+            e.DragUIOverride.Caption = allowImages ? "Bild/Video ablegen" : "Video ablegen";
         }
         else
         {
@@ -95,6 +107,7 @@ public static class VideoDrop
         }
 
         var allowFolders = GetAllowFolders(element);
+        var allowImages = GetAllowImages(element);
         if (FindPanelViewModel(element) is IVideoBatchHost batchHost)
         {
             batchHost.AddDroppedPaths(paths);
@@ -104,7 +117,7 @@ public static class VideoDrop
             return;
         }
 
-        var path = VideoPathDropHelper.PickFirstVideoOrFolder(paths, allowFolders);
+        var path = VideoPathDropHelper.PickFirstMediaOrFolder(paths, allowFolders, allowImages);
         if (string.IsNullOrWhiteSpace(path))
         {
             return;

@@ -117,7 +117,7 @@ A classic setup installer (single `.exe`) can be built with **`build_installer.b
 
 | Area | Tools |
 |------|--------|
-| **Video** | Scene Cutter, Intro Cutter, Text to Video, Bitrate Changer, Audio Cleaner, Clip Joiner, **Perfect Loop**, DaVinci Batch Render |
+| **Video** | Scene Cutter, Intro Cutter, Text to Video, Bitrate Changer, Audio Cleaner, Clip Joiner, **Perfect Loop**, **Media Overlay**, DaVinci Batch Render |
 | **Stash** | Stash Cutter, Marker Autocut, Marker Updater, Stash Pathfinder |
 | **Oxco** | Compare, bitrate pipeline, autotagger |
 | **Workflow** | Daten Sync, DL Sort, Autotagger monitor |
@@ -190,6 +190,7 @@ OXCO-MEDIA/
 │       ├── bitrate/
 │       ├── clip_joiner/
 │       ├── perfect_loop/            # Seam morph / cut / crossfade loop
+│       ├── media_overlay/           # Image/video PiP onto main video
 │       ├── audio_clean/
 │       ├── text_to_video/
 │       ├── oxco/

@@ -75,6 +75,15 @@
     "enabled": true
   },
   {
+    "id": "media_overlay",
+    "label": "Media Overlay",
+    "type": "hybrid",
+    "group": "video",
+    "bridge": "media_overlay_job.py",
+    "description": "Bild oder Video über ein Hauptvideo legen (Position, Größe, Zeitraum) — Ton vom Haupt- und/oder Overlay-Clip.",
+    "enabled": true
+  },
+  {
     "id": "davinci_batch_render",
     "label": "Davinci Batch Render",
     "type": "hybrid",

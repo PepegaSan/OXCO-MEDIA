@@ -2,6 +2,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using HailMary.Models;
 using HailMary.Services;
 using HailMary.ViewModels;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -10,6 +11,7 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Media.Core;
 using Windows.Media.Playback;
 using Windows.Storage.Streams;
+using Windows.System;
 using Windows.UI;
 
 namespace HailMary.Views.Controls;
@@ -23,11 +25,20 @@ public sealed partial class TextToVideoPreviewHost : UserControl
             typeof(TextToVideoPreviewHost),
             new PropertyMetadata(null, OnViewModelChanged));
 
+    private enum DragMode
+    {
+        None,
+        Move,
+        ResizeSe,
+    }
+
     private readonly DispatcherTimer _positionTimer;
     private bool _sliderDragging;
     private bool _suppressSliderSeek;
-    private bool _overlayDragging;
+    private DragMode _dragMode;
     private Pointer? _overlayPointer;
+    private Windows.Foundation.Point _grabOffsetNorm;
+    private TextOverlaySegment? _subscribedEditor;
 
     public TextToVideoPreviewHost()
     {
@@ -56,6 +67,11 @@ public sealed partial class TextToVideoPreviewHost : UserControl
 
             SeekTo(ViewModel.SliderValue);
         };
+
+        SizeChanged += (_, _) => UpdateLayoutGhost();
+        PreviewPresenter.SizeChanged += (_, _) => UpdateLayoutGhost();
+        VideoSurface.SizeChanged += (_, _) => UpdateLayoutGhost();
+        HitLayer.SizeChanged += (_, _) => UpdateLayoutGhost();
     }
 
     public TextToVideoViewModel? ViewModel
@@ -76,12 +92,47 @@ public sealed partial class TextToVideoPreviewHost : UserControl
             oldVm.PropertyChanged -= host.ViewModel_OnPropertyChanged;
         }
 
+        host.BindEditorSegment(null);
+
         if (e.NewValue is TextToVideoViewModel newVm)
         {
             newVm.PropertyChanged += host.ViewModel_OnPropertyChanged;
+            host.BindEditorSegment(newVm.EditorSegment);
             host.ApplyPlaybackPresentation(newVm.IsPreviewPlaying);
             _ = host.LoadVideoAsync();
             _ = host.UpdatePreviewImageAsync();
+            host.UpdateLayoutGhost();
+        }
+    }
+
+    private void BindEditorSegment(TextOverlaySegment? seg)
+    {
+        if (_subscribedEditor is not null)
+        {
+            _subscribedEditor.PropertyChanged -= EditorSegment_OnPropertyChanged;
+        }
+
+        _subscribedEditor = seg;
+        if (_subscribedEditor is not null)
+        {
+            _subscribedEditor.PropertyChanged += EditorSegment_OnPropertyChanged;
+        }
+    }
+
+    private void EditorSegment_OnPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(TextOverlaySegment.PosX)
+            or nameof(TextOverlaySegment.PosY)
+            or nameof(TextOverlaySegment.Fontsize)
+            or nameof(TextOverlaySegment.Text)
+            or nameof(TextOverlaySegment.LineSpacing)
+            or nameof(TextOverlaySegment.BoxEnabled)
+            or nameof(TextOverlaySegment.BoxBorder)
+            or nameof(TextOverlaySegment.Color)
+            or nameof(TextOverlaySegment.Bold)
+            or nameof(TextOverlaySegment.Italic))
+        {
+            UpdateLayoutGhost();
         }
     }
 
@@ -94,7 +145,7 @@ public sealed partial class TextToVideoPreviewHost : UserControl
 
         if (e.PropertyName == nameof(TextToVideoViewModel.PreviewImageBytes))
         {
-            if (!ViewModel.IsPreviewPlaying)
+            if (!ViewModel.IsPreviewPlaying && _dragMode == DragMode.None)
             {
                 _ = UpdatePreviewImageAsync();
             }
@@ -103,10 +154,16 @@ public sealed partial class TextToVideoPreviewHost : UserControl
                  || e.PropertyName == nameof(TextToVideoViewModel.HasVideo))
         {
             _ = LoadVideoAsync();
+            UpdateLayoutGhost();
         }
         else if (e.PropertyName == nameof(TextToVideoViewModel.IsPreviewPlaying))
         {
             ApplyPlaybackPresentation(ViewModel.IsPreviewPlaying);
+        }
+        else if (e.PropertyName == nameof(TextToVideoViewModel.EditorSegment))
+        {
+            BindEditorSegment(ViewModel.EditorSegment);
+            UpdateLayoutGhost();
         }
         else if (e.PropertyName == nameof(TextToVideoViewModel.SliderValue))
         {
@@ -120,23 +177,31 @@ public sealed partial class TextToVideoPreviewHost : UserControl
                 UpdatePlayGhost(ViewModel.SliderValue);
             }
         }
+        else if (e.PropertyName is nameof(TextToVideoViewModel.PreviewVideoWidth)
+                 or nameof(TextToVideoViewModel.PreviewVideoHeight))
+        {
+            UpdateLayoutGhost();
+        }
     }
 
     private void ApplyPlaybackPresentation(bool playing)
     {
         // Play = smooth MediaPlayer video + lightweight text ghost.
-        // Pause = FFmpeg still frame with burned-in overlay (accurate fonts/styles).
+        // Pause = FFmpeg still frame with burned-in overlay (accurate fonts/styles) + layout handles.
         VideoSurface.Opacity = playing ? 1 : 0;
         PreviewPresenter.Opacity = playing ? 0 : 1;
         HitLayer.IsHitTestVisible = !playing;
         if (playing)
         {
             EndOverlayDrag(commit: false);
+            LayoutGhost.Visibility = Visibility.Collapsed;
+            ResizeHandle.Visibility = Visibility.Collapsed;
             UpdatePlayGhost(ViewModel?.SliderValue ?? 0);
         }
         else
         {
             PlayGhost.Visibility = Visibility.Collapsed;
+            UpdateLayoutGhost();
         }
     }
 
@@ -154,6 +219,7 @@ public sealed partial class TextToVideoPreviewHost : UserControl
             VideoSurface.ClearVideoDimensions();
             PreviewPresenter.ImageSource = null;
             PreviewPresenter.ClearContentDimensions();
+            UpdateLayoutGhost();
             return;
         }
 
@@ -163,6 +229,7 @@ public sealed partial class TextToVideoPreviewHost : UserControl
             PreviewPlayer.Source = MediaSource.CreateFromUri(new Uri(path));
             await Task.Delay(300);
             SeekTo(ViewModel?.SliderValue ?? 0);
+            UpdateLayoutGhost();
         }
         catch (Exception ex)
         {
@@ -172,7 +239,7 @@ public sealed partial class TextToVideoPreviewHost : UserControl
 
     private async Task UpdatePreviewImageAsync()
     {
-        if (_overlayDragging || ViewModel?.IsPreviewPlaying == true)
+        if (_dragMode != DragMode.None || ViewModel?.IsPreviewPlaying == true)
         {
             return;
         }
@@ -182,6 +249,7 @@ public sealed partial class TextToVideoPreviewHost : UserControl
         {
             PreviewPresenter.ImageSource = null;
             PreviewPresenter.ClearContentDimensions();
+            UpdateLayoutGhost();
             return;
         }
 
@@ -194,111 +262,219 @@ public sealed partial class TextToVideoPreviewHost : UserControl
             await bitmap.SetSourceAsync(stream);
             PreviewPresenter.SetContentDimensions(bitmap.PixelWidth, bitmap.PixelHeight);
             PreviewPresenter.ImageSource = bitmap;
+            UpdateLayoutGhost();
         }
         catch
         {
             PreviewPresenter.ImageSource = null;
+            PreviewPresenter.ClearContentDimensions();
         }
+    }
+
+    private void UpdateLayoutGhost()
+    {
+        var vm = ViewModel;
+        if (vm is null
+            || vm.IsPreviewPlaying
+            || !vm.HasVideo
+            || vm.PreviewVideoWidth <= 0
+            || vm.PreviewVideoHeight <= 0
+            || HitLayer.ActualWidth <= 1)
+        {
+            LayoutGhost.Visibility = Visibility.Collapsed;
+            ResizeHandle.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        var seg = vm.EditorSegment;
+        var dw = HitLayer.ActualWidth;
+        var dh = HitLayer.ActualHeight;
+        var sx = dw / vm.PreviewVideoWidth;
+        var sy = dh / vm.PreviewVideoHeight;
+        var (wPx, hPx) = vm.EstimateEditorOverlayBox();
+        // Prefer live TextBlock measure when wider — keeps the cyan frame outside the glyphs.
+        var measured = MeasureOverlayBoxVideoPixels(seg);
+        if (measured.Width > wPx)
+        {
+            wPx = measured.Width;
+        }
+
+        if (measured.Height > hPx)
+        {
+            hPx = measured.Height;
+        }
+
+        var left = seg.PosX * sx;
+        var top = seg.PosY * sy;
+        var width = Math.Max(8, wPx * sx);
+        var height = Math.Max(8, hPx * sy);
+
+        // Outline only — FFmpeg still already has the real text; drawing it again looks doubled.
+        Canvas.SetLeft(LayoutGhost, left);
+        Canvas.SetTop(LayoutGhost, top);
+        LayoutGhost.Width = width;
+        LayoutGhost.Height = height;
+        LayoutGhost.Visibility = Visibility.Visible;
+
+        Canvas.SetLeft(ResizeHandle, left + width - ResizeHandle.Width / 2);
+        Canvas.SetTop(ResizeHandle, top + height - ResizeHandle.Height / 2);
+        ResizeHandle.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>Measure editor text in source pixels (WinUI font metrics; used to widen the layout frame).</summary>
+    private static (int Width, int Height) MeasureOverlayBoxVideoPixels(TextOverlaySegment seg)
+    {
+        var lines = (seg.Text ?? string.Empty)
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace("\r", "\n", StringComparison.Ordinal)
+            .Split('\n');
+        if (lines.Length == 0)
+        {
+            lines = [""];
+        }
+
+        var fs = Math.Clamp(seg.Fontsize, 8, 400);
+        var ls = Math.Clamp(seg.LineSpacing, -120, 120);
+        var lineStep = Math.Max(4, fs + ls);
+        FontFamily? family = null;
+        if (!string.IsNullOrWhiteSpace(seg.FontPath) && File.Exists(seg.FontPath))
+        {
+            try
+            {
+                family = new FontFamily($"file:///{seg.FontPath.Replace('\\', '/')}");
+            }
+            catch
+            {
+                family = null;
+            }
+        }
+
+        double maxW = fs;
+        foreach (var line in lines)
+        {
+            var tb = new TextBlock
+            {
+                Text = string.IsNullOrEmpty(line) ? "\u00a0" : line,
+                FontSize = fs,
+                FontWeight = seg.Bold ? Microsoft.UI.Text.FontWeights.Bold : Microsoft.UI.Text.FontWeights.Normal,
+                FontStyle = seg.Italic ? Windows.UI.Text.FontStyle.Italic : Windows.UI.Text.FontStyle.Normal,
+                TextWrapping = TextWrapping.NoWrap,
+            };
+            if (family is not null)
+            {
+                tb.FontFamily = family;
+            }
+
+            tb.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+            maxW = Math.Max(maxW, tb.DesiredSize.Width);
+        }
+
+        var h = fs + (Math.Max(1, lines.Length) - 1) * lineStep + Math.Max(2, fs / 6);
+        // Extra slack: some faces render wider in FFmpeg than WinUI reports
+        var w = maxW + Math.Max(12, fs * 1.6);
+        if (seg.Italic)
+        {
+            w += Math.Max(6, fs / 4.0);
+        }
+
+        if (seg.BoxEnabled)
+        {
+            var bb = Math.Max(0, seg.BoxBorder);
+            w += bb * 2 + Math.Max(8, fs / 6.0);
+            h += bb * 2 + Math.Max(6, fs / 8);
+        }
+
+        if (seg.Bold || seg.Italic || seg.Strike || !string.IsNullOrWhiteSpace(seg.FontPath))
+        {
+            w += Math.Max(12, fs / 3.0);
+            h += Math.Max(6, fs / 8);
+        }
+
+        return ((int)Math.Ceiling(w), (int)Math.Ceiling((double)h));
     }
 
     private void HitLayer_OnPointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        if (ViewModel is null || ViewModel.IsPreviewPlaying || HitLayer.ActualWidth <= 0 || HitLayer.ActualHeight <= 0)
+        if (ViewModel is null || ViewModel.IsPreviewPlaying || HitLayer.ActualWidth <= 1)
         {
             return;
         }
 
-        HitLayer.CapturePointer(e.Pointer);
+        Focus(FocusState.Programmatic);
+        var pos = e.GetCurrentPoint(HitLayer).Position;
+        var mode = HitTest(pos);
+        if (mode == DragMode.None)
+        {
+            var nx = Clamp01(pos.X / HitLayer.ActualWidth);
+            var ny = Clamp01(pos.Y / HitLayer.ActualHeight);
+            ViewModel.BeginOverlayPositionDrag();
+            ViewModel.ApplyMoveFromPreview(nx, ny);
+            ViewModel.EndOverlayPositionDrag();
+            UpdateLayoutGhost();
+            e.Handled = true;
+            return;
+        }
+
+        _dragMode = mode;
         _overlayPointer = e.Pointer;
-        _overlayDragging = true;
+        HitLayer.CapturePointer(e.Pointer);
         ViewModel.BeginOverlayPositionDrag();
-        ApplyPointerPosition(e);
-        ShowDragGhost(e.GetCurrentPoint(HitLayer).Position);
+
+        var left = ViewModel.EditorSegment.PosX / (double)ViewModel.PreviewVideoWidth;
+        var top = ViewModel.EditorSegment.PosY / (double)ViewModel.PreviewVideoHeight;
+        var nx0 = Clamp01(pos.X / HitLayer.ActualWidth);
+        var ny0 = Clamp01(pos.Y / HitLayer.ActualHeight);
+        _grabOffsetNorm = new Windows.Foundation.Point(nx0 - left, ny0 - top);
+
+        UpdateLayoutGhost();
         e.Handled = true;
     }
 
     private void HitLayer_OnPointerMoved(object sender, PointerRoutedEventArgs e)
     {
-        if (!_overlayDragging || ViewModel is null)
+        if (_dragMode == DragMode.None || ViewModel is null || _overlayPointer is null || !e.Pointer.Equals(_overlayPointer))
         {
+            UpdateCursor(e.GetCurrentPoint(HitLayer).Position);
             return;
         }
 
-        ApplyPointerPosition(e);
-        ShowDragGhost(e.GetCurrentPoint(HitLayer).Position);
+        var pos = e.GetCurrentPoint(HitLayer).Position;
+        var nx = Clamp01(pos.X / HitLayer.ActualWidth);
+        var ny = Clamp01(pos.Y / HitLayer.ActualHeight);
+
+        if (_dragMode == DragMode.Move)
+        {
+            ViewModel.ApplyMoveFromPreview(nx - _grabOffsetNorm.X, ny - _grabOffsetNorm.Y);
+        }
+        else if (_dragMode == DragMode.ResizeSe)
+        {
+            ViewModel.ApplyResizeFromPreview(nx, ny);
+        }
+
+        UpdateLayoutGhost();
         e.Handled = true;
     }
 
-    private void HitLayer_OnPointerReleased(object sender, PointerRoutedEventArgs e)
-    {
-        if (!_overlayDragging)
-        {
-            return;
-        }
-
-        ApplyPointerPosition(e);
+    private void HitLayer_OnPointerReleased(object sender, PointerRoutedEventArgs e) =>
         EndOverlayDrag(commit: true);
-        e.Handled = true;
-    }
 
     private void HitLayer_OnPointerCanceled(object sender, PointerRoutedEventArgs e) =>
         EndOverlayDrag(commit: false);
 
     private void HitLayer_OnPointerCaptureLost(object sender, PointerRoutedEventArgs e)
     {
-        if (_overlayDragging)
+        if (_dragMode != DragMode.None)
         {
             EndOverlayDrag(commit: true);
         }
     }
 
-    private void ApplyPointerPosition(PointerRoutedEventArgs e)
-    {
-        if (ViewModel is null || HitLayer.ActualWidth <= 0 || HitLayer.ActualHeight <= 0)
-        {
-            return;
-        }
-
-        var pos = e.GetCurrentPoint(HitLayer).Position;
-        var nx = Math.Clamp(pos.X / HitLayer.ActualWidth, 0, 1);
-        var ny = Math.Clamp(pos.Y / HitLayer.ActualHeight, 0, 1);
-        ViewModel.SetPositionFromPreviewClick(nx, ny, deferPreviewRefresh: true);
-    }
-
-    private void ShowDragGhost(Windows.Foundation.Point localPos)
-    {
-        if (ViewModel is null)
-        {
-            return;
-        }
-
-        var text = string.IsNullOrWhiteSpace(ViewModel.EditorSegment.Text)
-            ? "•"
-            : ViewModel.EditorSegment.Text.Replace('\n', ' ').Trim();
-        if (text.Length > 48)
-        {
-            text = text[..45] + "…";
-        }
-
-        DragGhostText.Text = text;
-        DragGhostText.FontSize = Math.Clamp(ViewModel.EditorSegment.Fontsize * 0.35, 12, 42);
-        DragGhost.Visibility = Visibility.Visible;
-
-        var x = Math.Clamp(localPos.X, 0, Math.Max(0, HitLayer.ActualWidth - 8));
-        var y = Math.Clamp(localPos.Y, 0, Math.Max(0, HitLayer.ActualHeight - 8));
-        Canvas.SetLeft(DragGhost, x);
-        Canvas.SetTop(DragGhost, y);
-    }
-
     private void EndOverlayDrag(bool commit)
     {
-        if (!_overlayDragging && DragGhost.Visibility != Visibility.Visible)
+        if (_dragMode == DragMode.None)
         {
             return;
         }
-
-        _overlayDragging = false;
-        DragGhost.Visibility = Visibility.Collapsed;
 
         if (_overlayPointer is not null)
         {
@@ -314,14 +490,111 @@ public sealed partial class TextToVideoPreviewHost : UserControl
             _overlayPointer = null;
         }
 
+        _dragMode = DragMode.None;
+
+        if (ViewModel is null)
+        {
+            return;
+        }
+
         if (commit)
         {
-            ViewModel?.EndOverlayPositionDrag();
+            ViewModel.EndOverlayPositionDrag();
         }
         else
         {
-            ViewModel?.CancelOverlayPositionDrag();
+            ViewModel.CancelOverlayPositionDrag();
         }
+
+        UpdateLayoutGhost();
+    }
+
+    private DragMode HitTest(Windows.Foundation.Point pos)
+    {
+        if (LayoutGhost.Visibility != Visibility.Visible)
+        {
+            return DragMode.None;
+        }
+
+        var left = Canvas.GetLeft(LayoutGhost);
+        var top = Canvas.GetTop(LayoutGhost);
+        var right = left + LayoutGhost.Width;
+        var bottom = top + LayoutGhost.Height;
+        const double handlePad = 10;
+
+        if (pos.X >= right - handlePad && pos.X <= right + handlePad
+            && pos.Y >= bottom - handlePad && pos.Y <= bottom + handlePad)
+        {
+            return DragMode.ResizeSe;
+        }
+
+        if (pos.X >= left && pos.X <= right && pos.Y >= top && pos.Y <= bottom)
+        {
+            return DragMode.Move;
+        }
+
+        return DragMode.None;
+    }
+
+    private void UpdateCursor(Windows.Foundation.Point pos)
+    {
+        if (ViewModel?.IsPreviewPlaying == true)
+        {
+            ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
+            return;
+        }
+
+        var mode = HitTest(pos);
+        ProtectedCursor = mode switch
+        {
+            DragMode.ResizeSe => InputSystemCursor.Create(InputSystemCursorShape.SizeNorthwestSoutheast),
+            DragMode.Move => InputSystemCursor.Create(InputSystemCursorShape.SizeAll),
+            _ => InputSystemCursor.Create(InputSystemCursorShape.Arrow),
+        };
+    }
+
+    private void RootHost_OnKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (ViewModel is null || !ViewModel.HasVideo || ViewModel.IsPreviewPlaying)
+        {
+            return;
+        }
+
+        var shift = InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Shift)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+        var ctrl = InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Control)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+        var step = ctrl ? 10 : 1;
+
+        if (shift && e.Key is VirtualKey.Up or VirtualKey.Down)
+        {
+            var dFs = e.Key == VirtualKey.Up ? step : -step;
+            ViewModel.NudgeOverlay(0, 0, dFs);
+            UpdateLayoutGhost();
+            e.Handled = true;
+            return;
+        }
+
+        var dx = e.Key switch
+        {
+            VirtualKey.Left => -step,
+            VirtualKey.Right => step,
+            _ => 0,
+        };
+        var dy = e.Key switch
+        {
+            VirtualKey.Up => -step,
+            VirtualKey.Down => step,
+            _ => 0,
+        };
+        if (dx == 0 && dy == 0)
+        {
+            return;
+        }
+
+        ViewModel.NudgeOverlay(dx, dy, 0);
+        UpdateLayoutGhost();
+        e.Handled = true;
     }
 
     private void UpdatePlayGhost(double timeSec)
@@ -362,7 +635,6 @@ public sealed partial class TextToVideoPreviewHost : UserControl
             return null;
         }
 
-        // Prefer the segment currently being edited when it is visible.
         if (IsVisibleAt(ViewModel.EditorSegment, timeSec)
             && !string.IsNullOrWhiteSpace(ViewModel.EditorSegment.Text))
         {
@@ -426,6 +698,8 @@ public sealed partial class TextToVideoPreviewHost : UserControl
         }
     }
 
+    private static double Clamp01(double v) => Math.Clamp(v, 0, 1);
+
     private void BtnPlay_Click(object sender, RoutedEventArgs e)
     {
         if (ViewModel is null)
@@ -433,7 +707,6 @@ public sealed partial class TextToVideoPreviewHost : UserControl
             return;
         }
 
-        // Cancel pending FFmpeg preview work so play stays smooth.
         ViewModel.CancelPendingPreview();
         Player?.Play();
         ViewModel.IsPreviewPlaying = true;

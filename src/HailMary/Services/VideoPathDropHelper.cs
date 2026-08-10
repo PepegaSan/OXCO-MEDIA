@@ -8,6 +8,11 @@ public static class VideoPathDropHelper
         ".mts", ".m2ts", ".flv",
     };
 
+    private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif", ".tif", ".tiff",
+    };
+
     public static bool IsVideoFile(string path)
     {
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
@@ -17,6 +22,18 @@ public static class VideoPathDropHelper
 
         return VideoExtensions.Contains(Path.GetExtension(path));
     }
+
+    public static bool IsImageFile(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            return false;
+        }
+
+        return ImageExtensions.Contains(Path.GetExtension(path));
+    }
+
+    public static bool IsImageOrVideoFile(string path) => IsVideoFile(path) || IsImageFile(path);
 
     public static IEnumerable<string> ExpandVideoPaths(
         IEnumerable<string> paths,
@@ -67,9 +84,12 @@ public static class VideoPathDropHelper
         return result;
     }
 
-    public static string? PickFirstVideoOrFolder(IEnumerable<string> paths, bool allowFolders)
+    public static string? PickFirstVideoOrFolder(IEnumerable<string> paths, bool allowFolders) =>
+        PickFirstMediaOrFolder(paths, allowFolders, allowImages: false);
+
+    public static string? PickFirstMediaOrFolder(IEnumerable<string> paths, bool allowFolders, bool allowImages)
     {
-        string? firstVideo = null;
+        string? firstMedia = null;
         string? firstFolder = null;
 
         foreach (var path in paths)
@@ -80,9 +100,10 @@ public static class VideoPathDropHelper
             }
 
             var full = Path.GetFullPath(path);
-            if (File.Exists(full) && IsVideoFile(full))
+            if (File.Exists(full)
+                && (IsVideoFile(full) || (allowImages && IsImageFile(full))))
             {
-                firstVideo ??= full;
+                firstMedia ??= full;
             }
             else if (allowFolders && Directory.Exists(full))
             {
@@ -90,6 +111,6 @@ public static class VideoPathDropHelper
             }
         }
 
-        return firstVideo ?? firstFolder;
+        return firstMedia ?? firstFolder;
     }
 }

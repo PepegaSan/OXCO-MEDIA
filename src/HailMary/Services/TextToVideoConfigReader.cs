@@ -10,7 +10,7 @@ public sealed class TextToVideoSettings
 
     public string LastVideoPath { get; set; } = string.Empty;
 
-    public string Codec { get; set; } = "H.264 (libx264)";
+    public string Codec { get; set; } = "libx H.264";
 
     public string Bitrate { get; set; } = "5000k";
 
@@ -135,7 +135,7 @@ public static class TextToVideoConfigReader
     {
         settings.LastVideoDir = GetString(root, "last_video_dir");
         settings.LastVideoPath = GetString(root, "last_video_path");
-        settings.Codec = NormalizeCodec(GetString(root, "codec", "H.264 (libx264)"));
+        settings.Codec = NormalizeCodec(GetString(root, "codec", "libx H.264"));
         settings.Bitrate = GetString(root, "bitrate", "5000k");
         settings.ExportContainer = GetString(root, "export_container", "mp4");
         settings.GifFps = GetInt(root, "gif_fps", 15);
@@ -168,17 +168,10 @@ public static class TextToVideoConfigReader
     {
         if (string.IsNullOrWhiteSpace(codec))
         {
-            return "H.264 (libx264)";
+            return FfmpegEncoderCatalog.LabelFor(FfmpegEncoderCatalog.TextToVideo, "libx264");
         }
 
-        return codec switch
-        {
-            "libx264" => "H.264 (libx264)",
-            "libx265" => "H.265 / HEVC (libx265)",
-            "libvpx-vp9" => "VP9 (libvpx-vp9)",
-            "libsvtav1" => "AV1 (libsvtav1)",
-            _ => codec,
-        };
+        return FfmpegEncoderCatalog.LabelFor(FfmpegEncoderCatalog.TextToVideo, codec);
     }
 
     private static string GetString(JsonElement el, string name, string fallback = "") =>

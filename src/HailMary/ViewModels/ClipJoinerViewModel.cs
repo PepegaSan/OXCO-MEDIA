@@ -40,7 +40,9 @@ public partial class ClipJoinerViewModel : ObservableObject, IToolShellHost, ILo
         OutputDir = settings.OutputDir;
         OutputName = settings.OutputName;
         SelectedMode = settings.Mode;
-        SelectedEncoder = settings.FfmpegEncoder;
+        SelectedEncoder = FfmpegEncoderCatalog.LabelFor(
+            FfmpegEncoderCatalog.SoftHardwareWithCopy,
+            settings.FfmpegEncoder);
         DavinciPreset = settings.DavinciPreset;
         DavinciTimeoutSeconds = settings.DavinciTimeoutSeconds;
         RefreshClipRows();
@@ -56,12 +58,14 @@ public partial class ClipJoinerViewModel : ObservableObject, IToolShellHost, ILo
     public IReadOnlyList<string> ModeOptions { get; } = ["ffmpeg", "davinci", "both"];
 
     public IReadOnlyList<string> EncoderOptions { get; } =
-        ["copy", "nvidia_h264", "nvidia_hevc", "cpu", "cpu_hevc"];
+        FfmpegEncoderCatalog.Labels(FfmpegEncoderCatalog.SoftHardwareWithCopy);
 
     [ObservableProperty] private string _outputDir = string.Empty;
     [ObservableProperty] private string _outputName = "joined";
     [ObservableProperty] private string _selectedMode = "ffmpeg";
-    [ObservableProperty] private string _selectedEncoder = "nvidia_h264";
+    [ObservableProperty] private string _selectedEncoder = FfmpegEncoderCatalog.LabelFor(
+        FfmpegEncoderCatalog.SoftHardwareWithCopy,
+        "nvidia_h264");
     [ObservableProperty] private double _targetFps;
     [ObservableProperty] private string _davinciPreset = "YouTube - 1080p";
     [ObservableProperty] private double _davinciTimeoutSeconds = 3600;
@@ -287,7 +291,7 @@ public partial class ClipJoinerViewModel : ObservableObject, IToolShellHost, ILo
             OutputDir = OutputDir,
             OutputName = OutputName,
             Mode = SelectedMode,
-            FfmpegEncoder = SelectedEncoder,
+            FfmpegEncoder = FfmpegEncoderCatalog.IdFor(FfmpegEncoderCatalog.SoftHardwareWithCopy, SelectedEncoder),
             DavinciPreset = DavinciPreset,
             DavinciTimeoutSeconds = DavinciTimeoutSeconds,
         });
@@ -330,7 +334,7 @@ public partial class ClipJoinerViewModel : ObservableObject, IToolShellHost, ILo
                 output_dir = OutputDir,
                 output_name = OutputName,
                 mode = SelectedMode,
-                ffmpeg_encoder = SelectedEncoder,
+                ffmpeg_encoder = FfmpegEncoderCatalog.IdFor(FfmpegEncoderCatalog.SoftHardwareWithCopy, SelectedEncoder),
                 target_fps = TargetFps,
                 davinci_preset = DavinciPreset,
                 davinci_timeout_s = DavinciTimeoutSeconds,
@@ -342,7 +346,7 @@ public partial class ClipJoinerViewModel : ObservableObject, IToolShellHost, ILo
                 output_dir = OutputDir,
                 output_name = OutputName,
                 mode = SelectedMode,
-                ffmpeg_encoder = SelectedEncoder,
+                ffmpeg_encoder = FfmpegEncoderCatalog.IdFor(FfmpegEncoderCatalog.SoftHardwareWithCopy, SelectedEncoder),
                 target_fps = TargetFps,
                 davinci_preset = DavinciPreset,
                 davinci_timeout_s = DavinciTimeoutSeconds,
