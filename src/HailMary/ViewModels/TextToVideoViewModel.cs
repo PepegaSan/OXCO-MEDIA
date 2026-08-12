@@ -178,6 +178,8 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
             or nameof(TextOverlaySegment.Color)
             or nameof(TextOverlaySegment.PosX)
             or nameof(TextOverlaySegment.PosY)
+            or nameof(TextOverlaySegment.LayoutWidth)
+            or nameof(TextOverlaySegment.LayoutHeight)
             or nameof(TextOverlaySegment.LineSpacing)
             or nameof(TextOverlaySegment.BoxBorder)
             or nameof(TextOverlaySegment.BoxEnabled)
@@ -194,6 +196,8 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
             }
             else if (e.PropertyName is nameof(TextOverlaySegment.PosX)
                      or nameof(TextOverlaySegment.PosY)
+                     or nameof(TextOverlaySegment.LayoutWidth)
+                     or nameof(TextOverlaySegment.LayoutHeight)
                      or nameof(TextOverlaySegment.Fontsize))
             {
                 if (_isOverlayDragging)
@@ -615,6 +619,16 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
             h += Math.Max(6, fs / 8);
         }
 
+        if (seg.LayoutWidth > 0)
+        {
+            w = seg.LayoutWidth;
+        }
+
+        if (seg.LayoutHeight > 0)
+        {
+            h = seg.LayoutHeight;
+        }
+
         if (_videoWidth > 0)
         {
             w = Math.Min(w, _videoWidth);
@@ -686,7 +700,7 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
         EditorSegment.PosY = y;
     }
 
-    /// <summary>SE corner in normalized preview space; box height → Fontsize (line stack matches FFmpeg drawtext).</summary>
+    /// <summary>SE corner in normalized preview space; width and height are independent.</summary>
     public void ApplyResizeFromPreview(double nRight, double nBottom)
     {
         if (_videoWidth <= 0 || _videoHeight <= 0)
@@ -696,27 +710,19 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
 
         var left = EditorSegment.PosX / (double)_videoWidth;
         var top = EditorSegment.PosY / (double)_videoHeight;
-        var newH = Math.Max(8.0, (Math.Clamp(nBottom, 0, 1) - top) * _videoHeight);
-        // Width is only used to keep the SE corner feel; font size is height-driven.
-        _ = Math.Max(8.0, (Math.Clamp(nRight, 0, 1) - left) * _videoWidth);
+        var maxW = Math.Max(8, _videoWidth - EditorSegment.PosX);
+        var maxH = Math.Max(8, _videoHeight - EditorSegment.PosY);
+        var newW = (int)Math.Clamp(
+            Math.Round((Math.Clamp(nRight, 0, 1) - left) * _videoWidth),
+            8,
+            maxW);
+        var newH = (int)Math.Clamp(
+            Math.Round((Math.Clamp(nBottom, 0, 1) - top) * _videoHeight),
+            8,
+            maxH);
 
-        var lines = (EditorSegment.Text ?? string.Empty).Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
-        var lineCount = Math.Max(1, lines.Length);
-        if (lineCount == 1 && string.IsNullOrEmpty(lines[0]))
-        {
-            lineCount = 1;
-        }
-
-        var ls = Math.Clamp(EditorSegment.LineSpacing, -120, 120);
-        var boxPad = EditorSegment.BoxEnabled ? Math.Max(0, EditorSegment.BoxBorder) * 2 + 4 : 0;
-        var textH = Math.Max(8.0, newH - boxPad);
-        // textH = fs + (L-1)*(fs+ls)  →  fs = (textH - (L-1)*ls) / L
-        var fs = (textH - (lineCount - 1) * ls) / lineCount;
-        EditorSegment.Fontsize = (int)Math.Clamp(Math.Round(fs), 12, 200);
-
-        var (w, h) = EstimateEditorOverlayBox();
-        EditorSegment.PosX = Math.Clamp(EditorSegment.PosX, 0, Math.Max(0, _videoWidth - w));
-        EditorSegment.PosY = Math.Clamp(EditorSegment.PosY, 0, Math.Max(0, _videoHeight - h));
+        EditorSegment.LayoutWidth = newW;
+        EditorSegment.LayoutHeight = newH;
     }
 
     public void NudgeOverlay(int dxPx, int dyPx, int dFontsize)

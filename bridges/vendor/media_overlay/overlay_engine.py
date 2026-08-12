@@ -97,8 +97,24 @@ def _run_ffprobe(path: str) -> dict:
     return json.loads(proc.stdout or "{}")
 
 
+def _stream_rotation_degrees(stream: dict) -> int:
+    """Read ffprobe display rotation (EXIF/mobile video orientation)."""
+    candidates: list[object] = []
+    tags = stream.get("tags") or {}
+    candidates.append(tags.get("rotate"))
+    for side_data in stream.get("side_data_list") or []:
+        candidates.append(side_data.get("rotation"))
+    for raw in candidates:
+        try:
+            # Only quarter turns swap the displayed width/height.
+            return int(round(float(raw))) % 360
+        except (TypeError, ValueError):
+            continue
+    return 0
+
+
 def probe_media(path: str) -> tuple[int, int, float, bool, bool]:
-    """Return width, height, duration, has_video, has_audio."""
+    """Return displayed width/height, duration, has_video, has_audio."""
     data = _run_ffprobe(path)
     width = height = 0
     has_video = has_audio = False
@@ -110,6 +126,8 @@ def probe_media(path: str) -> tuple[int, int, float, bool, bool]:
             try:
                 width = int(stream.get("width") or 0)
                 height = int(stream.get("height") or 0)
+                if _stream_rotation_degrees(stream) in (90, 270):
+                    width, height = height, width
             except (TypeError, ValueError):
                 width = height = 0
             try:
@@ -136,6 +154,20 @@ def _even(n: int) -> int:
     return n - (n % 2)
 
 
+def _scaled_overlay_size(
+    main_width: int,
+    width_percent: float,
+    overlay_width: int,
+    overlay_height: int,
+) -> tuple[int, int]:
+    """Return the exact even pixel size shared by preview, handles, and export."""
+    scale_w = _even(int(round(main_width * (width_percent / 100.0))))
+    if overlay_width <= 0 or overlay_height <= 0:
+        return scale_w, scale_w
+    scale_h = _even(int(round(scale_w * overlay_height / overlay_width)))
+    return scale_w, scale_h
+
+
 def _escape_enable(start: float, end: float) -> str:
     # Commas must be escaped for filter_complex / filtergraph
     return f"enable='between(t\\,{start:.3f}\\,{end:.3f})'"
@@ -159,7 +191,7 @@ def build_ffmpeg_command(settings: OverlaySettings, *, log: Optional[LogFn] = No
     if main_dur <= 0:
         raise RuntimeError("Could not read main video duration.")
 
-    _, _, _, ov_has_v, ov_has_a = probe_media(str(overlay))
+    ow, oh, _, ov_has_v, ov_has_a = probe_media(str(overlay))
     overlay_is_image = is_image_path(str(overlay))
     if not overlay_is_image and not ov_has_v:
         raise RuntimeError("Overlay file has no readable video stream.")
@@ -174,10 +206,10 @@ def build_ffmpeg_command(settings: OverlaySettings, *, log: Optional[LogFn] = No
 
     pct = float(settings.width_percent or 25.0)
     pct = min(100.0, max(1.0, pct))
-    scale_w = _even(int(round(mw * (pct / 100.0))))
+    scale_w, scale_h = _scaled_overlay_size(mw, pct, ow, oh)
 
-    pos_x = max(0, int(settings.pos_x))
-    pos_y = max(0, int(settings.pos_y))
+    pos_x = min(max(0, int(settings.pos_x)), max(0, mw - scale_w))
+    pos_y = min(max(0, int(settings.pos_y)), max(0, mh - scale_h))
     enable = _escape_enable(start, end)
 
     try:
@@ -193,10 +225,18 @@ def build_ffmpeg_command(settings: OverlaySettings, *, log: Optional[LogFn] = No
     else:
         cmd.extend(["-i", str(overlay)])
 
-    # Video: scale overlay by width %, keep aspect; pass through when eof
+    # Shift the overlay timeline to the requested start. Without this, a short
+    # overlay video may already be at EOF before enable= starts showing it.
+    overlay_pts = (
+        "setpts=PTS-STARTPTS"
+        if overlay_is_image
+        else f"setpts=PTS-STARTPTS+{start:.6f}/TB"
+    )
+    # Scale by displayed width %, keep display aspect, and normalize SAR.
     vf = (
-        f"[1:v]scale={scale_w}:-2,format=rgba[ov];"
-        f"[0:v][ov]overlay={pos_x}:{pos_y}:{enable}:eof_action=pass[vout]"
+        f"[1:v]{overlay_pts},scale={scale_w}:{scale_h},setsar=1,format=rgba[ov];"
+        f"[0:v]setsar=1[main];"
+        f"[main][ov]overlay={pos_x}:{pos_y}:{enable}:eof_action=pass[vout]"
     )
 
     want_main_a = bool(settings.main_audio) and main_has_a
@@ -293,7 +333,7 @@ def extract_preview_frame(
     if main_dur <= 0:
         raise RuntimeError("Could not read main video duration.")
 
-    ow, oh, _, ov_has_v, _ = probe_media(str(overlay))
+    ow, oh, overlay_dur, ov_has_v, _ = probe_media(str(overlay))
     overlay_is_image = is_image_path(str(overlay))
     if not overlay_is_image and not ov_has_v:
         raise RuntimeError("Overlay file has no readable video stream.")
@@ -308,9 +348,9 @@ def extract_preview_frame(
     end = min(end, main_dur)
 
     pct = min(100.0, max(1.0, float(settings.width_percent or 25.0)))
-    scale_w = _even(int(round(mw * (pct / 100.0))))
-    pos_x = max(0, int(settings.pos_x))
-    pos_y = max(0, int(settings.pos_y))
+    scale_w, scale_h = _scaled_overlay_size(mw, pct, ow, oh)
+    pos_x = min(max(0, int(settings.pos_x)), max(0, mw - scale_w))
+    pos_y = min(max(0, int(settings.pos_y)), max(0, mh - scale_h))
 
     if force_show:
         overlay_filter = f"[0:v][ov]overlay={pos_x}:{pos_y}:eof_action=pass[comp]"
@@ -320,8 +360,9 @@ def extract_preview_frame(
 
     scale_f = _preview_scale_filter(width_max, height_max)
     fc = (
-        f"[1:v]scale={scale_w}:-2,format=rgba[ov];"
-        f"{overlay_filter};"
+        f"[1:v]setpts=PTS-STARTPTS,scale={scale_w}:{scale_h},setsar=1,format=rgba[ov];"
+        f"[0:v]setsar=1[main];"
+        f"{overlay_filter.replace('[0:v]', '[main]')};"
         f"[comp]format=yuv420p,{scale_f},format=rgb24[vout]"
     )
 
@@ -338,8 +379,14 @@ def extract_preview_frame(
     if overlay_is_image:
         cmd.extend(["-loop", "1", "-i", str(overlay)])
     else:
-        # Align overlay timeline with main: show frame at (t - start)
+        # Align overlay timeline with main. For force-show editing previews,
+        # wrap short videos so a valid frame remains visible at later playheads.
         ov_t = max(0.0, t - start)
+        if overlay_dur > 0:
+            if force_show:
+                ov_t %= overlay_dur
+            else:
+                ov_t = min(ov_t, max(0.0, overlay_dur - 0.10))
         cmd.extend(["-ss", f"{ov_t:.3f}", "-i", str(overlay)])
 
     cmd.extend(

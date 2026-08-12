@@ -82,6 +82,21 @@ def _parse_positive_int(raw: object) -> Optional[int]:
         return None
 
 
+def _stream_rotation_degrees(stream: Dict[str, Any]) -> int:
+    """Read ffprobe display rotation from tags or Display Matrix side data."""
+    candidates: List[object] = [(stream.get("tags") or {}).get("rotate")]
+    candidates.extend(
+        side_data.get("rotation")
+        for side_data in (stream.get("side_data_list") or [])
+    )
+    for raw in candidates:
+        try:
+            return int(round(float(raw))) % 360
+        except (TypeError, ValueError):
+            continue
+    return 0
+
+
 def probe_video(video_path: str) -> VideoInfo:
     ffprobe = find_ffprobe()
     code, out, err = run_cmd(
@@ -110,6 +125,8 @@ def probe_video(video_path: str) -> VideoInfo:
         if st.get("codec_type") == "video":
             w = int(st.get("width") or w)
             h = int(st.get("height") or h)
+            if _stream_rotation_degrees(st) in (90, 270):
+                w, h = h, w
             stream_br = _parse_positive_int(st.get("bit_rate"))
             fr = st.get("r_frame_rate") or st.get("avg_frame_rate") or ""
             if "/" in str(fr):
@@ -270,6 +287,9 @@ class TimedTextOverlay:
     fontsize: int
     pos_x: int
     pos_y: int
+    # 0 = natural text bounds; positive values freely stretch the rasterized text box.
+    layout_width: int = 0
+    layout_height: int = 0
     box_border_w: int = 3
     #: Halbtransparenter Kasten hinter dem Text (drawtext + Pillow).
     box_enabled: bool = True
@@ -734,8 +754,11 @@ def build_timed_overlay_vf_parts(
 
         font_bn = _prepare_segment_font(work_dir, ov.font_path)
 
-        # Custom fonts (esp. .ttc / odd OTFs) are unreliable with FFmpeg drawtext — prefer Pillow.
-        use_raster_styles = bool(ov.bold or ov.italic or ov.strike or ov.font_path)
+        # Custom fonts/styles and freely sized boxes use Pillow, then optional exact scaling.
+        has_free_layout = ov.layout_width > 0 and ov.layout_height > 0
+        use_raster_styles = bool(
+            ov.bold or ov.italic or ov.strike or ov.font_path or has_free_layout
+        )
         try:
             if use_raster_styles:
                 png_bn = _render_styled_overlay_png(
@@ -753,7 +776,14 @@ def build_timed_overlay_vf_parts(
                         ov.text_visible_from_sec,
                         ov.text_visible_to_sec,
                     )
-                parts.append(f"movie={png_bn}[{lbl}]")
+                if has_free_layout:
+                    target_w = max(8, min(int(ov.layout_width), play_res_width))
+                    target_h = max(8, min(int(ov.layout_height), play_res_height))
+                    parts.append(
+                        f"movie={png_bn},scale={target_w}:{target_h},format=rgba[{lbl}]"
+                    )
+                else:
+                    parts.append(f"movie={png_bn}[{lbl}]")
                 parts.append(
                     f"[in][{lbl}]overlay={int(ov.pos_x)}:{int(ov.pos_y)}{enable_sfx}"
                 )

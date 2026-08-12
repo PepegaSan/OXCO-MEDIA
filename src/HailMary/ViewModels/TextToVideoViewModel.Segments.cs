@@ -31,6 +31,8 @@ public partial class TextToVideoViewModel
             fresh.Color = styleSource.Color;
             fresh.PosX = styleSource.PosX;
             fresh.PosY = styleSource.PosY;
+            fresh.LayoutWidth = styleSource.LayoutWidth;
+            fresh.LayoutHeight = styleSource.LayoutHeight;
             fresh.LineSpacing = styleSource.LineSpacing;
             fresh.BoxBorder = styleSource.BoxBorder;
             fresh.BoxEnabled = styleSource.BoxEnabled;

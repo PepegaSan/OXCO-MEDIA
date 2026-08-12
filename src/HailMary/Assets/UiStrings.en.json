@@ -1165,7 +1165,7 @@
   "texttovideo.preset.watermark": "Watermark",
   "texttovideo.presetPlaceholder": "YouTube - 1080p",
   "texttovideo.previewHint": "Pause: accurate FFmpeg preview. Play: smooth video + text hint at position (exact font/style after pause).",
-  "texttovideo.layoutDragHint": "Drag: move · bottom-right corner: font size (box height) · click outside: set position · arrows: 1 px (Ctrl=10) · Shift+↑/↓: font size",
+  "texttovideo.layoutDragHint": "Drag: move · bottom-right corner: freely resize width/height · click outside: set position · arrows: 1 px (Ctrl=10) · Shift+↑/↓: font size",
   "texttovideo.removeSelection": "Remove selection",
   "texttovideo.renderPreset": "Render preset",
   "texttovideo.scanFolder": "Scan folder",

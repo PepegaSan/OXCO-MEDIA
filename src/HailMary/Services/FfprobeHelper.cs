@@ -78,7 +78,7 @@ public static class FfprobeHelper
             var psi = new ProcessStartInfo
             {
                 FileName = ffprobe,
-                Arguments = $"-v error -select_streams v:0 -show_entries stream=width,height -of json \"{path}\"",
+                Arguments = $"-v error -select_streams v:0 -show_entries \"stream=width,height:stream_tags=rotate:stream_side_data=rotation\" -of json \"{path}\"",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -114,6 +114,12 @@ public static class FfprobeHelper
                 && w > 0
                 && h > 0)
             {
+                var rotation = ReadRotationDegrees(stream);
+                if (rotation is 90 or 270)
+                {
+                    (w, h) = (h, w);
+                }
+
                 return (w, h);
             }
         }
@@ -123,6 +129,61 @@ public static class FfprobeHelper
         }
 
         return null;
+    }
+
+    private static int ReadRotationDegrees(JsonElement stream)
+    {
+        if (stream.TryGetProperty("tags", out var tags)
+            && tags.ValueKind == JsonValueKind.Object
+            && tags.TryGetProperty("rotate", out var rotateTag)
+            && TryReadDegrees(rotateTag, out var tagDegrees))
+        {
+            return tagDegrees;
+        }
+
+        if (stream.TryGetProperty("side_data_list", out var sideData)
+            && sideData.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in sideData.EnumerateArray())
+            {
+                if (item.TryGetProperty("rotation", out var rotation)
+                    && TryReadDegrees(rotation, out var sideDegrees))
+                {
+                    return sideDegrees;
+                }
+            }
+        }
+
+        return 0;
+    }
+
+    private static bool TryReadDegrees(JsonElement value, out int degrees)
+    {
+        degrees = 0;
+        double raw;
+        if (value.ValueKind == JsonValueKind.Number)
+        {
+            if (!value.TryGetDouble(out raw))
+            {
+                return false;
+            }
+        }
+        else if (value.ValueKind == JsonValueKind.String
+                 && double.TryParse(
+                     value.GetString(),
+                     System.Globalization.NumberStyles.Float,
+                     System.Globalization.CultureInfo.InvariantCulture,
+                     out var parsed))
+        {
+            raw = parsed;
+        }
+        else
+        {
+            return false;
+        }
+
+        degrees = ((int)Math.Round(raw) % 360 + 360) % 360;
+        return true;
     }
 
     private static string? FindFfprobe()

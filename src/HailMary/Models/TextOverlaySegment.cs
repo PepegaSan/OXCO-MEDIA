@@ -19,6 +19,11 @@ public partial class TextOverlaySegment : ObservableObject
 
     [ObservableProperty] private int _posY = 80;
 
+    // 0 = automatic text bounds; positive values are a freely resized output box.
+    [ObservableProperty] private int _layoutWidth;
+
+    [ObservableProperty] private int _layoutHeight;
+
     [ObservableProperty] private int _lineSpacing;
 
     [ObservableProperty] private int _boxBorder = 3;
@@ -57,6 +62,25 @@ public partial class TextOverlaySegment : ObservableObject
 
     partial void OnToChanged(string value) => OnPropertyChanged(nameof(ListLabel));
 
+    partial void OnFontsizeChanged(int oldValue, int newValue)
+    {
+        if (oldValue <= 0 || newValue <= 0 || (LayoutWidth <= 0 && LayoutHeight <= 0))
+        {
+            return;
+        }
+
+        var ratio = newValue / (double)oldValue;
+        if (LayoutWidth > 0)
+        {
+            LayoutWidth = Math.Max(8, (int)Math.Round(LayoutWidth * ratio));
+        }
+
+        if (LayoutHeight > 0)
+        {
+            LayoutHeight = Math.Max(8, (int)Math.Round(LayoutHeight * ratio));
+        }
+    }
+
     public object ToJsonObject() => new
     {
         text = Text,
@@ -66,6 +90,8 @@ public partial class TextOverlaySegment : ObservableObject
         color = Color,
         px = PosX,
         py = PosY,
+        layout_width = LayoutWidth,
+        layout_height = LayoutHeight,
         line_spacing = LineSpacing,
         box_border = BoxBorder,
         box_enabled = BoxEnabled ? 1 : 0,
@@ -85,6 +111,8 @@ public partial class TextOverlaySegment : ObservableObject
         Color = el.TryGetProperty("color", out var c) ? (c.GetString() ?? "FFFFFF").Trim().TrimStart('#') : "FFFFFF",
         PosX = el.TryGetProperty("px", out var px) ? px.GetInt32() : 80,
         PosY = el.TryGetProperty("py", out var py) ? py.GetInt32() : 80,
+        LayoutWidth = el.TryGetProperty("layout_width", out var lw) ? Math.Max(0, lw.GetInt32()) : 0,
+        LayoutHeight = el.TryGetProperty("layout_height", out var lh) ? Math.Max(0, lh.GetInt32()) : 0,
         LineSpacing = el.TryGetProperty("line_spacing", out var ls) ? ls.GetInt32() : 0,
         BoxBorder = el.TryGetProperty("box_border", out var bb) ? bb.GetInt32() : 3,
         BoxEnabled = !el.TryGetProperty("box_enabled", out var be) || be.ValueKind switch
@@ -116,6 +144,8 @@ public partial class TextOverlaySegment : ObservableObject
         Color = Color,
         PosX = PosX,
         PosY = PosY,
+        LayoutWidth = LayoutWidth,
+        LayoutHeight = LayoutHeight,
         LineSpacing = LineSpacing,
         BoxBorder = BoxBorder,
         BoxEnabled = BoxEnabled,
@@ -135,6 +165,8 @@ public partial class TextOverlaySegment : ObservableObject
         Color = source.Color;
         PosX = source.PosX;
         PosY = source.PosY;
+        LayoutWidth = source.LayoutWidth;
+        LayoutHeight = source.LayoutHeight;
         LineSpacing = source.LineSpacing;
         BoxBorder = source.BoxBorder;
         BoxEnabled = source.BoxEnabled;

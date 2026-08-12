@@ -124,6 +124,8 @@ public sealed partial class TextToVideoPreviewHost : UserControl
         if (e.PropertyName is nameof(TextOverlaySegment.PosX)
             or nameof(TextOverlaySegment.PosY)
             or nameof(TextOverlaySegment.Fontsize)
+            or nameof(TextOverlaySegment.LayoutWidth)
+            or nameof(TextOverlaySegment.LayoutHeight)
             or nameof(TextOverlaySegment.Text)
             or nameof(TextOverlaySegment.LineSpacing)
             or nameof(TextOverlaySegment.BoxEnabled)
@@ -292,16 +294,19 @@ public sealed partial class TextToVideoPreviewHost : UserControl
         var sx = dw / vm.PreviewVideoWidth;
         var sy = dh / vm.PreviewVideoHeight;
         var (wPx, hPx) = vm.EstimateEditorOverlayBox();
-        // Prefer live TextBlock measure when wider — keeps the cyan frame outside the glyphs.
-        var measured = MeasureOverlayBoxVideoPixels(seg);
-        if (measured.Width > wPx)
+        // Auto-sized overlays get a measured safety margin; freely resized boxes stay exact.
+        if (seg.LayoutWidth <= 0 || seg.LayoutHeight <= 0)
         {
-            wPx = measured.Width;
-        }
+            var measured = MeasureOverlayBoxVideoPixels(seg);
+            if (seg.LayoutWidth <= 0 && measured.Width > wPx)
+            {
+                wPx = measured.Width;
+            }
 
-        if (measured.Height > hPx)
-        {
-            hPx = measured.Height;
+            if (seg.LayoutHeight <= 0 && measured.Height > hPx)
+            {
+                hPx = measured.Height;
+            }
         }
 
         var left = seg.PosX * sx;
@@ -316,8 +321,19 @@ public sealed partial class TextToVideoPreviewHost : UserControl
         LayoutGhost.Height = height;
         LayoutGhost.Visibility = Visibility.Visible;
 
-        Canvas.SetLeft(ResizeHandle, left + width - ResizeHandle.Width / 2);
-        Canvas.SetTop(ResizeHandle, top + height - ResizeHandle.Height / 2);
+        // Keep the handle fully reachable even when the box fills the video.
+        Canvas.SetLeft(
+            ResizeHandle,
+            Math.Clamp(
+                left + width - ResizeHandle.Width / 2,
+                0,
+                Math.Max(0, HitLayer.ActualWidth - ResizeHandle.Width)));
+        Canvas.SetTop(
+            ResizeHandle,
+            Math.Clamp(
+                top + height - ResizeHandle.Height / 2,
+                0,
+                Math.Max(0, HitLayer.ActualHeight - ResizeHandle.Height)));
         ResizeHandle.Visibility = Visibility.Visible;
     }
 

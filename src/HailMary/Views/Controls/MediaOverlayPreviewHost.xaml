@@ -18,6 +18,7 @@
         <Grid x:Name="PreviewSurface" HorizontalAlignment="Left" Background="Transparent">
             <controls:AspectFitImagePresenter
                 x:Name="PreviewPresenter"
+                HorizontalAlignment="Left"
                 MaxPreviewHeight="560"
                 MinPreviewHeight="240"
                 IsHitTestVisible="False" />

@@ -1165,7 +1165,7 @@
   "texttovideo.preset.watermark": "Wasserzeichen",
   "texttovideo.presetPlaceholder": "YouTube - 1080p",
   "texttovideo.previewHint": "Pause: genaue FFmpeg-Vorschau. Play: flüssiges Video + Text-Hinweis an der Position (Schrift/Stil exakt erst nach Pause).",
-  "texttovideo.layoutDragHint": "Ziehen: verschieben · Ecke unten rechts: Schriftgröße (Boxhöhe) · Klick außerhalb: Position setzen · Pfeile: 1 px (Strg=10) · Umschalt+↑/↓: Schriftgröße",
+  "texttovideo.layoutDragHint": "Ziehen: verschieben · Ecke unten rechts: Breite/Höhe frei skalieren · Klick außerhalb: Position setzen · Pfeile: 1 px (Strg=10) · Umschalt+↑/↓: Schriftgröße",
   "texttovideo.removeSelection": "Auswahl entfernen",
   "texttovideo.renderPreset": "Render-Preset",
   "texttovideo.scanFolder": "Ordner scannen",

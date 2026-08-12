@@ -18,6 +18,7 @@
         <Grid x:Name="PreviewSurface" HorizontalAlignment="Left" Background="Transparent">
             <controls:AspectFitVideoPresenter
                 x:Name="VideoSurface"
+                HorizontalAlignment="Left"
                 MaxPreviewHeight="720"
                 MinPreviewHeight="320"
                 Opacity="0"
@@ -25,6 +26,7 @@
             <controls:AspectFitImagePresenter
                 x:Name="PreviewPresenter"
                 MaxPreviewHeight="720"
+                HorizontalAlignment="Left"
                 MinPreviewHeight="320"
                 IsHitTestVisible="False" />
             <Border

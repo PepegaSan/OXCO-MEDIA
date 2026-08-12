@@ -39,19 +39,26 @@ def build_settings(cfg: dict) -> OverlaySettings:
     elif output_dir and not Path(out).is_absolute():
         out = str(Path(output_dir) / out)
 
+    def number(key: str, default: float) -> float:
+        raw = cfg.get(key)
+        if raw is None or raw == "":
+            return default
+        return float(raw)
+
     return OverlaySettings(
         main_path=main,
         overlay_path=overlay,
         output_path=out,
-        pos_x=int(cfg.get("pos_x") or 24),
-        pos_y=int(cfg.get("pos_y") or 24),
-        width_percent=float(cfg.get("width_percent") or 25.0),
-        start_seconds=float(cfg.get("start_seconds") or 0.0),
-        end_seconds=float(cfg.get("end_seconds") or 0.0),
+        # Zero is a valid edge position; ``or 24`` used to move x/y=0 inward.
+        pos_x=int(number("pos_x", 24)),
+        pos_y=int(number("pos_y", 24)),
+        width_percent=number("width_percent", 25.0),
+        start_seconds=number("start_seconds", 0.0),
+        end_seconds=number("end_seconds", 0.0),
         main_audio=bool(cfg.get("main_audio", True)),
         overlay_audio=bool(cfg.get("overlay_audio", False)),
         ffmpeg_encoder=str(cfg.get("ffmpeg_encoder") or "nvidia_h264"),
-        target_fps=float(cfg.get("target_fps") or 0),
+        target_fps=number("target_fps", 0.0),
     )
 
 
