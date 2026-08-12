@@ -8,7 +8,7 @@
     xmlns:viewModels="using:HailMary.ViewModels"
     xmlns:controls="using:HailMary.Views.Controls"
     xmlns:drop="using:HailMary.Views.Helpers"
-    HorizontalAlignment="Left"
+    HorizontalAlignment="Stretch"
     VerticalAlignment="Top"
     mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
 
@@ -112,59 +112,131 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <TabView HorizontalAlignment="Left" IsAddTabButtonVisible="False" MaxWidth="1200" TabWidthMode="Equal" VerticalAlignment="Top">
+    <TabView
+        MaxWidth="{StaticResource HmContentWidthWide}"
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Top"
+        IsAddTabButtonVisible="False"
+        TabWidthMode="Equal">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="NarrowLayout">
+                    <VisualState.Setters>
+                        <Setter Target="WorkflowRightColumn.Width" Value="0" />
+                        <Setter Target="DeepfakeCard.(Grid.Column)" Value="0" />
+                        <Setter Target="DeepfakeCard.(Grid.Row)" Value="1" />
+                        <Setter Target="TaggerRightColumn.Width" Value="0" />
+                        <Setter Target="TaggerPreview.(Grid.Column)" Value="0" />
+                        <Setter Target="TaggerPreview.(Grid.Row)" Value="1" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="WideLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1100" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="WorkflowRightColumn.Width" Value="*" />
+                        <Setter Target="DeepfakeCard.(Grid.Column)" Value="1" />
+                        <Setter Target="DeepfakeCard.(Grid.Row)" Value="0" />
+                        <Setter Target="TaggerRightColumn.Width" Value="*" />
+                        <Setter Target="TaggerPreview.(Grid.Column)" Value="1" />
+                        <Setter Target="TaggerPreview.(Grid.Row)" Value="0" />
+                        <Setter Target="DeepfakePathBox.(Grid.Column)" Value="2" />
+                        <Setter Target="DeepfakePathBox.(Grid.Row)" Value="0" />
+                        <Setter Target="DeepfakePathButton.(Grid.Column)" Value="3" />
+                        <Setter Target="DeepfakePathButton.(Grid.Row)" Value="0" />
+                        <Setter Target="DeepfakeFolderBox.(Grid.Column)" Value="2" />
+                        <Setter Target="DeepfakeFolderBox.(Grid.Row)" Value="0" />
+                        <Setter Target="DeepfakeFolderButton.(Grid.Column)" Value="3" />
+                        <Setter Target="DeepfakeFolderButton.(Grid.Row)" Value="0" />
+                        <Setter Target="FilterNoiseBox.(Grid.Column)" Value="1" />
+                        <Setter Target="FilterNoiseBox.(Grid.Row)" Value="0" />
+                        <Setter Target="FilterPixelBox.(Grid.Column)" Value="2" />
+                        <Setter Target="FilterPixelBox.(Grid.Row)" Value="0" />
+                        <Setter Target="FilterTimeoutBox.(Grid.Column)" Value="1" />
+                        <Setter Target="FilterTimeoutBox.(Grid.Row)" Value="0" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
         <TabViewItem loc:Loc.HeaderKey="oxco.workflowTab" IsClosable="False">
-            <ScrollViewer HorizontalContentAlignment="Left" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                <StackPanel Padding="16,12" HorizontalAlignment="Left" Spacing="10">
+            <StackPanel Padding="16,12" HorizontalAlignment="Stretch" Spacing="10">
                     <Border Style="{StaticResource ToolShellCard}">
                         <StackPanel Spacing="8">
-                            <Grid ColumnSpacing="8">
+                            <Grid ColumnSpacing="8" RowSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
                                 <TextBox Grid.Column="0" loc:Loc.HeaderKey="oxco.originalFile" Text="{x:Bind ViewModel.SourcePath, Mode=TwoWay}" drop:VideoDrop.IsEnabled="True" drop:VideoDrop.PathPropertyName="SourcePath" />
                                 <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.PickSourceCommand}" loc:Loc.Key="common.addDots" />
-                                <TextBox Grid.Column="2" loc:Loc.HeaderKey="oxco.deepfakeFile" Text="{x:Bind ViewModel.DeepfakePath, Mode=TwoWay}" drop:VideoDrop.IsEnabled="True" drop:VideoDrop.PathPropertyName="DeepfakePath" />
-                                <Button Grid.Column="3" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.PickDeepfakeCommand}" loc:Loc.Key="common.addDots" />
+                                <TextBox x:Name="DeepfakePathBox" Grid.Row="1" Grid.Column="0" loc:Loc.HeaderKey="oxco.deepfakeFile" Text="{x:Bind ViewModel.DeepfakePath, Mode=TwoWay}" drop:VideoDrop.IsEnabled="True" drop:VideoDrop.PathPropertyName="DeepfakePath" />
+                                <Button x:Name="DeepfakePathButton" Grid.Row="1" Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.PickDeepfakeCommand}" loc:Loc.Key="common.addDots" />
                             </Grid>
-                            <Grid ColumnSpacing="8">
+                            <Grid ColumnSpacing="8" RowSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
                                 <TextBox Grid.Column="0" loc:Loc.HeaderKey="oxco.originalFolder" Text="{x:Bind ViewModel.CompareSourceDir, Mode=TwoWay}" />
                                 <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.PickCompareSourceDirCommand}" loc:Loc.Key="common.addDots" />
-                                <TextBox Grid.Column="2" loc:Loc.HeaderKey="oxco.deepfakeFolder" Text="{x:Bind ViewModel.CompareDeepfakeDir, Mode=TwoWay}" />
-                                <Button Grid.Column="3" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.PickCompareDeepfakeDirCommand}" loc:Loc.Key="common.addDots" />
+                                <TextBox x:Name="DeepfakeFolderBox" Grid.Row="1" Grid.Column="0" loc:Loc.HeaderKey="oxco.deepfakeFolder" Text="{x:Bind ViewModel.CompareDeepfakeDir, Mode=TwoWay}" />
+                                <Button x:Name="DeepfakeFolderButton" Grid.Row="1" Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.PickCompareDeepfakeDirCommand}" loc:Loc.Key="common.addDots" />
                             </Grid>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <CheckBox loc:Loc.Key="common.recursive" IsChecked="{x:Bind ViewModel.CompareRecursive, Mode=TwoWay}" VerticalAlignment="Center" />
-                                <Button Command="{x:Bind ViewModel.LoadCompareListsCommand}" loc:Loc.Key="oxco.loadLists" />
-                                <TextBlock VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="common.sort" />
+                            <Grid ColumnSpacing="6" RowSpacing="6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <CheckBox Grid.Column="0" loc:Loc.Key="common.recursive" IsChecked="{x:Bind ViewModel.CompareRecursive, Mode=TwoWay}" VerticalAlignment="Center" />
+                                <Button Grid.Column="1" Command="{x:Bind ViewModel.LoadCompareListsCommand}" loc:Loc.Key="oxco.loadLists" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="common.sort" />
                                 <ComboBox
+                                    Grid.Row="1"
+                                    Grid.Column="1"
                                     MinWidth="180"
                                     ItemsSource="{x:Bind ViewModel.CompareSortChoices, Mode=OneWay}"
                                     SelectedItem="{x:Bind ViewModel.CompareSortLabel, Mode=TwoWay}" />
-                                <TextBlock VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="common.group" />
+                                <TextBlock Grid.Row="1" Grid.Column="2" VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="common.group" />
                                 <ComboBox
+                                    Grid.Row="1"
+                                    Grid.Column="3"
                                     MinWidth="160"
                                     ItemsSource="{x:Bind ViewModel.CompareGroupChoices, Mode=OneWay}"
                                     SelectedItem="{x:Bind ViewModel.CompareGroupLabel, Mode=TwoWay}" />
-                                <TextBlock VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.ProbeStatus, Mode=OneWay}" />
-                            </StackPanel>
+                                <TextBlock Grid.Row="2" Grid.ColumnSpan="4" VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.ProbeStatus, Mode=OneWay}" />
+                            </Grid>
                         </StackPanel>
                     </Border>
 
-                    <Grid ColumnSpacing="10">
+                    <Grid ColumnSpacing="10" RowSpacing="10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition x:Name="WorkflowRightColumn" Width="0" />
                         </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
                         <Border Grid.Column="0" Style="{StaticResource ToolShellCard}">
                             <Grid RowSpacing="4">
                                 <Grid.RowDefinitions>
@@ -206,7 +278,7 @@
                                 </Border>
                             </Grid>
                         </Border>
-                        <Border Grid.Column="1" Style="{StaticResource ToolShellCard}">
+                        <Border x:Name="DeepfakeCard" Grid.Row="1" Grid.Column="0" Style="{StaticResource ToolShellCard}">
                             <Grid RowSpacing="4">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -215,7 +287,7 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="oxco.deepfakeMultiSelect" />
-                                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Padding="0,0,0,4">
+                                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="6">
                                     <Button
                                         Click="MoveSelectedDeepfakesToBitrate_Click"
                                         Content="{x:Bind ViewModel.MoveSelectedDeepfakesToBitrateLabel, Mode=OneWay}" />
@@ -266,7 +338,7 @@
                                 Style="{StaticResource CaptionTextBlockStyle}"
                                 loc:Loc.Key="oxco.colorLegend"
                                 TextWrapping="WrapWholeWords" />
-                            <StackPanel Orientation="Horizontal" Spacing="12">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
                                 <StackPanel Orientation="Horizontal" Spacing="4">
                                     <Border Width="14" Height="14" BorderBrush="#0078D4" BorderThickness="3" CornerRadius="2" />
                                     <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="oxco.legendMarkedSelected" />
@@ -285,7 +357,7 @@
 
                     <Border Style="{StaticResource ToolShellCard}">
                         <StackPanel Spacing="8">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Button Command="{x:Bind ViewModel.UseSessionInputCommand}" loc:Loc.Key="oxco.sessionInput" />
                                 <Button Command="{x:Bind ViewModel.RunCompareCommand}" loc:Loc.Key="common.startCompare" Style="{StaticResource AccentButtonStyle}" />
                                 <Button Command="{x:Bind ViewModel.RunCompareBatchCommand}" loc:Loc.Key="oxco.batchSelection" />
@@ -299,7 +371,7 @@
                     <Border Style="{StaticResource ToolShellCard}">
                         <StackPanel Spacing="8">
                             <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="oxco.step2Bitrate" />
-                            <StackPanel Orientation="Horizontal" Spacing="8">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Button Command="{x:Bind ViewModel.BitrateScanCommand}" loc:Loc.Key="common.scan" />
                                 <Button Command="{x:Bind ViewModel.BitrateConvertCommand}" loc:Loc.Key="common.convert" />
                                 <Button Command="{x:Bind ViewModel.MoveBitrateRowsToTaggerCommand}" loc:Loc.Key="oxco.moveConvertedToTagger" />
@@ -335,34 +407,59 @@
                     <Border Style="{StaticResource ToolShellCard}">
                         <StackPanel Spacing="8">
                             <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="oxco.step3Autotagger" />
-                            <Grid x:Name="TaggerSectionGrid" ColumnSpacing="8" MinHeight="320">
+                            <Grid x:Name="TaggerSectionGrid" ColumnSpacing="8" RowSpacing="8" MinHeight="320">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="1.25*" MinWidth="200" />
-                                    <ColumnDefinition Width="*" MinWidth="320" MaxWidth="560" />
+                                    <ColumnDefinition x:Name="TaggerRightColumn" Width="0" />
                                 </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
                                 <Grid Grid.Column="0" RowSpacing="4">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="*" MinHeight="120" MaxHeight="360" />
                                     </Grid.RowDefinitions>
-                                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
-                                        <StackPanel MinWidth="200" Spacing="4">
-                                            <ComboBox
-                                                x:Name="TaggerTagBox"
-                                                loc:Loc.HeaderKey="oxco.tagInFilename"
-                                                IsEditable="True"
-                                                ItemsSource="{x:Bind ViewModel.TaggerTagChoices, Mode=OneWay}"
-                                                loc:Loc.PlaceholderKey="oxco.tagPlaceholder"
-                                                Text="{x:Bind ViewModel.TaggerTag, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                            <TextBlock
-                                                Opacity="0.75"
-                                                Style="{StaticResource CaptionTextBlockStyle}"
-                                                loc:Loc.Key="oxco.tagHintFull"
-                                                TextWrapping="WrapWholeWords" />
-                                        </StackPanel>
-                                        <TextBox MinWidth="100" loc:Loc.HeaderKey="common.profile" Text="{x:Bind ViewModel.TaggerProfileName, Mode=TwoWay}" />
-                                        <Button VerticalAlignment="Bottom" Command="{x:Bind ViewModel.RefreshTaggerListCommand}" loc:Loc.Key="oxco.loadList" />
-                                    </StackPanel>
+                                    <Grid Grid.Row="0" ColumnSpacing="8" RowSpacing="4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2*" MinWidth="180" />
+                                            <ColumnDefinition Width="*" MinWidth="120" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <ComboBox
+                                            x:Name="TaggerTagBox"
+                                            Grid.Row="0"
+                                            Grid.Column="0"
+                                            loc:Loc.HeaderKey="oxco.tagInFilename"
+                                            IsEditable="True"
+                                            ItemsSource="{x:Bind ViewModel.TaggerTagChoices, Mode=OneWay}"
+                                            loc:Loc.PlaceholderKey="oxco.tagPlaceholder"
+                                            Text="{x:Bind ViewModel.TaggerTag, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBox
+                                            Grid.Row="0"
+                                            Grid.Column="1"
+                                            loc:Loc.HeaderKey="common.profile"
+                                            Text="{x:Bind ViewModel.TaggerProfileName, Mode=TwoWay}" />
+                                        <Button
+                                            Grid.Row="0"
+                                            Grid.Column="2"
+                                            VerticalAlignment="Bottom"
+                                            Command="{x:Bind ViewModel.RefreshTaggerListCommand}"
+                                            loc:Loc.Key="oxco.loadList" />
+                                        <TextBlock
+                                            Grid.Row="1"
+                                            Grid.Column="0"
+                                            Grid.ColumnSpan="3"
+                                            Opacity="0.75"
+                                            Style="{StaticResource CaptionTextBlockStyle}"
+                                            loc:Loc.Key="oxco.tagHintFull"
+                                            TextWrapping="WrapWholeWords" />
+                                    </Grid>
                                     <ListView
                                         x:Name="TaggerList"
                                         Grid.Row="1"
@@ -376,7 +473,7 @@
                                         </ListView.ItemTemplate>
                                     </ListView>
                                 </Grid>
-                                <Grid Grid.Column="1" RowSpacing="6">
+                                <Grid x:Name="TaggerPreview" Grid.Row="1" Grid.Column="0" RowSpacing="6">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
@@ -404,7 +501,7 @@
                                 </Grid>
                             </Grid>
                             <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="oxco.scopeHintFull" TextWrapping="WrapWholeWords" />
-                            <StackPanel Orientation="Horizontal" Spacing="8">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Button Click="RunTaggerAll_Click" loc:Loc.Key="oxco.processAllFiles" />
                                 <Button Click="RunTaggerSelected_Click" loc:Loc.Key="oxco.processSelection" />
                                 <Button Click="TagRouteSetup_Click" loc:Loc.Key="oxco.tagRouteSetup" />
@@ -414,13 +511,11 @@
                             <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.Status, Mode=OneWay}" TextWrapping="WrapWholeWords" />
                         </StackPanel>
                     </Border>
-                </StackPanel>
-            </ScrollViewer>
+            </StackPanel>
         </TabViewItem>
 
         <TabViewItem loc:Loc.HeaderKey="common.paths" IsClosable="False">
-            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                <StackPanel Padding="16,12" MaxWidth="720" Spacing="10">
+            <StackPanel Padding="16,12" MaxWidth="{StaticResource HmContentWidthStandard}" HorizontalAlignment="Stretch" Spacing="10">
                     <Border Style="{StaticResource ToolShellCard}">
                         <StackPanel Spacing="8">
                             <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="common.paths" />
@@ -468,33 +563,40 @@
                             <TextBox loc:Loc.HeaderKey="oxco.filenamePattern" Text="{x:Bind ViewModel.TaggerPattern, Mode=TwoWay}" />
                         </StackPanel>
                     </Border>
-                </StackPanel>
-            </ScrollViewer>
+            </StackPanel>
         </TabViewItem>
 
         <TabViewItem loc:Loc.HeaderKey="oxco.filterTab" IsClosable="False">
-            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                <StackPanel Padding="16,12" MaxWidth="720" Spacing="10">
+            <StackPanel Padding="16,12" MaxWidth="{StaticResource HmContentWidthStandard}" HorizontalAlignment="Stretch" Spacing="10">
                     <Border Style="{StaticResource ToolShellCard}">
                         <StackPanel Spacing="8">
                             <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="oxco.filterCompareSection" />
-                            <Grid ColumnSpacing="8">
+                            <Grid ColumnSpacing="8" RowSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
                                 <TextBox Grid.Column="0" loc:Loc.HeaderKey="oxco.bufferSeconds" Text="{x:Bind ViewModel.FilterBuffer, Mode=TwoWay}" />
-                                <TextBox Grid.Column="1" loc:Loc.HeaderKey="oxco.noise" Text="{x:Bind ViewModel.FilterNoise, Mode=TwoWay}" />
-                                <TextBox Grid.Column="2" loc:Loc.HeaderKey="oxco.pixelThreshold" Text="{x:Bind ViewModel.FilterPixel, Mode=TwoWay}" />
+                                <TextBox x:Name="FilterNoiseBox" Grid.Row="1" Grid.Column="0" loc:Loc.HeaderKey="oxco.noise" Text="{x:Bind ViewModel.FilterNoise, Mode=TwoWay}" />
+                                <TextBox x:Name="FilterPixelBox" Grid.Row="2" Grid.Column="0" loc:Loc.HeaderKey="oxco.pixelThreshold" Text="{x:Bind ViewModel.FilterPixel, Mode=TwoWay}" />
                             </Grid>
-                            <Grid ColumnSpacing="8">
+                            <Grid ColumnSpacing="8" RowSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
                                 <TextBox Grid.Column="0" loc:Loc.HeaderKey="oxco.pixelMaxOff" Text="{x:Bind ViewModel.FilterPixelMax, Mode=TwoWay}" />
-                                <TextBox Grid.Column="1" loc:Loc.HeaderKey="oxco.davinciTimeout" Text="{x:Bind ViewModel.FilterDavinciTimeout, Mode=TwoWay}" />
+                                <TextBox x:Name="FilterTimeoutBox" Grid.Row="1" Grid.Column="0" loc:Loc.HeaderKey="oxco.davinciTimeout" Text="{x:Bind ViewModel.FilterDavinciTimeout, Mode=TwoWay}" />
                             </Grid>
                             <CheckBox loc:Loc.Key="oxco.ffmpegExport" IsChecked="{x:Bind ViewModel.FilterFfmpeg, Mode=TwoWay}" />
                             <CheckBox loc:Loc.Key="oxco.davinciExport" IsChecked="{x:Bind ViewModel.FilterDavinci, Mode=TwoWay}" />
@@ -519,8 +621,8 @@
                     <Border Style="{StaticResource ToolShellCard}">
                         <StackPanel Spacing="8">
                             <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="common.bitrate" />
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <ComboBox Width="200" loc:Loc.HeaderKey="common.preset" ItemsSource="{x:Bind ViewModel.BrPresetOptions, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.BrPreset, Mode=TwoWay}" />
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <ComboBox MinWidth="200" loc:Loc.HeaderKey="common.preset" ItemsSource="{x:Bind ViewModel.BrPresetOptions, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.BrPreset, Mode=TwoWay}" />
                                 <Button VerticalAlignment="Bottom" Command="{x:Bind ViewModel.ApplyBrPresetCommand}" loc:Loc.Key="oxco.applyPreset" />
                             </StackPanel>
                             <Grid ColumnSpacing="8" RowSpacing="4">
@@ -580,8 +682,7 @@
                             <Button Command="{x:Bind ViewModel.SaveSettingsCommand}" loc:Loc.Key="oxco.saveFilters" HorizontalAlignment="Left" />
                         </StackPanel>
                     </Border>
-                </StackPanel>
-            </ScrollViewer>
+            </StackPanel>
         </TabViewItem>
 
         <TabViewItem loc:Loc.HeaderKey="common.preview" IsClosable="False">

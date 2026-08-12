@@ -6,7 +6,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    HorizontalAlignment="Left"
+    HorizontalAlignment="Stretch"
     VerticalAlignment="Top"
     xmlns:conv="using:HailMary.Converters"
     xmlns:controls="using:HailMary.Views.Controls"
@@ -17,9 +17,10 @@
         <conv:SecondsDisplayConverter x:Key="SecondsDisplayConverter" />
     </UserControl.Resources>
 
-    <StackPanel HorizontalAlignment="Left" Spacing="8">
+    <StackPanel HorizontalAlignment="Stretch" Spacing="8">
         <controls:AspectFitVideoPresenter
             x:Name="VideoSurface"
+            HorizontalAlignment="Stretch"
             MaxPreviewHeight="420"
             MinPreviewHeight="120" />
 
@@ -49,7 +50,7 @@
             </Grid>
         </StackPanel>
 
-        <StackPanel Orientation="Horizontal" Spacing="8">
+        <StackPanel Orientation="Horizontal" Spacing="6">
             <Button Click="BtnPlay_Click" loc:Loc.Key="common.play" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
             <Button Click="BtnPause_Click" loc:Loc.Key="common.pause" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
             <Button Click="BtnStop_Click" loc:Loc.Key="common.stopButton" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />

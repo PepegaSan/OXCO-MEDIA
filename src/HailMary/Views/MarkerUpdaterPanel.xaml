@@ -5,17 +5,52 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    HorizontalAlignment="Left"
-    VerticalAlignment="Top"
+    HorizontalAlignment="Stretch"
+    VerticalAlignment="Stretch"
     mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
 
-    <TabView x:Name="RootTabs" HorizontalAlignment="Left" IsAddTabButtonVisible="False" MaxWidth="960" TabWidthMode="Equal">
+    <TabView
+        x:Name="RootTabs"
+        MaxWidth="{StaticResource HmContentWidthWide}"
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Stretch"
+        IsAddTabButtonVisible="False"
+        TabWidthMode="Equal">
         <TabViewItem loc:Loc.HeaderKey="common.editor" IsClosable="False">
-            <Grid Padding="16,12" ColumnSpacing="10">
+            <Grid x:Name="EditorGrid" Padding="{StaticResource HmContentPadding}" ColumnSpacing="10" RowSpacing="10">
+                <VisualStateManager.VisualStateGroups>
+                    <VisualStateGroup>
+                        <VisualState x:Name="EditorNarrowLayout">
+                            <VisualState.Setters>
+                                <Setter Target="EditorRightColumn.Width" Value="0" />
+                                <Setter Target="EditorTopRow.Height" Value="*" />
+                                <Setter Target="EditorBottomRow.Height" Value="*" />
+                                <Setter Target="MarkerEditorCard.(Grid.Column)" Value="0" />
+                                <Setter Target="MarkerEditorCard.(Grid.Row)" Value="1" />
+                            </VisualState.Setters>
+                        </VisualState>
+                        <VisualState x:Name="EditorWideLayout">
+                            <VisualState.StateTriggers>
+                                <AdaptiveTrigger MinWindowWidth="1100" />
+                            </VisualState.StateTriggers>
+                            <VisualState.Setters>
+                                <Setter Target="EditorRightColumn.Width" Value="*" />
+                                <Setter Target="EditorTopRow.Height" Value="*" />
+                                <Setter Target="EditorBottomRow.Height" Value="0" />
+                                <Setter Target="MarkerEditorCard.(Grid.Column)" Value="1" />
+                                <Setter Target="MarkerEditorCard.(Grid.Row)" Value="0" />
+                            </VisualState.Setters>
+                        </VisualState>
+                    </VisualStateGroup>
+                </VisualStateManager.VisualStateGroups>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" MinWidth="340" />
-                    <ColumnDefinition Width="*" MinWidth="340" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition x:Name="EditorRightColumn" Width="0" />
                 </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition x:Name="EditorTopRow" Height="*" />
+                    <RowDefinition x:Name="EditorBottomRow" Height="*" />
+                </Grid.RowDefinitions>
 
                 <!-- Linkes Fenster: Szene & Vorschau -->
                 <Border Grid.Column="0" Style="{StaticResource ToolShellCard}" VerticalAlignment="Stretch">
@@ -124,7 +159,7 @@
                 </Border>
 
                 <!-- Rechtes Fenster: Marker & Tags -->
-                <Border Grid.Column="1" Style="{StaticResource ToolShellCard}" VerticalAlignment="Stretch">
+                <Border x:Name="MarkerEditorCard" Grid.Row="1" Grid.Column="0" Style="{StaticResource ToolShellCard}" VerticalAlignment="Stretch">
                     <Grid RowSpacing="10">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -269,12 +304,13 @@
                             <ItemsControl ItemsSource="{x:Bind ViewModel.QuickPresets, Mode=OneWay}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
-                                        <StackPanel Orientation="Horizontal" Spacing="6" />
+                                        <StackPanel Orientation="Horizontal" />
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate xmlns:models="using:HailMary.Models" x:DataType="models:MarkerQuickPreset">
                                         <Button
+                                            Margin="0,0,8,8"
                                             Click="QuickPresetButton_Click"
                                             Content="{x:Bind Display}"
                                             Tag="{x:Bind}" />

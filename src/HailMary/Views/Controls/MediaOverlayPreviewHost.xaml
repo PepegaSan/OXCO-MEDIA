@@ -8,13 +8,13 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:loc="using:HailMary.Services"
-    HorizontalAlignment="Left"
+    HorizontalAlignment="Stretch"
     VerticalAlignment="Top"
     IsTabStop="True"
     KeyDown="RootHost_OnKeyDown"
     mc:Ignorable="d">
 
-    <StackPanel Spacing="8">
+    <StackPanel HorizontalAlignment="Stretch" Spacing="8">
         <Grid x:Name="PreviewSurface" HorizontalAlignment="Left" Background="Transparent">
             <controls:AspectFitImagePresenter
                 x:Name="PreviewPresenter"

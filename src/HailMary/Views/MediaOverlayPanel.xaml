@@ -8,12 +8,29 @@
     xmlns:drop="using:HailMary.Views.Helpers"
     xmlns:controls="using:HailMary.Views.Controls"
     xmlns:loc="using:HailMary.Services"
-    HorizontalAlignment="Left"
+    HorizontalAlignment="Stretch"
     VerticalAlignment="Top"
     mc:Ignorable="d">
 
-    <ScrollViewer HorizontalContentAlignment="Left" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <StackPanel Style="{StaticResource ToolShellContentPanel}" Spacing="10">
+    <Grid
+        MaxWidth="{StaticResource HmContentWidthWide}"
+        Padding="{StaticResource HmContentPadding}"
+        HorizontalAlignment="Stretch">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="WideLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1100" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="ExportColumn.(Grid.Column)" Value="1" />
+                        <Setter Target="ExportColumn.(Grid.Row)" Value="0" />
+                        <Setter Target="ExportColumnDefinition.Width" Value="*" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        <StackPanel Spacing="10">
 
             <TextBlock Text="{x:Bind ViewModel.Description, Mode=OneWay}" TextWrapping="WrapWholeWords" />
             <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.Status, Mode=OneWay}" />
@@ -28,6 +45,16 @@
                 </StackPanel>
             </Border>
 
+            <Grid ColumnSpacing="16" RowSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition x:Name="ExportColumnDefinition" Width="0" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Row="0" Grid.Column="0" Spacing="16">
             <Border Style="{StaticResource ToolShellCard}">
                 <StackPanel Spacing="8">
                     <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="mediaoverlay.mainHeader" />
@@ -123,6 +150,8 @@
                     </Grid>
                 </StackPanel>
             </Border>
+                </StackPanel>
+                <StackPanel x:Name="ExportColumn" Grid.Row="1" Grid.Column="0" Spacing="16">
 
             <Border Style="{StaticResource ToolShellCard}">
                 <StackPanel Spacing="8">
@@ -169,7 +198,9 @@
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
             </Border>
+                </StackPanel>
+            </Grid>
 
         </StackPanel>
-    </ScrollViewer>
+    </Grid>
 </UserControl>

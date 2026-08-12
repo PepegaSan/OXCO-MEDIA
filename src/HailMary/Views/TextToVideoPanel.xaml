@@ -12,21 +12,51 @@
     VerticalAlignment="Top"
     mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
 
-    <ScrollViewer HorizontalContentAlignment="Stretch" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <ContentControl IsEnabled="{x:Bind ViewModel.CanInteract, Mode=OneWay}" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch">
+    <ContentControl IsEnabled="{x:Bind ViewModel.CanInteract, Mode=OneWay}" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch">
         <StackPanel
             Style="{StaticResource ToolShellContentPanel}"
-            MaxWidth="1280"
+            MaxWidth="{StaticResource HmContentWidthWide}"
             HorizontalAlignment="Stretch"
             Spacing="10">
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup>
+                    <VisualState x:Name="NarrowLayout">
+                        <VisualState.Setters>
+                            <Setter Target="MainRightColumn.Width" Value="0" />
+                            <Setter Target="MainRight.(Grid.Column)" Value="0" />
+                            <Setter Target="MainRight.(Grid.Row)" Value="1" />
+                            <Setter Target="LowerRightColumn.Width" Value="0" />
+                            <Setter Target="DavinciCard.(Grid.Column)" Value="0" />
+                            <Setter Target="DavinciCard.(Grid.Row)" Value="1" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="WideLayout">
+                        <VisualState.StateTriggers>
+                            <AdaptiveTrigger MinWindowWidth="1180" />
+                        </VisualState.StateTriggers>
+                        <VisualState.Setters>
+                            <Setter Target="MainRightColumn.Width" Value="*" />
+                            <Setter Target="MainRight.(Grid.Column)" Value="1" />
+                            <Setter Target="MainRight.(Grid.Row)" Value="0" />
+                            <Setter Target="LowerRightColumn.Width" Value="*" />
+                            <Setter Target="DavinciCard.(Grid.Column)" Value="1" />
+                            <Setter Target="DavinciCard.(Grid.Row)" Value="0" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
             <TextBlock Text="{x:Bind ViewModel.Description, Mode=OneWay}" TextWrapping="WrapWholeWords" />
             <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.Status, Mode=OneWay}" TextWrapping="WrapWholeWords" />
 
             <Grid ColumnSpacing="12" RowSpacing="10" HorizontalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" MinWidth="360" />
-                    <ColumnDefinition Width="*" MinWidth="360" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition x:Name="MainRightColumn" Width="0" />
                 </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
                 <Border Grid.Column="0" Style="{StaticResource ToolShellCard}" VerticalAlignment="Top">
                     <StackPanel Spacing="8">
@@ -44,7 +74,7 @@
                     </StackPanel>
                 </Border>
 
-                <StackPanel Grid.Column="1" Spacing="10" VerticalAlignment="Top" HorizontalAlignment="Stretch">
+                <StackPanel x:Name="MainRight" Grid.Column="0" Grid.Row="1" Spacing="10" VerticalAlignment="Top" HorizontalAlignment="Stretch">
                     <Border Style="{StaticResource ToolShellCard}">
                         <StackPanel Spacing="8">
                             <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="texttovideo.segmentsHeader" />
@@ -202,19 +232,13 @@
                                 Style="{StaticResource CaptionTextBlockStyle}"
                                 loc:Loc.Key="texttovideo.timeFormatHint"
                                 TextWrapping="WrapWholeWords" />
-                            <VariableSizedWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="2" HorizontalChildrenAlignment="Left">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
                                 <CheckBox loc:Loc.Key="common.bold" IsChecked="{x:Bind ViewModel.EditorSegment.Bold, Mode=TwoWay}" Margin="0,0,12,4" />
                                 <CheckBox loc:Loc.Key="common.italic" IsChecked="{x:Bind ViewModel.EditorSegment.Italic, Mode=TwoWay}" Margin="0,0,12,4" />
                                 <CheckBox loc:Loc.Key="common.strike" IsChecked="{x:Bind ViewModel.EditorSegment.Strike, Mode=TwoWay}" Margin="0,0,12,4" />
                                 <CheckBox loc:Loc.Key="texttovideo.textBackground" IsChecked="{x:Bind ViewModel.EditorSegment.BoxEnabled, Mode=TwoWay}" Margin="0,0,0,4" />
-                            </VariableSizedWrapGrid>
-                            <VariableSizedWrapGrid
-                                x:Name="ColorPalettePanel"
-                                Orientation="Horizontal"
-                                MaximumRowsOrColumns="8"
-                                ItemWidth="34"
-                                ItemHeight="34"
-                                HorizontalChildrenAlignment="Left" />
+                            </StackPanel>
+                            <StackPanel x:Name="ColorPalettePanel" Orientation="Horizontal" Spacing="6" />
                             <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" loc:Loc.HeaderKey="texttovideo.advancedOptions">
                                 <StackPanel Spacing="8">
                                     <Grid ColumnSpacing="8">
@@ -299,7 +323,16 @@
                 </StackPanel>
             </Border>
 
-            <Border Style="{StaticResource ToolShellCard}">
+            <Grid ColumnSpacing="12" RowSpacing="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition x:Name="LowerRightColumn" Width="0" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+            <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource ToolShellCard}">
                 <StackPanel Spacing="8">
                     <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="common.export" />
                     <Grid ColumnSpacing="8" RowSpacing="8">
@@ -360,7 +393,7 @@
                 </StackPanel>
             </Border>
 
-            <Border Style="{StaticResource ToolShellCard}">
+            <Border x:Name="DavinciCard" Grid.Row="1" Grid.Column="0" Style="{StaticResource ToolShellCard}">
                 <StackPanel Spacing="8">
                     <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="texttovideo.davinciSection" />
                     <TextBlock
@@ -399,7 +432,7 @@
                     <Button Command="{x:Bind ViewModel.ExportResolveCommand}" loc:Loc.Key="texttovideo.exportResolve" />
                 </StackPanel>
             </Border>
+            </Grid>
         </StackPanel>
-        </ContentControl>
-    </ScrollViewer>
+    </ContentControl>
 </UserControl>

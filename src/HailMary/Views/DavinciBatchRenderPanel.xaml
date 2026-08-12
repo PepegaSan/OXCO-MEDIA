@@ -14,15 +14,31 @@
 
     xmlns:viewModels="using:HailMary.ViewModels"
 
-    HorizontalAlignment="Left"
+    HorizontalAlignment="Stretch"
     VerticalAlignment="Top"
     mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
 
 
 
-    <ScrollViewer HorizontalContentAlignment="Left" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-
-        <StackPanel Style="{StaticResource ToolShellContentPanel}" Spacing="10">
+    <Grid
+        MaxWidth="{StaticResource HmContentWidthStandard}"
+        Padding="{StaticResource HmContentPadding}"
+        HorizontalAlignment="Stretch">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="WideLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1100" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="ExportCard.(Grid.Column)" Value="1" />
+                        <Setter Target="ExportCard.(Grid.Row)" Value="0" />
+                        <Setter Target="ExportColumnDefinition.Width" Value="*" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        <StackPanel Spacing="10">
 
             <TextBlock Text="{x:Bind ViewModel.Description, Mode=OneWay}" TextWrapping="WrapWholeWords" />
 
@@ -30,7 +46,16 @@
 
 
 
-            <Border Style="{StaticResource ToolShellCard}">
+            <Grid ColumnSpacing="16" RowSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition x:Name="ExportColumnDefinition" Width="0" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+            <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource ToolShellCard}">
 
                 <StackPanel Spacing="8">
 
@@ -93,15 +118,10 @@
                     </ListView>
 
                     <StackPanel Orientation="Horizontal" Spacing="8">
-
                         <Button Command="{x:Bind ViewModel.PickVideosCommand}" loc:Loc.Key="common.pickFiles" IsEnabled="{x:Bind ViewModel.CanEditQueue, Mode=OneWay}" />
-
                         <Button Command="{x:Bind ViewModel.PickFolderCommand}" loc:Loc.Key="common.folder" IsEnabled="{x:Bind ViewModel.CanEditQueue, Mode=OneWay}" />
-
                         <Button Command="{x:Bind ViewModel.RemoveSelectedCommand}" loc:Loc.Key="common.remove" IsEnabled="{x:Bind ViewModel.CanEditQueue, Mode=OneWay}" />
-
                         <Button Command="{x:Bind ViewModel.ClearQueueCommand}" loc:Loc.Key="common.clear" IsEnabled="{x:Bind ViewModel.CanEditQueue, Mode=OneWay}" />
-
                     </StackPanel>
 
                 </StackPanel>
@@ -110,7 +130,7 @@
 
 
 
-            <Border Style="{StaticResource ToolShellCard}">
+            <Border x:Name="ExportCard" Grid.Row="1" Grid.Column="0" Style="{StaticResource ToolShellCard}">
 
                 <StackPanel Spacing="8">
 
@@ -169,10 +189,10 @@
                 </StackPanel>
 
             </Border>
+            </Grid>
 
         </StackPanel>
-
-    </ScrollViewer>
+    </Grid>
 
 </UserControl>
 

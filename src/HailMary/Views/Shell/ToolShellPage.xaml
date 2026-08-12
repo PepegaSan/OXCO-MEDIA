@@ -57,28 +57,29 @@
                     Grid.Row="0"
                     MaxHeight="560"
                     Padding="16,16,16,0"
-                    HorizontalAlignment="Left"
+                    HorizontalAlignment="Stretch"
                     Visibility="Collapsed">
                     <ScrollViewer
+                        HorizontalContentAlignment="Stretch"
                         HorizontalScrollBarVisibility="Disabled"
                         VerticalScrollBarVisibility="Auto">
                         <ContentControl
                             x:Name="PreviewHost"
-                            HorizontalAlignment="Left"
-                            HorizontalContentAlignment="Left" />
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch" />
                     </ScrollViewer>
                 </Border>
 
                 <ScrollViewer
                     x:Name="ToolContentScroll"
                     Grid.Row="1"
-                    HorizontalContentAlignment="Left"
+                    HorizontalContentAlignment="Stretch"
                     HorizontalScrollBarVisibility="Disabled"
                     VerticalScrollBarVisibility="Auto">
                     <ContentPresenter
                         x:Name="ToolContentHost"
-                        HorizontalAlignment="Left"
-                        HorizontalContentAlignment="Left"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch"
                         VerticalAlignment="Top"
                         VerticalContentAlignment="Top" />
                 </ScrollViewer>
@@ -86,7 +87,8 @@
                 <ContentPresenter
                     x:Name="ToolContentSplitHost"
                     Grid.Row="1"
-                    HorizontalAlignment="Left"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
                     VerticalAlignment="Top"
                     Visibility="Collapsed" />
 

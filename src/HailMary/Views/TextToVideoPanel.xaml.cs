@@ -136,7 +136,6 @@ public sealed partial class TextToVideoPanel : UserControl
                 Width = 28,
                 Height = 28,
                 Padding = new Thickness(0),
-                Margin = new Thickness(0, 0, 6, 6),
                 Background = new SolidColorBrush(color),
                 Tag = hex,
             };

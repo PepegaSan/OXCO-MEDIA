@@ -13,12 +13,30 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 
     xmlns:drop="using:HailMary.Views.Helpers"
-    HorizontalAlignment="Left"
+    HorizontalAlignment="Stretch"
     VerticalAlignment="Top"
     mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
 
-    <ScrollViewer HorizontalContentAlignment="Left" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <StackPanel Style="{StaticResource ToolShellContentPanel}" Spacing="10">
+    <Grid
+        x:Name="LayoutRoot"
+        MaxWidth="{StaticResource HmContentWidthStandard}"
+        Padding="{StaticResource HmContentPadding}"
+        HorizontalAlignment="Stretch">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="WideLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1100" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="SecondaryColumn.(Grid.Column)" Value="1" />
+                        <Setter Target="SecondaryColumn.(Grid.Row)" Value="0" />
+                        <Setter Target="SecondaryColumnDefinition.Width" Value="*" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        <StackPanel Spacing="10">
 
             <TextBlock Text="{x:Bind ViewModel.Description, Mode=OneWay}" TextWrapping="WrapWholeWords" />
 
@@ -26,6 +44,16 @@
 
 
 
+            <Grid ColumnSpacing="16" RowSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition x:Name="SecondaryColumnDefinition" Width="0" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Row="0" Grid.Column="0" Spacing="16">
             <Border Style="{StaticResource ToolShellCard}">
 
                 <StackPanel Spacing="8">
@@ -107,6 +135,8 @@
                 </StackPanel>
 
             </Border>
+                </StackPanel>
+                <StackPanel x:Name="SecondaryColumn" Grid.Row="1" Grid.Column="0" Spacing="16">
 
 
 
@@ -156,10 +186,11 @@
                 </StackPanel>
 
             </Border>
+                </StackPanel>
+            </Grid>
 
         </StackPanel>
-
-    </ScrollViewer>
+    </Grid>
 
 </UserControl>
 

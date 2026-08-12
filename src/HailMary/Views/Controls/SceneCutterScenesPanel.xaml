@@ -12,6 +12,7 @@
     mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
 
     <Grid
+        MaxWidth="{StaticResource HmContentWidthWide}"
         Padding="16,12"
         HorizontalAlignment="Stretch"
         VerticalAlignment="Top"
@@ -23,7 +24,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" HorizontalAlignment="Left" Orientation="Horizontal" Spacing="8">
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6">
             <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="cutter.scenesHeader" VerticalAlignment="Center" />
             <Button Command="{x:Bind ViewModel.TogglePartialSelectModeCommand}" Content="{x:Bind ViewModel.PartialSelectButtonText, Mode=OneWay}" />
             <CheckBox loc:Loc.Key="cutter.chronologicalSort" IsChecked="{x:Bind ViewModel.ChronologicalSort, Mode=TwoWay}" />
@@ -32,7 +33,7 @@
 
         <Grid
             Grid.Row="1"
-            HorizontalAlignment="Left"
+            HorizontalAlignment="Stretch"
             Padding="4,0"
             ColumnSpacing="8"
             Visibility="{x:Bind ViewModel.ShowSceneCheckboxes, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
@@ -40,8 +41,8 @@
                 <ColumnDefinition Width="32" />
                 <ColumnDefinition Width="36" />
                 <ColumnDefinition Width="52" />
-                <ColumnDefinition Width="130" />
-                <ColumnDefinition Width="130" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="72" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
@@ -55,27 +56,28 @@
 
         <ListView
             Grid.Row="2"
-            HorizontalAlignment="Left"
+            HorizontalAlignment="Stretch"
             VerticalAlignment="Top"
+            MaxHeight="360"
             ItemsSource="{x:Bind ViewModel.Scenes, Mode=OneWay}"
-            ScrollViewer.VerticalScrollBarVisibility="Disabled"
-            ScrollViewer.VerticalScrollMode="Disabled"
+            ScrollViewer.VerticalScrollBarVisibility="Auto"
+            ScrollViewer.VerticalScrollMode="Auto"
             SelectionMode="None">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
-                    <Setter Property="HorizontalContentAlignment" Value="Left" />
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                     <Setter Property="Padding" Value="0,2" />
                 </Style>
             </ListView.ItemContainerStyle>
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="models:SceneEntry">
-                    <Grid HorizontalAlignment="Left" ColumnSpacing="6" Padding="2,4">
+                    <Grid HorizontalAlignment="Stretch" ColumnSpacing="6" Padding="2,4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="32" />
                             <ColumnDefinition Width="36" />
                             <ColumnDefinition Width="52" />
-                            <ColumnDefinition Width="130" />
-                            <ColumnDefinition Width="130" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="72" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
@@ -118,9 +120,9 @@
             </ListView.ItemTemplate>
         </ListView>
 
-        <StackPanel Grid.Row="3" HorizontalAlignment="Left" Spacing="8">
+        <StackPanel Grid.Row="3" HorizontalAlignment="Stretch" Spacing="8">
             <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="common.export" />
-            <StackPanel Orientation="Horizontal" Spacing="12">
+            <StackPanel Orientation="Horizontal" Spacing="6">
                 <CheckBox loc:Loc.Key="cutter.safeOutput" IsChecked="{x:Bind ViewModel.SafeOutput, Mode=TwoWay}" />
                 <CheckBox loc:Loc.Key="cutter.autoRemoveExported" IsChecked="{x:Bind ViewModel.AutoRemoveExported, Mode=TwoWay}" />
                 <CheckBox loc:Loc.Key="cutter.useDavinciExport" IsChecked="{x:Bind ViewModel.UseDavinciExport, Mode=TwoWay}" />
@@ -135,14 +137,29 @@
                     loc:Loc.Key="cutter.replaceOriginalHint"
                     TextWrapping="WrapWholeWords" />
             </StackPanel>
-            <StackPanel Orientation="Horizontal" Spacing="12" Visibility="{x:Bind ViewModel.UseDavinciExport, Mode=OneWay, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}">
+            <Grid
+                MaxWidth="640"
+                HorizontalAlignment="Left"
+                ColumnSpacing="12"
+                RowSpacing="8"
+                Visibility="{x:Bind ViewModel.UseDavinciExport, Mode=OneWay, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
                 <ComboBox
-                    Width="180"
+                    Grid.Row="0"
+                    Grid.Column="0"
                     loc:Loc.HeaderKey="common.codec"
                     ItemsSource="{x:Bind ViewModel.CodecOptions, Mode=OneWay}"
                     SelectedItem="{x:Bind ViewModel.SelectedCodec, Mode=TwoWay}" />
                 <NumberBox
-                    Width="120"
+                    Grid.Row="0"
+                    Grid.Column="1"
                     loc:Loc.HeaderKey="common.targetFps"
                     Minimum="0"
                     Maximum="240"
@@ -151,27 +168,31 @@
                     SpinButtonPlacementMode="Compact"
                     Value="{x:Bind ViewModel.TargetFps, Mode=TwoWay}" />
                 <TextBox
-                    Width="280"
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    Grid.ColumnSpan="2"
                     loc:Loc.HeaderKey="cutter.ffmpegOutputDir"
                     loc:Loc.PlaceholderKey="cutter.ffmpegOutputDirPlaceholder"
                     Text="{x:Bind ViewModel.FfmpegOutputDir, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            </StackPanel>
+            </Grid>
             <TextBlock
                 Style="{StaticResource CaptionTextBlockStyle}"
                 loc:Loc.Key="common.targetFpsHint"
                 TextWrapping="WrapWholeWords"
                 Visibility="{x:Bind ViewModel.UseDavinciExport, Mode=OneWay, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}" />
-            <Grid ColumnSpacing="12" Visibility="{x:Bind ViewModel.UseDavinciExport, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+            <Grid ColumnSpacing="12" RowSpacing="8" Visibility="{x:Bind ViewModel.UseDavinciExport, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="220" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="220" />
+                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="cutter.resolvePreset" />
-                <TextBox Grid.Column="1" Text="{x:Bind ViewModel.DavinciPreset, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                <TextBlock Grid.Column="2" VerticalAlignment="Center" loc:Loc.Key="cutter.davinciOutputDir" />
-                <TextBox Grid.Column="3" Text="{x:Bind ViewModel.DavinciOutputDir, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="cutter.resolvePreset" />
+                <TextBox Grid.Row="0" Grid.Column="1" Text="{x:Bind ViewModel.DavinciPreset, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="cutter.davinciOutputDir" />
+                <TextBox Grid.Row="1" Grid.Column="1" Text="{x:Bind ViewModel.DavinciOutputDir, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             </Grid>
         </StackPanel>
     </Grid>

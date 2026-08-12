@@ -27,6 +27,27 @@
     <FontFamily x:Key="HmUiFont">Segoe UI Variable Text</FontFamily>
     <FontFamily x:Key="HmMonoFont">Consolas</FontFamily>
 
+    <!-- Shared responsive layout scale. Panels can opt into the width that best
+         matches their content without introducing one-off measurements. -->
+    <x:Double x:Key="HmContentWidthNarrow">720</x:Double>
+    <x:Double x:Key="HmContentWidthStandard">1040</x:Double>
+    <x:Double x:Key="HmContentWidthWide">1280</x:Double>
+    <Thickness x:Key="HmContentPadding">20,16,20,20</Thickness>
+    <Thickness x:Key="HmSectionSpacing">0,0,0,16</Thickness>
+    <Thickness x:Key="HmCardPadding">16</Thickness>
+    <Thickness x:Key="HmFormFieldSpacing">0,0,0,12</Thickness>
+
+    <!-- Applied implicitly so shell tabs and tool-local TabViews share the same
+         readable typography and target size. -->
+    <Style x:Key="HmTabViewItemStyle" TargetType="TabViewItem">
+        <Setter Property="FontFamily" Value="{StaticResource HmUiFont}" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="MinHeight" Value="48" />
+        <Setter Property="Padding" Value="18,0" />
+    </Style>
+    <Style TargetType="TabViewItem" BasedOn="{StaticResource HmTabViewItemStyle}" />
+
     <Style x:Key="HmTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource DefaultTextBoxStyle}">
         <Setter Property="FontFamily" Value="{StaticResource HmUiFont}" />
         <Setter Property="Background" Value="{ThemeResource HmFieldBackgroundBrush}" />

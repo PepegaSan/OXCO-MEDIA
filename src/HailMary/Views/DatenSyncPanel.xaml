@@ -12,15 +12,31 @@
 
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 
-    HorizontalAlignment="Left"
+    HorizontalAlignment="Stretch"
     VerticalAlignment="Top"
     mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
 
 
 
-    <ScrollViewer HorizontalContentAlignment="Left" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-
-        <StackPanel Style="{StaticResource ToolShellContentPanel}" Spacing="10">
+    <Grid
+        MaxWidth="{StaticResource HmContentWidthStandard}"
+        Padding="{StaticResource HmContentPadding}"
+        HorizontalAlignment="Stretch">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="WideLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1100" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="OptionsColumn.(Grid.Column)" Value="1" />
+                        <Setter Target="OptionsColumn.(Grid.Row)" Value="0" />
+                        <Setter Target="OptionsColumnDefinition.Width" Value="*" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        <StackPanel Spacing="10">
 
             <TextBlock Text="{x:Bind ViewModel.Description, Mode=OneWay}" TextWrapping="WrapWholeWords" />
 
@@ -28,6 +44,16 @@
 
 
 
+            <Grid ColumnSpacing="16" RowSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition x:Name="OptionsColumnDefinition" Width="0" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Row="0" Grid.Column="0" Spacing="16">
             <Border Style="{StaticResource ToolShellCard}">
 
                 <StackPanel Spacing="8">
@@ -69,15 +95,10 @@
                     </Grid>
 
                     <StackPanel Orientation="Horizontal" Spacing="8">
-
                         <Button Command="{x:Bind ViewModel.AddJobCommand}" loc:Loc.Key="datensync.addJob" />
-
                         <Button Command="{x:Bind ViewModel.LoadSelectedJobCommand}" loc:Loc.Key="datensync.loadSelection" />
-
                         <Button Command="{x:Bind ViewModel.UpdateSelectedJobCommand}" loc:Loc.Key="datensync.updateSelection" />
-
                         <Button Command="{x:Bind ViewModel.RemoveSelectedJobCommand}" loc:Loc.Key="datensync.removeSelection" />
-
                     </StackPanel>
 
                 </StackPanel>
@@ -149,6 +170,8 @@
                 </StackPanel>
 
             </Border>
+                </StackPanel>
+                <StackPanel x:Name="OptionsColumn" Grid.Row="1" Grid.Column="0" Spacing="16">
 
 
 
@@ -196,11 +219,19 @@
 
                         </Grid.ColumnDefinitions>
 
-                        <TextBox Grid.Column="0" loc:Loc.HeaderKey="datensync.profileName" Text="{x:Bind ViewModel.ProfileName, Mode=TwoWay}" />
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
 
-                        <ComboBox Grid.Column="1" loc:Loc.HeaderKey="datensync.loadProfile" ItemsSource="{x:Bind ViewModel.ProfileNames, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedProfileName, Mode=TwoWay}" />
+                        <TextBlock Grid.Row="0" Grid.Column="0" Margin="0,0,0,6" loc:Loc.Key="datensync.profileName" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Margin="0,0,0,6" loc:Loc.Key="datensync.loadProfile" />
 
-                        <StackPanel Grid.Column="2" Spacing="8" VerticalAlignment="Bottom">
+                        <TextBox Grid.Row="1" Grid.Column="0" Text="{x:Bind ViewModel.ProfileName, Mode=TwoWay}" />
+
+                        <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{x:Bind ViewModel.ProfileNames, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedProfileName, Mode=TwoWay}" />
+
+                        <StackPanel Grid.Row="0" Grid.RowSpan="2" Grid.Column="2" Spacing="8" VerticalAlignment="Bottom">
 
                             <Button Command="{x:Bind ViewModel.SaveProfileCommand}" loc:Loc.Key="common.save" />
 
@@ -221,10 +252,11 @@
                 </StackPanel>
 
             </Border>
+                </StackPanel>
+            </Grid>
 
         </StackPanel>
-
-    </ScrollViewer>
+    </Grid>
 
 </UserControl>
 

@@ -7,12 +7,29 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:drop="using:HailMary.Views.Helpers"
     xmlns:loc="using:HailMary.Services"
-    HorizontalAlignment="Left"
+    HorizontalAlignment="Stretch"
     VerticalAlignment="Top"
     mc:Ignorable="d">
 
-    <ScrollViewer HorizontalContentAlignment="Left" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <StackPanel Style="{StaticResource ToolShellContentPanel}" Spacing="10">
+    <Grid
+        MaxWidth="{StaticResource HmContentWidthStandard}"
+        Padding="{StaticResource HmContentPadding}"
+        HorizontalAlignment="Stretch">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="WideLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1100" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="SettingsColumn.(Grid.Column)" Value="1" />
+                        <Setter Target="SettingsColumn.(Grid.Row)" Value="0" />
+                        <Setter Target="SettingsColumnDefinition.Width" Value="*" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        <StackPanel Spacing="10">
 
             <TextBlock Text="{x:Bind ViewModel.Description, Mode=OneWay}" TextWrapping="WrapWholeWords" />
             <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.Status, Mode=OneWay}" />
@@ -21,6 +38,16 @@
                 Text="{x:Bind ViewModel.QualityHint, Mode=OneWay}"
                 TextWrapping="WrapWholeWords" />
 
+            <Grid ColumnSpacing="16" RowSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition x:Name="SettingsColumnDefinition" Width="0" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Row="0" Grid.Column="0" Spacing="16">
             <Border Style="{StaticResource ToolShellCard}">
                 <StackPanel Spacing="8">
                     <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="perfectloop.inputHeader" />
@@ -62,6 +89,8 @@
                     <TextBox loc:Loc.HeaderKey="perfectloop.outputPreview" IsReadOnly="True" Text="{x:Bind ViewModel.OutputPath, Mode=OneWay}" />
                 </StackPanel>
             </Border>
+                </StackPanel>
+                <StackPanel x:Name="SettingsColumn" Grid.Row="1" Grid.Column="0">
 
             <Border Style="{StaticResource ToolShellCard}">
                 <StackPanel Spacing="8">
@@ -115,7 +144,9 @@
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
             </Border>
+                </StackPanel>
+            </Grid>
 
         </StackPanel>
-    </ScrollViewer>
+    </Grid>
 </UserControl>

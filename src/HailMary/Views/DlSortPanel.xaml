@@ -6,18 +6,18 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:viewModels="using:HailMary.ViewModels"
-    HorizontalAlignment="Left"
+    HorizontalAlignment="Stretch"
     VerticalAlignment="Top"
     mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
 
     <TabView
-        HorizontalAlignment="Left"
+        MaxWidth="{StaticResource HmContentWidthWide}"
+        HorizontalAlignment="Stretch"
         VerticalAlignment="Top"
         IsAddTabButtonVisible="False"
         TabWidthMode="SizeToContent">
         <TabViewItem Header="Profile" IsClosable="False">
-            <ScrollViewer HorizontalContentAlignment="Left" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                <StackPanel Style="{StaticResource ToolShellContentPanel}" Spacing="10">
+            <StackPanel Style="{StaticResource ToolShellContentPanel}" Spacing="10">
                     <TextBlock Text="{x:Bind ViewModel.Description, Mode=OneWay}" TextWrapping="WrapWholeWords" />
                     <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="dlsort.profileHintFull" TextWrapping="WrapWholeWords" />
                     <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.Status, Mode=OneWay}" />
@@ -67,12 +67,11 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
-                </StackPanel>
-            </ScrollViewer>
+            </StackPanel>
         </TabViewItem>
 
         <TabViewItem loc:Loc.HeaderKey="common.rules" IsClosable="False">
-            <Grid HorizontalAlignment="Left" MaxWidth="960" Padding="16,12" RowSpacing="10">
+            <Grid HorizontalAlignment="Stretch" MaxWidth="{StaticResource HmContentWidthStandard}" Padding="16,12" RowSpacing="10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
@@ -98,11 +97,11 @@
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                             loc:Loc.Key="dlsort.rulesHintFull"
                             TextWrapping="WrapWholeWords" />
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button Command="{x:Bind ViewModel.AddRuleCommand}" loc:Loc.Key="dlsort.addRule" Style="{StaticResource AccentButtonStyle}" />
-                            <Button Command="{x:Bind ViewModel.RemoveLastRuleCommand}" loc:Loc.Key="dlsort.removeLastRule" />
-                            <Button Command="{x:Bind ViewModel.SaveConfigCommand}" loc:Loc.Key="common.save" />
-                        </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Button Command="{x:Bind ViewModel.AddRuleCommand}" loc:Loc.Key="dlsort.addRule" Style="{StaticResource AccentButtonStyle}" />
+                                <Button Command="{x:Bind ViewModel.RemoveLastRuleCommand}" loc:Loc.Key="dlsort.removeLastRule" />
+                                <Button Command="{x:Bind ViewModel.SaveConfigCommand}" loc:Loc.Key="common.save" />
+                            </StackPanel>
                     </StackPanel>
                 </Border>
 
@@ -151,7 +150,25 @@
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate x:DataType="viewModels:DlSortCriterionRow">
                                                 <StackPanel Margin="0,0,0,4" Spacing="3">
-                                                    <Grid ColumnSpacing="6">
+                                                    <VisualStateManager.VisualStateGroups>
+                                                        <VisualStateGroup>
+                                                            <VisualState x:Name="CriterionNarrowLayout" />
+                                                            <VisualState x:Name="CriterionWideLayout">
+                                                                <VisualState.StateTriggers>
+                                                                    <AdaptiveTrigger MinWindowWidth="980" />
+                                                                </VisualState.StateTriggers>
+                                                                <VisualState.Setters>
+                                                                    <Setter Target="CriterionValue.(Grid.Row)" Value="0" />
+                                                                    <Setter Target="CriterionValue.(Grid.Column)" Value="3" />
+                                                                    <Setter Target="CriterionAdd.(Grid.Row)" Value="0" />
+                                                                    <Setter Target="CriterionAdd.(Grid.Column)" Value="4" />
+                                                                    <Setter Target="CriterionRemove.(Grid.Row)" Value="0" />
+                                                                    <Setter Target="CriterionRemove.(Grid.Column)" Value="5" />
+                                                                </VisualState.Setters>
+                                                            </VisualState>
+                                                        </VisualStateGroup>
+                                                    </VisualStateManager.VisualStateGroups>
+                                                    <Grid ColumnSpacing="6" RowSpacing="6">
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="48" />
                                                             <ColumnDefinition Width="148" />
@@ -160,6 +177,10 @@
                                                             <ColumnDefinition Width="Auto" />
                                                             <ColumnDefinition Width="Auto" />
                                                         </Grid.ColumnDefinitions>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="Auto" />
+                                                        </Grid.RowDefinitions>
                                                         <TextBlock
                                                             Grid.Column="0"
                                                             VerticalAlignment="Center"
@@ -176,14 +197,21 @@
                                                             ItemsSource="{x:Bind ConditionLabels}"
                                                             SelectedItem="{x:Bind ConditionLabel, Mode=TwoWay}" />
                                                         <TextBox
-                                                            Grid.Column="3"
+                                                            x:Name="CriterionValue"
+                                                            Grid.Row="1"
+                                                            Grid.Column="1"
+                                                            Grid.ColumnSpan="3"
                                                             loc:Loc.PlaceholderKey="dlsort.criterionExample"
                                                             Text="{x:Bind FirstValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                                         <Button
+                                                            x:Name="CriterionAdd"
+                                                            Grid.Row="1"
                                                             Grid.Column="4"
                                                             Command="{x:Bind AddOrValueCommand}"
                                                             loc:Loc.Key="dlsort.addOr" />
                                                         <Button
+                                                            x:Name="CriterionRemove"
+                                                            Grid.Row="1"
                                                             Grid.Column="5"
                                                             Command="{x:Bind RemoveCriterionCommand}"
                                                             Content="✕"
@@ -196,8 +224,6 @@
                                                                 <Grid Margin="0,2,0,0" ColumnSpacing="6">
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="48" />
-                                                                        <ColumnDefinition Width="148" />
-                                                                        <ColumnDefinition Width="120" />
                                                                         <ColumnDefinition Width="*" />
                                                                         <ColumnDefinition Width="Auto" />
                                                                     </Grid.ColumnDefinitions>
@@ -207,11 +233,11 @@
                                                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                                         loc:Loc.Key="dlsort.orLabel" />
                                                                     <TextBox
-                                                                        Grid.Column="3"
+                                                                        Grid.Column="1"
                                                                         loc:Loc.PlaceholderKey="dlsort.criterionAlt"
                                                                         Text="{x:Bind Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                                                     <Button
-                                                                        Grid.Column="4"
+                                                                        Grid.Column="2"
                                                                         Command="{x:Bind RemoveCommand}"
                                                                         Content="✕" />
                                                                 </Grid>

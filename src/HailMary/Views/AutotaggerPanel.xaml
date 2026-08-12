@@ -12,15 +12,31 @@
 
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 
-    HorizontalAlignment="Left"
+    HorizontalAlignment="Stretch"
     VerticalAlignment="Top"
     mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
 
 
 
-    <ScrollViewer HorizontalContentAlignment="Left" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-
-        <StackPanel Style="{StaticResource ToolShellContentPanel}" Spacing="10">
+    <Grid
+        MaxWidth="{StaticResource HmContentWidthStandard}"
+        Padding="{StaticResource HmContentPadding}"
+        HorizontalAlignment="Stretch">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="WideLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1100" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="QueueColumn.(Grid.Column)" Value="1" />
+                        <Setter Target="QueueColumn.(Grid.Row)" Value="0" />
+                        <Setter Target="QueueColumnDefinition.Width" Value="*" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        <StackPanel Spacing="10">
 
             <TextBlock Text="{x:Bind ViewModel.Description, Mode=OneWay}" TextWrapping="WrapWholeWords" />
 
@@ -28,6 +44,16 @@
 
 
 
+            <Grid ColumnSpacing="16" RowSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition x:Name="QueueColumnDefinition" Width="0" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Row="0" Grid.Column="0" Spacing="16">
             <Border Style="{StaticResource ToolShellCard}">
 
                 <StackPanel Spacing="8">
@@ -127,6 +153,8 @@
                 </StackPanel>
 
             </Border>
+                </StackPanel>
+                <StackPanel x:Name="QueueColumn" Grid.Row="1" Grid.Column="0" Spacing="16">
 
 
 
@@ -233,10 +261,11 @@
                 </StackPanel>
 
             </Border>
+                </StackPanel>
+            </Grid>
 
         </StackPanel>
-
-    </ScrollViewer>
+    </Grid>
 
 </UserControl>
 

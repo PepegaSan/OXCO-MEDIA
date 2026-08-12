@@ -14,7 +14,7 @@
 
     xmlns:drop="using:HailMary.Views.Helpers"
 
-    HorizontalAlignment="Left"
+    HorizontalAlignment="Stretch"
 
     VerticalAlignment="Top"
 
@@ -22,7 +22,25 @@
 
 
 
-    <Grid HorizontalAlignment="Left" MaxWidth="960" Padding="16,12" RowSpacing="10">
+    <Grid
+        MaxWidth="{StaticResource HmContentWidthWide}"
+        Padding="{StaticResource HmContentPadding}"
+        HorizontalAlignment="Stretch"
+        RowSpacing="10">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="WideLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1100" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="OutputField.(Grid.Column)" Value="1" />
+                        <Setter Target="OutputField.(Grid.Row)" Value="0" />
+                        <Setter Target="OutputColumnDefinition.Width" Value="*" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
 
         <Grid.RowDefinitions>
 
@@ -42,7 +60,16 @@
 
                 <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="common.video" />
 
-                <Grid ColumnSpacing="8" drop:VideoDrop.IsEnabled="True">
+                <Grid ColumnSpacing="16" RowSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition x:Name="OutputColumnDefinition" Width="0" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                <Grid Grid.Row="0" Grid.Column="0" ColumnSpacing="8" drop:VideoDrop.IsEnabled="True">
 
                     <Grid.ColumnDefinitions>
 
@@ -52,13 +79,13 @@
 
                     </Grid.ColumnDefinitions>
 
-                    <TextBox Grid.Column="0" loc:Loc.PlaceholderKey="cutter.videoPlaceholder" Text="{x:Bind ViewModel.InputPath, Mode=TwoWay}" />
+                    <TextBox Grid.Column="0" VerticalAlignment="Bottom" loc:Loc.PlaceholderKey="cutter.videoPlaceholder" Text="{x:Bind ViewModel.InputPath, Mode=TwoWay}" />
 
-                    <Button Grid.Column="1" VerticalAlignment="Center" Command="{x:Bind ViewModel.PickInputFileCommand}" loc:Loc.Key="common.file" />
+                    <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.PickInputFileCommand}" loc:Loc.Key="common.file" />
 
                 </Grid>
 
-                <Grid ColumnSpacing="8">
+                <Grid x:Name="OutputField" Grid.Row="1" Grid.Column="0" ColumnSpacing="8">
 
                     <Grid.ColumnDefinitions>
 
@@ -72,6 +99,7 @@
 
                     <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.PickOutputDirCommand}" loc:Loc.Key="common.addDots" />
 
+                </Grid>
                 </Grid>
 
             </StackPanel>
