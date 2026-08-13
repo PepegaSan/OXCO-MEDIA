@@ -7,58 +7,47 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="using:HailMary.Models"
+    xmlns:loc="using:HailMary.Services"
     HorizontalAlignment="Stretch"
     VerticalAlignment="Stretch"
-    mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
+    mc:Ignorable="d">
 
-    <Grid
-        MaxWidth="{StaticResource HmContentWidthWide}"
-        Padding="16,12"
-        HorizontalAlignment="Stretch"
-        VerticalAlignment="Top"
-        RowSpacing="8">
+    <Grid Padding="12,8,12,12" RowSpacing="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" MinHeight="120" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6">
-            <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="cutter.scenesHeader" VerticalAlignment="Center" />
-            <Button Command="{x:Bind ViewModel.TogglePartialSelectModeCommand}" Content="{x:Bind ViewModel.PartialSelectButtonText, Mode=OneWay}" />
-            <CheckBox loc:Loc.Key="cutter.chronologicalSort" IsChecked="{x:Bind ViewModel.ChronologicalSort, Mode=TwoWay}" />
-            <Button Command="{x:Bind ViewModel.ClearScenesCommand}" loc:Loc.Key="cutter.clearScenes" />
+        <StackPanel Grid.Row="0" Spacing="8">
+            <TextBlock
+                Style="{StaticResource ToolShellSectionHeader}"
+                loc:Loc.Key="cutter.scenesHeader" />
+            <Grid ColumnSpacing="8" RowSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button
+                    Grid.Column="0"
+                    HorizontalAlignment="Stretch"
+                    Command="{x:Bind ViewModel.TogglePartialSelectModeCommand}"
+                    Content="{x:Bind ViewModel.PartialSelectButtonText, Mode=OneWay}" />
+                <CheckBox
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    loc:Loc.Key="cutter.chronologicalSort"
+                    IsChecked="{x:Bind ViewModel.ChronologicalSort, Mode=TwoWay}" />
+            </Grid>
+            <Button
+                HorizontalAlignment="Left"
+                Command="{x:Bind ViewModel.ClearScenesCommand}"
+                loc:Loc.Key="cutter.clearScenes" />
         </StackPanel>
 
-        <Grid
+        <ListView
             Grid.Row="1"
             HorizontalAlignment="Stretch"
-            Padding="4,0"
-            ColumnSpacing="8"
-            Visibility="{x:Bind ViewModel.ShowSceneCheckboxes, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="32" />
-                <ColumnDefinition Width="36" />
-                <ColumnDefinition Width="52" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="72" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Style="{StaticResource CaptionTextBlockStyle}" Text="✓" />
-            <TextBlock Grid.Column="1" Style="{StaticResource CaptionTextBlockStyle}" Text="#" />
-            <TextBlock Grid.Column="2" Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="common.position" />
-            <TextBlock Grid.Column="3" Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="actionBar.start" />
-            <TextBlock Grid.Column="4" Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="common.end" />
-            <TextBlock Grid.Column="5" Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="common.order" />
-        </Grid>
-
-        <ListView
-            Grid.Row="2"
-            HorizontalAlignment="Stretch"
-            VerticalAlignment="Top"
-            MaxHeight="360"
+            VerticalAlignment="Stretch"
             ItemsSource="{x:Bind ViewModel.Scenes, Mode=OneWay}"
             ScrollViewer.VerticalScrollBarVisibility="Auto"
             ScrollViewer.VerticalScrollMode="Auto"
@@ -66,134 +55,72 @@
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                    <Setter Property="Padding" Value="0,2" />
+                    <Setter Property="Padding" Value="0,4" />
+                    <Setter Property="MinHeight" Value="0" />
                 </Style>
             </ListView.ItemContainerStyle>
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="models:SceneEntry">
-                    <Grid HorizontalAlignment="Stretch" ColumnSpacing="6" Padding="2,4">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="32" />
-                            <ColumnDefinition Width="36" />
-                            <ColumnDefinition Width="52" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="72" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <CheckBox
-                            Grid.Column="0"
-                            IsChecked="{x:Bind IsSelected, Mode=TwoWay}"
-                            IsEnabled="{Binding ElementName=RootPanel, Path=ViewModel.ShowSceneCheckboxes}" />
-                        <TextBlock Grid.Column="1" VerticalAlignment="Center" FontFamily="Consolas" Text="{x:Bind Number}" />
-                        <TextBox
-                            Grid.Column="2"
-                            FontFamily="Consolas"
-                            KeyDown="ScenePosition_KeyDown"
-                            PlaceholderText="#"
-                            Tag="{x:Bind}"
-                            Text="{x:Bind PositionInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        <TextBox
-                            Grid.Column="3"
-                            FontFamily="Consolas"
-                            LostFocus="SceneTime_LostFocus"
-                            loc:Loc.PlaceholderKey="actionBar.start"
-                            Tag="{x:Bind}"
-                            Text="{x:Bind StartInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        <TextBox
-                            Grid.Column="4"
-                            FontFamily="Consolas"
-                            LostFocus="SceneTime_LostFocus"
-                            loc:Loc.PlaceholderKey="common.end"
-                            Tag="{x:Bind}"
-                            Text="{x:Bind EndInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="2">
-                            <Button Click="MoveSceneUp_Click" Content="↑" Tag="{x:Bind}" />
-                            <Button Click="MoveSceneDown_Click" Content="↓" Tag="{x:Bind}" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="4">
-                            <Button Click="SeekScene_Click" Content="▶" Tag="{x:Bind}" />
-                            <Button Click="RemoveScene_Click" Content="×" Tag="{x:Bind}" />
-                        </StackPanel>
-                    </Grid>
+                    <Border
+                        Padding="10,8"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8">
+                        <Grid ColumnSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <CheckBox
+                                VerticalAlignment="Center"
+                                IsChecked="{x:Bind IsSelected, Mode=TwoWay}"
+                                Visibility="{Binding ElementName=RootPanel, Path=ViewModel.ShowSceneCheckboxes, Converter={StaticResource BoolToVisibility}}" />
+                            <StackPanel Grid.Column="1" Spacing="6">
+                                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="{x:Bind Title, Mode=OneWay}" />
+                                <TextBlock
+                                    FontFamily="Consolas"
+                                    Style="{StaticResource CaptionTextBlockStyle}"
+                                    Text="{x:Bind Display, Mode=OneWay}" />
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="52" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox
+                                        FontFamily="Consolas"
+                                        KeyDown="ScenePosition_KeyDown"
+                                        PlaceholderText="#"
+                                        Tag="{x:Bind}"
+                                        Text="{x:Bind PositionInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBox
+                                        Grid.Column="1"
+                                        FontFamily="Consolas"
+                                        LostFocus="SceneTime_LostFocus"
+                                        loc:Loc.PlaceholderKey="actionBar.start"
+                                        Tag="{x:Bind}"
+                                        Text="{x:Bind StartInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBox
+                                        Grid.Column="2"
+                                        FontFamily="Consolas"
+                                        LostFocus="SceneTime_LostFocus"
+                                        loc:Loc.PlaceholderKey="common.end"
+                                        Tag="{x:Bind}"
+                                        Text="{x:Bind EndInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </Grid>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal" Spacing="4">
+                                <Button Click="MoveSceneUp_Click" Content="↑" Tag="{x:Bind}" />
+                                <Button Click="MoveSceneDown_Click" Content="↓" Tag="{x:Bind}" />
+                                <Button Click="SeekScene_Click" Content="▶" Tag="{x:Bind}" />
+                                <Button Click="RemoveScene_Click" Content="×" Tag="{x:Bind}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
-
-        <StackPanel Grid.Row="3" HorizontalAlignment="Stretch" Spacing="8">
-            <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="common.export" />
-            <StackPanel Orientation="Horizontal" Spacing="6">
-                <CheckBox loc:Loc.Key="cutter.safeOutput" IsChecked="{x:Bind ViewModel.SafeOutput, Mode=TwoWay}" />
-                <CheckBox loc:Loc.Key="cutter.autoRemoveExported" IsChecked="{x:Bind ViewModel.AutoRemoveExported, Mode=TwoWay}" />
-                <CheckBox loc:Loc.Key="cutter.useDavinciExport" IsChecked="{x:Bind ViewModel.UseDavinciExport, Mode=TwoWay}" />
-            </StackPanel>
-            <StackPanel Spacing="4" Visibility="{x:Bind ViewModel.UseDavinciExport, Mode=OneWay, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}">
-                <CheckBox
-                    loc:Loc.Key="cutter.replaceOriginalWithCut"
-                    loc:Loc.ToolTipKey="cutter.replaceOriginalHint"
-                    IsChecked="{x:Bind ViewModel.ReplaceOriginalWithCut, Mode=TwoWay}" />
-                <TextBlock
-                    Style="{StaticResource CaptionTextBlockStyle}"
-                    loc:Loc.Key="cutter.replaceOriginalHint"
-                    TextWrapping="WrapWholeWords" />
-            </StackPanel>
-            <Grid
-                MaxWidth="640"
-                HorizontalAlignment="Left"
-                ColumnSpacing="12"
-                RowSpacing="8"
-                Visibility="{x:Bind ViewModel.UseDavinciExport, Mode=OneWay, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <ComboBox
-                    Grid.Row="0"
-                    Grid.Column="0"
-                    loc:Loc.HeaderKey="common.codec"
-                    ItemsSource="{x:Bind ViewModel.CodecOptions, Mode=OneWay}"
-                    SelectedItem="{x:Bind ViewModel.SelectedCodec, Mode=TwoWay}" />
-                <NumberBox
-                    Grid.Row="0"
-                    Grid.Column="1"
-                    loc:Loc.HeaderKey="common.targetFps"
-                    Minimum="0"
-                    Maximum="240"
-                    SmallChange="1"
-                    LargeChange="5"
-                    SpinButtonPlacementMode="Compact"
-                    Value="{x:Bind ViewModel.TargetFps, Mode=TwoWay}" />
-                <TextBox
-                    Grid.Row="1"
-                    Grid.Column="0"
-                    Grid.ColumnSpan="2"
-                    loc:Loc.HeaderKey="cutter.ffmpegOutputDir"
-                    loc:Loc.PlaceholderKey="cutter.ffmpegOutputDirPlaceholder"
-                    Text="{x:Bind ViewModel.FfmpegOutputDir, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            </Grid>
-            <TextBlock
-                Style="{StaticResource CaptionTextBlockStyle}"
-                loc:Loc.Key="common.targetFpsHint"
-                TextWrapping="WrapWholeWords"
-                Visibility="{x:Bind ViewModel.UseDavinciExport, Mode=OneWay, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}" />
-            <Grid ColumnSpacing="12" RowSpacing="8" Visibility="{x:Bind ViewModel.UseDavinciExport, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="cutter.resolvePreset" />
-                <TextBox Grid.Row="0" Grid.Column="1" Text="{x:Bind ViewModel.DavinciPreset, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="cutter.davinciOutputDir" />
-                <TextBox Grid.Row="1" Grid.Column="1" Text="{x:Bind ViewModel.DavinciOutputDir, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            </Grid>
-        </StackPanel>
     </Grid>
 </UserControl>

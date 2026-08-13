@@ -25,7 +25,7 @@ class LoopSettings:
     seam_seconds: float = 0.25
     smart_trim: bool = False
     min_loop_seconds: float = 1.5
-    ffmpeg_encoder: str = "nvidia_h264"
+    ffmpeg_encoder: str = "cpu"
     mute_audio: bool = True
     # cut = export segment as-is (best when already similar)
     # crossfade = short alpha blend, no warp
@@ -33,6 +33,11 @@ class LoopSettings:
     # auto = pick from quality score
     seam_method: str = "auto"
     target_fps: float = 0.0
+    loop_count: int = 1
+    preview_max_width: int = 0
+    crf: int = 0
+    range_start_seconds: float = 0.0
+    range_end_seconds: float = 0.0
 
 
 @dataclass
@@ -62,6 +67,8 @@ class AnalyzeResult:
     duration_seconds: float
     recommended_seam_seconds: float
     recommended_seam_method: str
+    range_start_seconds: float = 0.0
+    range_end_seconds: float = 0.0
 
 
 def _log(log: Optional[LogFn], msg: str) -> None:
@@ -83,13 +90,20 @@ def find_ffprobe() -> Optional[str]:
 
 
 def frame_similarity(a: np.ndarray, b: np.ndarray) -> float:
-    """Higher is better (1.0 = identical). Uses grayscale MSE mapped to [0, 1]."""
+    """Higher is better (1.0 = identical). MSE plus histogram correlation."""
     if a.shape != b.shape:
         b = cv2.resize(b, (a.shape[1], a.shape[0]), interpolation=cv2.INTER_AREA)
-    ga = cv2.cvtColor(a, cv2.COLOR_BGR2GRAY).astype(np.float32)
-    gb = cv2.cvtColor(b, cv2.COLOR_BGR2GRAY).astype(np.float32)
-    mse = float(np.mean((ga - gb) ** 2))
-    return 1.0 / (1.0 + mse / 100.0)
+    ga = cv2.cvtColor(a, cv2.COLOR_BGR2GRAY)
+    gb = cv2.cvtColor(b, cv2.COLOR_BGR2GRAY)
+    mse = float(np.mean((ga.astype(np.float32) - gb.astype(np.float32)) ** 2))
+    mse_score = 1.0 / (1.0 + mse / 100.0)
+    ha = cv2.calcHist([ga], [0], None, [48], [0, 256])
+    hb = cv2.calcHist([gb], [0], None, [48], [0, 256])
+    cv2.normalize(ha, ha)
+    cv2.normalize(hb, hb)
+    hist = float(cv2.compareHist(ha, hb, cv2.HISTCMP_CORREL))
+    hist_score = max(0.0, min(1.0, (hist + 1.0) * 0.5))
+    return 0.72 * mse_score + 0.28 * hist_score
 
 
 def read_video_meta(path: str) -> tuple[float, int, int, int]:
@@ -112,8 +126,10 @@ def _maybe_downscale(frame: np.ndarray, max_width: Optional[int]) -> np.ndarray:
     if not max_width or frame.shape[1] <= max_width:
         return frame
     h, w = frame.shape[:2]
-    th = max(1, int(round(h * (max_width / max(1, w)))))
-    return cv2.resize(frame, (max_width, th), interpolation=cv2.INTER_AREA)
+    tw = max(2, int(max_width) - (int(max_width) % 2))
+    th = max(2, int(round(h * (tw / max(1, w)))))
+    th -= th % 2
+    return cv2.resize(frame, (tw, th), interpolation=cv2.INTER_AREA)
 
 
 def read_first_last_frames(path: str) -> tuple[np.ndarray, np.ndarray, float, int]:
@@ -142,6 +158,31 @@ def read_first_last_frames(path: str) -> tuple[np.ndarray, np.ndarray, float, in
                 last = frame
     cap.release()
     return first, last, fps, total
+
+
+def resolve_frame_range(fps: float, total: int, start_sec: float, end_sec: float) -> tuple[int, int]:
+    """User in/out → [start, end) frames. end_sec <= 0 means until the last frame."""
+    start = int(round(max(0.0, float(start_sec or 0.0)) * fps))
+    start = max(0, min(max(0, total - 4), start))
+    if end_sec is None or float(end_sec) <= 0:
+        end = total
+    else:
+        end = int(round(float(end_sec) * fps))
+    end = max(start + 4, min(total, end))
+    return start, end
+
+
+def read_frame_at(path: str, index: int) -> np.ndarray:
+    cap = cv2.VideoCapture(path)
+    if not cap.isOpened():
+        raise RuntimeError(f"Cannot open video: {path}")
+    if index > 0:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, float(index))
+    ok, frame = cap.read()
+    cap.release()
+    if not ok or frame is None:
+        raise RuntimeError(f"Cannot read frame {index}: {path}")
+    return frame
 
 
 def load_frames(
@@ -229,13 +270,18 @@ def smart_trim_range(
         return 0, n, frame_similarity(frames[0], frames[-1])
 
     thumbs: list[np.ndarray] = []
+    hists: list[np.ndarray] = []
     for i in range(0, n, stride):
         f = frames[i]
         h, w = f.shape[:2]
         tw = sample_width
         th = max(1, int(round(h * (tw / max(1, w)))))
         small = cv2.resize(f, (tw, th), interpolation=cv2.INTER_AREA)
-        thumbs.append(cv2.cvtColor(small, cv2.COLOR_BGR2GRAY).astype(np.float32))
+        gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+        thumbs.append(gray.astype(np.float32))
+        hist = cv2.calcHist([gray], [0], None, [32], [0, 256])
+        cv2.normalize(hist, hist)
+        hists.append(hist)
 
     thumb_n = len(thumbs)
     min_thumb_span = max(2, min_len // stride)
@@ -248,7 +294,10 @@ def smart_trim_range(
     for ai in range(0, thumb_n - min_thumb_span):
         for bi in range(ai + min_thumb_span, thumb_n):
             mse = float(np.mean((thumbs[ai] - thumbs[bi]) ** 2))
-            score = 1.0 / (1.0 + mse / 100.0)
+            mse_score = 1.0 / (1.0 + mse / 100.0)
+            hist = float(cv2.compareHist(hists[ai], hists[bi], cv2.HISTCMP_CORREL))
+            hist_score = max(0.0, min(1.0, (hist + 1.0) * 0.5))
+            score = 0.75 * mse_score + 0.25 * hist_score
             # Prefer mid-length loops slightly when scores are close
             length_bias = 0.02 * (1.0 - abs((bi - ai) / max(1, thumb_n - 1) - 0.55))
             score += length_bias
@@ -278,16 +327,50 @@ def _warp_flow(img: np.ndarray, flow: np.ndarray, factor: float) -> np.ndarray:
     return cv2.remap(img, map_x, map_y, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
 
 
+def _optical_flow(ga: np.ndarray, gb: np.ndarray) -> np.ndarray:
+    """Dense flow a→b. DIS at capped resolution is less ghosty than full-res Farneback."""
+    h, w = ga.shape[:2]
+    work_a, work_b, scale = ga, gb, 1.0
+    if w > 720:
+        scale = 720.0 / w
+        nw = max(2, int(round(w * scale)) & ~1)
+        nh = max(2, int(round(h * scale)) & ~1)
+        work_a = cv2.resize(ga, (nw, nh), interpolation=cv2.INTER_AREA)
+        work_b = cv2.resize(gb, (nw, nh), interpolation=cv2.INTER_AREA)
+
+    flow = None
+    create = getattr(cv2, "DISOpticalFlow_create", None)
+    if create is None:
+        dis_cls = getattr(cv2, "DISOpticalFlow", None)
+        create = getattr(dis_cls, "create", None) if dis_cls is not None else None
+    if create is not None:
+        try:
+            preset = getattr(cv2, "DISOPTICAL_FLOW_PRESET_MEDIUM", 1)
+            flow = create(preset).calc(work_a, work_b, None)
+        except cv2.error:
+            flow = None
+    if flow is None:
+        flow = cv2.calcOpticalFlowFarneback(work_a, work_b, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+
+    if scale != 1.0:
+        flow = cv2.resize(flow, (w, h), interpolation=cv2.INTER_LINEAR)
+        flow *= 1.0 / scale
+    return flow
+
+
 def morph_pair(a: np.ndarray, b: np.ndarray, alpha: float) -> np.ndarray:
-    """Optical-flow morph from a→b at blend factor alpha in [0, 1]."""
+    """Optical-flow morph mixed with a dissolve so large motion does not ghost."""
     ga = cv2.cvtColor(a, cv2.COLOR_BGR2GRAY)
     gb = cv2.cvtColor(b, cv2.COLOR_BGR2GRAY)
-    flow_ab = cv2.calcOpticalFlowFarneback(ga, gb, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-    flow_ba = cv2.calcOpticalFlowFarneback(gb, ga, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+    flow_ab = _optical_flow(ga, gb)
+    flow_ba = _optical_flow(gb, ga)
     warped_a = _warp_flow(a, flow_ab, alpha)
     warped_b = _warp_flow(b, flow_ba, 1.0 - alpha)
-    blended = cv2.addWeighted(warped_a, 1.0 - alpha, warped_b, alpha, 0)
-    return blended
+    morph = cv2.addWeighted(warped_a, 1.0 - alpha, warped_b, alpha, 0)
+    fade = crossfade_pair(a, b, alpha)
+    mag = float(np.mean(np.linalg.norm(flow_ab, axis=2)))
+    fade_w = float(np.clip(mag / 14.0, 0.18, 0.70))
+    return cv2.addWeighted(morph, 1.0 - fade_w, fade, fade_w, 0)
 
 
 def crossfade_pair(a: np.ndarray, b: np.ndarray, alpha: float) -> np.ndarray:
@@ -322,7 +405,8 @@ def build_loop_frames(
 
     blends: list[np.ndarray] = []
     for i in range(seam):
-        alpha = (i + 1) / (seam + 1)
+        t = (i + 1) / (seam + 1)
+        alpha = t * t * (3.0 - 2.0 * t)
         src_idx = n - seam + i
         dst_idx = i
         if use_morph:
@@ -353,15 +437,34 @@ def build_seam_loop(
     return build_loop_frames(frames, seam_frames, "morph", log=log, progress=progress)
 
 
-def encoder_args(encoder: str) -> list[str]:
-    table = {
-        "cpu": ["-c:v", "libx264", "-preset", "fast", "-crf", "18"],
-        "cpu_hevc": ["-c:v", "libx265", "-preset", "fast", "-crf", "22"],
-        "nvidia_h264": ["-c:v", "h264_nvenc", "-preset", "p6", "-cq", "18"],
-        "nvidia_hevc": ["-c:v", "hevc_nvenc", "-preset", "p6", "-cq", "18"],
-        "copy": ["-c:v", "libx264", "-preset", "fast", "-crf", "18"],
+def _clamp_crf(value: object, default: int) -> int:
+    try:
+        parsed = int(round(float(value)))  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return default
+    if parsed <= 0:
+        return default
+    return max(1, min(51, parsed))
+
+
+def encoder_args(encoder: str, crf: object = 0) -> list[str]:
+    defaults = {
+        "cpu": 18,
+        "cpu_hevc": 22,
+        "nvidia_h264": 18,
+        "nvidia_hevc": 18,
+        "copy": 18,
     }
-    return list(table.get(encoder, table["nvidia_h264"]))
+    key = encoder if encoder in defaults else "cpu"
+    q = str(_clamp_crf(crf, defaults[key]))
+    table = {
+        "cpu": ["-c:v", "libx264", "-preset", "fast", "-crf", q],
+        "cpu_hevc": ["-c:v", "libx265", "-preset", "fast", "-crf", q],
+        "nvidia_h264": ["-c:v", "h264_nvenc", "-preset", "p6", "-cq", q],
+        "nvidia_hevc": ["-c:v", "hevc_nvenc", "-preset", "p6", "-cq", q],
+        "copy": ["-c:v", "libx264", "-preset", "fast", "-crf", q],
+    }
+    return list(table.get(encoder, table["cpu"]))
 
 
 def write_frames_ffmpeg(
@@ -369,9 +472,10 @@ def write_frames_ffmpeg(
     output_path: str,
     fps: float,
     *,
-    encoder: str = "nvidia_h264",
+    encoder: str = "cpu",
     mute_audio: bool = True,
     target_fps: float = 0.0,
+    crf: int = 0,
     log: Optional[LogFn] = None,
 ) -> None:
     ffmpeg = find_ffmpeg()
@@ -418,7 +522,7 @@ def write_frames_ffmpeg(
             f"{out_fps:.6f}",
             "-i",
             pattern,
-            *encoder_args(encoder),
+            *encoder_args(encoder, crf),
             "-pix_fmt",
             "yuv420p",
             "-movflags",
@@ -441,7 +545,7 @@ def write_frames_ffmpeg(
         if proc.returncode != 0:
             err = (proc.stderr or proc.stdout or "").strip()
             # Fallback to CPU if NVENC fails
-            if "nvenc" in " ".join(encoder_args(encoder)).lower() or encoder.startswith("nvidia"):
+            if "nvenc" in " ".join(encoder_args(encoder, crf)).lower() or encoder.startswith("nvidia"):
                 _log(log, "NVENC failed — retrying with libx264")
                 cmd_cpu = [
                     ffmpeg,
@@ -450,7 +554,7 @@ def write_frames_ffmpeg(
                     f"{out_fps:.6f}",
                     "-i",
                     pattern,
-                    *encoder_args("cpu"),
+                    *encoder_args("cpu", crf),
                     "-pix_fmt",
                     "yuv420p",
                     "-movflags",
@@ -473,6 +577,47 @@ def write_frames_ffmpeg(
                 raise RuntimeError(err[-2000:] or "ffmpeg encode failed")
 
 
+def _repeat_encoded_loop(output_path: str, loop_count: int, *, log: Optional[LogFn] = None) -> None:
+    """Write the seamless cycle N times into the file (preview still plays one cycle)."""
+    count = max(1, int(loop_count))
+    if count <= 1:
+        return
+    ffmpeg = find_ffmpeg()
+    if not ffmpeg:
+        raise RuntimeError("ffmpeg not found on PATH")
+    src = Path(output_path)
+    tmp = src.with_name(f"{src.stem}.__looprep__{src.suffix or '.mp4'}")
+    cmd = [
+        ffmpeg,
+        "-y",
+        "-stream_loop",
+        str(count - 1),
+        "-i",
+        str(src),
+        "-c",
+        "copy",
+        "-movflags",
+        "+faststart",
+        str(tmp),
+    ]
+    _log(log, f"Repeating loop {count}x")
+    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    proc = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        creationflags=flags,
+    )
+    if proc.returncode != 0 or not tmp.is_file():
+        err = (proc.stderr or proc.stdout or "").strip()
+        if tmp.exists():
+            tmp.unlink(missing_ok=True)
+        raise RuntimeError(err[-2000:] or "ffmpeg loop repeat failed")
+    tmp.replace(src)
+
+
 def analyze_loop(
     settings: LoopSettings,
     *,
@@ -486,27 +631,33 @@ def analyze_loop(
 
     _progress(progress, 5.0, "Prüfen…")
     fps, total, _, _ = read_video_meta(path)
-    trim_start, trim_end = 0, total
+    win_start, win_end = resolve_frame_range(
+        fps, total, settings.range_start_seconds, settings.range_end_seconds
+    )
+    trim_start, trim_end = win_start, win_end
     smart_used = False
 
     if settings.smart_trim:
-        # Downscaled full pass for segment search — still no morph/encode
         _progress(progress, 15.0, "Abschnitt suchen…")
-        frames, fps = load_frames(path, max_width=160, log=log, progress=progress)
-        trim_start, trim_end, quality = smart_trim_range(
+        frames, fps = load_frames(
+            path, start=win_start, end=win_end, max_width=160, log=log, progress=progress
+        )
+        local_s, local_e, quality = smart_trim_range(
             frames,
             fps,
             min_loop_seconds=settings.min_loop_seconds,
             log=log,
             progress=progress,
         )
+        trim_start = win_start + local_s
+        trim_end = win_start + local_e
         smart_used = True
         frame_count = max(0, trim_end - trim_start)
     else:
-        first, last, fps, total = read_first_last_frames(path)
+        first = read_frame_at(path, trim_start)
+        last = read_frame_at(path, max(trim_start, trim_end - 1))
         quality = frame_similarity(first, last)
-        trim_end = total
-        frame_count = total
+        frame_count = max(0, trim_end - trim_start)
 
     duration = frame_count / max(fps, 1e-6)
     quality_warning = quality < 0.55
@@ -539,6 +690,8 @@ def analyze_loop(
         duration_seconds=duration,
         recommended_seam_seconds=recommended,
         recommended_seam_method=method,
+        range_start_seconds=trim_start / max(fps, 1e-6),
+        range_end_seconds=trim_end / max(fps, 1e-6),
     )
 
 
@@ -553,20 +706,29 @@ def run_loop(
         raise FileNotFoundError(f"Input not found: {path}")
 
     _progress(progress, 2.0, "Start…")
-    frames, fps = load_frames(path, log=log, progress=progress)
+    fps, total, _, _ = read_video_meta(path)
+    win_start, win_end = resolve_frame_range(
+        fps, total, settings.range_start_seconds, settings.range_end_seconds
+    )
+    max_w = settings.preview_max_width if settings.preview_max_width and settings.preview_max_width > 0 else None
+    frames, fps = load_frames(
+        path, start=win_start, end=win_end, max_width=max_w, log=log, progress=progress
+    )
 
-    trim_start, trim_end = 0, len(frames)
+    trim_start, trim_end = win_start, win_end
     smart_used = False
     if settings.smart_trim:
         _progress(progress, 40.0, "Abschnitt suchen…")
-        trim_start, trim_end, _ = smart_trim_range(
+        local_s, local_e, _ = smart_trim_range(
             frames,
             fps,
             min_loop_seconds=settings.min_loop_seconds,
             log=log,
             progress=progress,
         )
-        frames = list(frames[trim_start:trim_end])
+        frames = list(frames[local_s:local_e])
+        trim_start = win_start + local_s
+        trim_end = win_start + local_e
         smart_used = True
 
     quality = frame_similarity(frames[0], frames[-1])
@@ -595,8 +757,13 @@ def run_loop(
         encoder=settings.ffmpeg_encoder,
         mute_audio=settings.mute_audio,
         target_fps=settings.target_fps,
+        crf=settings.crf,
         log=log,
     )
+    repeats = max(1, int(settings.loop_count or 1))
+    if repeats > 1:
+        _progress(progress, 96.0, "Wiederholen…")
+        _repeat_encoded_loop(settings.output_path, repeats, log=log)
     _progress(progress, 100.0, "Fertig")
 
     return LoopResult(

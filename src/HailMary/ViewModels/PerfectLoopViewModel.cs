@@ -7,17 +7,35 @@ using HailMary.Services;
 
 namespace HailMary.ViewModels;
 
-public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILocalizable
+public sealed class SeamMethodChoice
 {
+    public SeamMethodChoice(string id, string label)
+    {
+        Id = id;
+        Label = label;
+    }
+
+    public string Id { get; }
+
+    public string Label { get; }
+}
+
+public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ISplitPaneToolHost, ILocalizable
+{
+    private static readonly string[] SeamMethodIds = ["auto", "cut", "crossfade", "morph"];
+
     private readonly ToolDefinition _tool;
     private int _analyzeEpoch;
+    private int _previewEpoch;
     private bool _suppressAutoAnalyze;
     private bool _userChoseSeamSettings;
+    private string? _seamPreviewTempPath;
 
     public PerfectLoopViewModel(ToolDefinition tool)
         : base(tool.Id)
     {
         _tool = tool;
+        RebuildSeamMethodChoices(selectId: "auto");
         RefreshBatchFiles(preserveQualityPreview: false);
     }
 
@@ -25,25 +43,49 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILo
 
     public ObservableCollection<string> BatchFiles { get; } = [];
 
+    public ObservableCollection<SeamMethodChoice> SeamMethodChoices { get; } = [];
+
     public IReadOnlyList<string> EncoderOptions { get; } =
         FfmpegEncoderCatalog.Labels(FfmpegEncoderCatalog.SoftHardware);
 
-    public IReadOnlyList<string> SeamMethodOptions { get; } =
-        ["auto", "cut", "crossfade", "morph"];
-
+    [ObservableProperty] private SeamMethodChoice? _selectedSeamMethodItem;
     [ObservableProperty] private string _outputPath = string.Empty;
     [ObservableProperty] private double _seamSeconds = 0.15;
-    [ObservableProperty] private bool _smartTrim;
     [ObservableProperty] private string _selectedEncoder = FfmpegEncoderCatalog.LabelFor(
         FfmpegEncoderCatalog.SoftHardware,
-        "nvidia_h264");
+        FfmpegEncoderCatalog.DefaultSoftHardwareId);
     [ObservableProperty] private double _targetFps;
-    [ObservableProperty] private string _selectedSeamMethod = "auto";
+    [ObservableProperty] private double _crfValue;
+    [ObservableProperty] private double _loopCount = 1;
     [ObservableProperty] private string _qualityHint = string.Empty;
+    [ObservableProperty] private string _previewHint = string.Empty;
+    [ObservableProperty] private string _previewVideoPath = string.Empty;
     [ObservableProperty] private string _batchSummary = Loc.T("intro.batchSummaryEmpty");
     [ObservableProperty] private string _status = Loc.T("common.ready");
     [ObservableProperty] private bool _isBusy;
+    [ObservableProperty] private bool _isPreviewEncoding;
     [ObservableProperty] private bool _hasQualityPreview;
+    [ObservableProperty] private double _loopStartSeconds;
+    [ObservableProperty] private double _loopEndSeconds;
+    [ObservableProperty] private double _durationSeconds;
+    [ObservableProperty] private double _sliderValue;
+    [ObservableProperty] private double _sliderMaximum = 1;
+    [ObservableProperty] private string _positionDisplay = "00:00";
+    [ObservableProperty] private string _durationDisplay = "00:00";
+    [ObservableProperty] private string _rangeSummary = string.Empty;
+    [ObservableProperty] private float[]? _waveformPeaks;
+
+    public IReadOnlyList<TimelineSpan> TimelineRanges { get; private set; } = [];
+
+    private bool _userSetRange;
+    private bool _hasSearchWindow;
+    private double _searchWindowStart;
+    private double _searchWindowEnd;
+
+    public string SelectedSeamMethod => SelectedSeamMethodItem?.Id ?? "auto";
+
+    public bool HasPreviewVideo =>
+        !string.IsNullOrWhiteSpace(PreviewVideoPath) && File.Exists(PreviewVideoPath);
 
     public string ExportButtonLabel => BatchFiles.Count > 1
         ? Loc.F("perfectloop.exportBatch", BatchFiles.Count)
@@ -53,14 +95,53 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILo
 
     public string AnalyzeButtonLabel => Loc.T("perfectloop.analyze");
 
+    public string FindBestButtonLabel => Loc.T("perfectloop.findBest");
+
     public bool SeamSliderEnabled =>
         !string.Equals(SelectedSeamMethod, "cut", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsSourcePreview
+    {
+        get
+        {
+            var source = BatchFiles.FirstOrDefault();
+            return !string.IsNullOrWhiteSpace(source)
+                && string.Equals(PreviewVideoPath, source, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    public bool HasVideo =>
+        BatchFiles.Count > 0 && File.Exists(BatchFiles[0]);
+
+    public string? SourceVideoPath =>
+        BatchFiles.FirstOrDefault(p => !string.IsNullOrWhiteSpace(p) && File.Exists(p));
+
+    public bool CanMarkRange => HasVideo;
+
+    public double EffectiveLoopEnd
+    {
+        get
+        {
+            if (LoopEndSeconds <= 0.001)
+            {
+                return DurationSeconds;
+            }
+
+            return DurationSeconds > 0 ? Math.Min(LoopEndSeconds, DurationSeconds) : LoopEndSeconds;
+        }
+    }
+
+    public double RangeBarBefore => Math.Max(0.001, LoopStartSeconds);
+    public double RangeBarMid => Math.Max(0.001, EffectiveLoopEnd - LoopStartSeconds);
+    public double RangeBarAfter => Math.Max(0.001, DurationSeconds - EffectiveLoopEnd);
 
     protected override void OnOutputDirUpdated(string value) => RefreshOutputFromInput();
 
     protected override void OnInputPathUpdated(string value)
     {
         _userChoseSeamSettings = false;
+        _userSetRange = false;
+        _hasSearchWindow = false;
         RefreshBatchFiles(preserveQualityPreview: false);
         _ = QueueAutoAnalyzeAsync();
     }
@@ -75,7 +156,7 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILo
         OnPropertyChanged(nameof(SeamSecondsLabel));
     }
 
-    partial void OnSelectedSeamMethodChanged(string value)
+    partial void OnSelectedSeamMethodItemChanged(SeamMethodChoice? value)
     {
         if (!_suppressAutoAnalyze)
         {
@@ -83,9 +164,75 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILo
         }
 
         OnPropertyChanged(nameof(SeamSliderEnabled));
+        OnPropertyChanged(nameof(SelectedSeamMethod));
     }
 
-    partial void OnSmartTrimChanged(bool value) => _ = QueueAutoAnalyzeAsync();
+    partial void OnPreviewVideoPathChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasPreviewVideo));
+        OnPropertyChanged(nameof(HasVideo));
+        OnPropertyChanged(nameof(IsSourcePreview));
+        OnPropertyChanged(nameof(CanMarkRange));
+    }
+
+    partial void OnLoopStartSecondsChanged(double value) => OnLoopRangeEdited();
+
+    partial void OnLoopEndSecondsChanged(double value) => OnLoopRangeEdited();
+
+    private void OnLoopRangeEdited()
+    {
+        NotifyRangeUi();
+        if (_suppressAutoAnalyze)
+        {
+            return;
+        }
+
+        _userSetRange = true;
+        if (!IsSourcePreview)
+        {
+            ShowSourcePreview();
+        }
+
+        _ = QueueAutoAnalyzeAsync();
+    }
+
+    private void NotifyRangeUi()
+    {
+        var start = Math.Max(0, LoopStartSeconds);
+        var end = EffectiveLoopEnd;
+        var span = Math.Max(0, end - start);
+        RangeSummary = DurationSeconds <= 0
+            ? string.Empty
+            : Loc.F("perfectloop.rangeSummary", start.ToString("0.00"), end.ToString("0.00"), span.ToString("0.00"));
+        OnPropertyChanged(nameof(EffectiveLoopEnd));
+        OnPropertyChanged(nameof(RangeBarBefore));
+        OnPropertyChanged(nameof(RangeBarMid));
+        OnPropertyChanged(nameof(RangeBarAfter));
+        OnPropertyChanged(nameof(CanMarkRange));
+        RebuildTimeline();
+    }
+
+    private void RebuildSeamMethodChoices(string? selectId)
+    {
+        var keepId = selectId ?? SelectedSeamMethodItem?.Id ?? "auto";
+        _suppressAutoAnalyze = true;
+        try
+        {
+            SeamMethodChoices.Clear();
+            foreach (var id in SeamMethodIds)
+            {
+                SeamMethodChoices.Add(new SeamMethodChoice(id, Loc.T($"perfectloop.method.{id}")));
+            }
+
+            SelectedSeamMethodItem = SeamMethodChoices.FirstOrDefault(c =>
+                string.Equals(c.Id, keepId, StringComparison.OrdinalIgnoreCase))
+                ?? SeamMethodChoices[0];
+        }
+        finally
+        {
+            _suppressAutoAnalyze = false;
+        }
+    }
 
     private void RefreshBatchFiles(bool preserveQualityPreview)
     {
@@ -110,13 +257,232 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILo
         OnPropertyChanged(nameof(ExportButtonLabel));
         OnPropertyChanged(nameof(PrimaryActionLabel));
         OnPropertyChanged(nameof(IsPrimaryActionEnabled));
+        OnPropertyChanged(nameof(HasVideo));
+        OnPropertyChanged(nameof(SourceVideoPath));
+        OnPropertyChanged(nameof(CanMarkRange));
         RefreshOutputFromInput();
 
         if (!preserveQualityPreview && !_suppressAutoAnalyze)
         {
             HasQualityPreview = false;
             QualityHint = BatchFiles.Count > 0 ? Loc.T("perfectloop.qualityPending") : string.Empty;
+            ShowSourcePreview();
         }
+        else if (BatchFiles.Count == 0)
+        {
+            ShowSourcePreview();
+        }
+        else if (!HasPreviewVideo)
+        {
+            ShowSourcePreview();
+        }
+    }
+
+    private void ShowSourcePreview()
+    {
+        _previewEpoch++;
+        ClearSeamPreviewTemp();
+        var source = BatchFiles.FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(source) && File.Exists(source))
+        {
+            PreviewVideoPath = source;
+            PreviewHint = Loc.T("perfectloop.previewSource");
+            _ = ProbeSourceDurationAsync(source);
+        }
+        else
+        {
+            PreviewVideoPath = string.Empty;
+            PreviewHint = string.Empty;
+            WaveformPeaks = null;
+            RebuildTimeline();
+        }
+    }
+
+    private void ClearSeamPreviewTemp()
+    {
+        var old = _seamPreviewTempPath;
+        _seamPreviewTempPath = null;
+        if (string.IsNullOrWhiteSpace(old) || !File.Exists(old))
+        {
+            return;
+        }
+
+        try
+        {
+            File.Delete(old);
+        }
+        catch
+        {
+            // ignore
+        }
+    }
+
+    private async Task ProbeSourceDurationAsync(string path)
+    {
+        var dur = await FfprobeHelper.ProbeDurationSecondsAsync(path) ?? 0;
+        ApplyDuration(dur);
+        _ = LoadWaveformAsync(path);
+    }
+
+    public void ApplyDuration(double seconds)
+    {
+        var dur = Math.Max(0, seconds);
+        DurationSeconds = dur;
+        SliderMaximum = Math.Max(0.001, dur);
+        DurationDisplay = FormatTime(dur);
+        if (!_userSetRange)
+        {
+            _suppressAutoAnalyze = true;
+            try
+            {
+                LoopStartSeconds = 0;
+                LoopEndSeconds = dur;
+            }
+            finally
+            {
+                _suppressAutoAnalyze = false;
+            }
+        }
+        else if (LoopEndSeconds <= 0.001 && dur > 0)
+        {
+            _suppressAutoAnalyze = true;
+            try
+            {
+                LoopEndSeconds = dur;
+            }
+            finally
+            {
+                _suppressAutoAnalyze = false;
+            }
+        }
+
+        NotifyRangeUi();
+    }
+
+    public async Task LoadWaveformAsync(string? path)
+    {
+        WaveformPeaks = null;
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            return;
+        }
+
+        var peaks = await WaveformPeakExtractor.ExtractAsync(path);
+        if (string.Equals(path, SourceVideoPath, StringComparison.OrdinalIgnoreCase))
+        {
+            WaveformPeaks = peaks;
+        }
+    }
+
+    public void RebuildTimeline()
+    {
+        var spans = new List<TimelineSpan>();
+        var loopStart = Math.Max(0, LoopStartSeconds);
+        var loopEnd = EffectiveLoopEnd;
+        if (_hasSearchWindow && _searchWindowEnd > _searchWindowStart + 0.05)
+        {
+            spans.Add(new TimelineSpan(
+                _searchWindowStart,
+                _searchWindowEnd,
+                TimelineSpanKind.Pending,
+                Loc.T("common.selection")));
+        }
+
+        if (loopEnd > loopStart + 0.02)
+        {
+            spans.Add(new TimelineSpan(
+                loopStart,
+                loopEnd,
+                TimelineSpanKind.Loop,
+                Loc.T("perfectloop.rangeBarLoop")));
+        }
+
+        TimelineRanges = spans;
+        OnPropertyChanged(nameof(TimelineRanges));
+    }
+
+    public void SetPosition(double seconds)
+    {
+        SliderValue = Math.Clamp(seconds, 0, SliderMaximum);
+        PositionDisplay = FormatTime(SliderValue);
+    }
+
+    public void MarkInAt(double seconds)
+    {
+        if (!HasVideo)
+        {
+            return;
+        }
+
+        if (!IsSourcePreview)
+        {
+            ShowSourcePreview();
+        }
+
+        var end = EffectiveLoopEnd > 0.05 ? EffectiveLoopEnd : DurationSeconds;
+        LoopStartSeconds = Math.Clamp(seconds, 0, Math.Max(0, end - 0.05));
+    }
+
+    public void MarkOutAt(double seconds)
+    {
+        if (!HasVideo)
+        {
+            return;
+        }
+
+        if (!IsSourcePreview)
+        {
+            ShowSourcePreview();
+        }
+
+        var minEnd = LoopStartSeconds + 0.05;
+        var maxEnd = DurationSeconds > 0 ? DurationSeconds : seconds;
+        LoopEndSeconds = Math.Clamp(seconds, minEnd, Math.Max(minEnd, maxEnd));
+    }
+
+    [RelayCommand]
+    private void MarkLoopStart() => MarkInAt(SliderValue);
+
+    [RelayCommand]
+    private void MarkLoopEnd() => MarkOutAt(SliderValue);
+
+    [RelayCommand]
+    private void ResetLoopRange()
+    {
+        _userSetRange = false;
+        _hasSearchWindow = false;
+        _suppressAutoAnalyze = true;
+        try
+        {
+            LoopStartSeconds = 0;
+            LoopEndSeconds = DurationSeconds;
+        }
+        finally
+        {
+            _suppressAutoAnalyze = false;
+        }
+
+        NotifyRangeUi();
+        if (!IsSourcePreview)
+        {
+            ShowSourcePreview();
+        }
+
+        _ = QueueAutoAnalyzeAsync();
+    }
+
+    [RelayCommand]
+    private void ShowOriginalPreview() => ShowSourcePreview();
+
+    private static string FormatTime(double seconds)
+    {
+        if (double.IsNaN(seconds) || seconds < 0)
+        {
+            seconds = 0;
+        }
+
+        var t = TimeSpan.FromSeconds(seconds);
+        return t.TotalHours >= 1 ? t.ToString(@"h\:mm\:ss") : t.ToString(@"mm\:ss");
     }
 
     private void RefreshOutputFromInput()
@@ -136,6 +502,10 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILo
         var dir = string.IsNullOrWhiteSpace(outputDir) ? ip.DirectoryName ?? "" : outputDir;
         return Path.Combine(dir, $"{ip.Name[..^ip.Extension.Length]}_loop{ip.Extension}");
     }
+
+    private int ExportLoopCount => Math.Clamp((int)Math.Round(LoopCount), 1, 20);
+
+    private int ExportCrf => Math.Clamp((int)Math.Round(CrfValue), 0, 51);
 
     private async Task QueueAutoAnalyzeAsync()
     {
@@ -158,7 +528,22 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILo
     private async Task AnalyzeAsync() =>
         await AnalyzeCoreAsync(applyRecommendations: !_userChoseSeamSettings);
 
-    private async Task AnalyzeCoreAsync(bool applyRecommendations)
+    [RelayCommand]
+    private async Task FindBestLoopInRangeAsync()
+    {
+        _searchWindowStart = Math.Max(0, LoopStartSeconds);
+        _searchWindowEnd = EffectiveLoopEnd;
+        _hasSearchWindow = _searchWindowEnd > _searchWindowStart + 0.05;
+        RebuildTimeline();
+        await AnalyzeCoreAsync(
+            applyRecommendations: !_userChoseSeamSettings,
+            searchBestInRange: true);
+    }
+
+    private async Task AnalyzeCoreAsync(
+        bool applyRecommendations,
+        bool encodeSeamPreview = false,
+        bool searchBestInRange = false)
     {
         _suppressAutoAnalyze = true;
         try
@@ -176,13 +561,16 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILo
             Status = Loc.T("perfectloop.noInput");
             QualityHint = string.Empty;
             HasQualityPreview = false;
+            ShowSourcePreview();
             return;
         }
 
         var input = files[0];
         IsBusy = true;
-        Status = Loc.T("perfectloop.analyzeRunning");
-        QualityHint = Loc.T("perfectloop.analyzeRunning");
+        Status = searchBestInRange
+            ? Loc.T("perfectloop.findBestRunning")
+            : Loc.T("perfectloop.analyzeRunning");
+        QualityHint = Status;
 
         var configPath = Path.Combine(Path.GetTempPath(), $"hm_perfect_loop_an_{Guid.NewGuid():N}.json");
         var outputJson = Path.Combine(Path.GetTempPath(), $"hm_perfect_loop_an_out_{Guid.NewGuid():N}.json");
@@ -193,11 +581,13 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILo
             files = new[] { input },
             seam_seconds = SeamSeconds,
             seam_method = SelectedSeamMethod,
-            smart_trim = SmartTrim,
+            smart_trim = searchBestInRange,
             min_loop_seconds = 1.5,
             ffmpeg_encoder = FfmpegEncoderCatalog.IdFor(FfmpegEncoderCatalog.SoftHardware, SelectedEncoder),
             target_fps = TargetFps,
             mute_audio = true,
+            range_start_seconds = Math.Max(0, LoopStartSeconds),
+            range_end_seconds = EffectiveLoopEnd,
         };
 
         try
@@ -215,8 +605,14 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILo
                 return;
             }
 
-            ApplyAnalyzeResult(outputJson, applyRecommendations);
-            Status = Loc.T("perfectloop.analyzeDone");
+            ApplyAnalyzeResult(outputJson, applyRecommendations, applyFoundRange: searchBestInRange);
+            Status = searchBestInRange
+                ? Loc.T("perfectloop.findBestDone")
+                : Loc.T("perfectloop.analyzeDone");
+            if (encodeSeamPreview)
+            {
+                _ = QueueSeamPreviewAsync();
+            }
         }
         finally
         {
@@ -233,7 +629,7 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILo
         }
     }
 
-    private void ApplyAnalyzeResult(string outputJson, bool applyRecommendations)
+    private void ApplyAnalyzeResult(string outputJson, bool applyRecommendations, bool applyFoundRange = false)
     {
         if (!File.Exists(outputJson))
         {
@@ -278,6 +674,25 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILo
             QualityHint = hint;
             HasQualityPreview = true;
 
+            var smartUsed = first.TryGetProperty("smart_trim_used", out var stu) && stu.GetBoolean();
+            if ((applyFoundRange || smartUsed)
+                && first.TryGetProperty("range_start_seconds", out var rss)
+                && first.TryGetProperty("range_end_seconds", out var res))
+            {
+                _suppressAutoAnalyze = true;
+                try
+                {
+                    LoopStartSeconds = rss.GetDouble();
+                    LoopEndSeconds = res.GetDouble();
+                    _userSetRange = true;
+                    NotifyRangeUi();
+                }
+                finally
+                {
+                    _suppressAutoAnalyze = false;
+                }
+            }
+
             // Only seed defaults once — never overwrite after the user touched method/seam.
             if (!applyRecommendations || _userChoseSeamSettings)
             {
@@ -304,6 +719,112 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILo
         }
     }
 
+    private async Task QueueSeamPreviewAsync()
+    {
+        var epoch = ++_previewEpoch;
+        await Task.Delay(450);
+        if (epoch != _previewEpoch || IsBusy || BatchFiles.Count == 0 || !HasQualityPreview)
+        {
+            return;
+        }
+
+        await EncodeSeamPreviewAsync(epoch);
+    }
+
+    private async Task EncodeSeamPreviewAsync(int epoch)
+    {
+        var input = BatchFiles.FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(input) || !File.Exists(input))
+        {
+            return;
+        }
+
+        IsPreviewEncoding = true;
+        PreviewHint = Loc.T("perfectloop.previewEncoding");
+
+        var previewPath = Path.Combine(Path.GetTempPath(), $"hm_perfect_loop_prev_{Guid.NewGuid():N}.mp4");
+        var configPath = Path.Combine(Path.GetTempPath(), $"hm_perfect_loop_prev_{Guid.NewGuid():N}.json");
+        var outputJson = Path.Combine(Path.GetTempPath(), $"hm_perfect_loop_prev_out_{Guid.NewGuid():N}.json");
+        var payload = new
+        {
+            mode = "preview",
+            input,
+            output = previewPath,
+            files = new[] { input },
+            seam_seconds = SeamSeconds,
+            seam_method = SelectedSeamMethod,
+            smart_trim = false,
+            min_loop_seconds = 1.5,
+            ffmpeg_encoder = "cpu",
+            target_fps = TargetFps,
+            mute_audio = true,
+            loop_count = 1,
+            preview_max_width = 640,
+            range_start_seconds = Math.Max(0, LoopStartSeconds),
+            range_end_seconds = EffectiveLoopEnd,
+        };
+
+        try
+        {
+            await File.WriteAllTextAsync(configPath, JsonSerializer.Serialize(payload));
+            var result = await AppServices.JobRunner.RunBridgeAsync(
+                "perfect_loop_job.py",
+                ["--config-json", configPath, "--output-json", outputJson]);
+
+            if (epoch != _previewEpoch)
+            {
+                TryDelete(previewPath);
+                return;
+            }
+
+            if (!result.Success || !File.Exists(previewPath))
+            {
+                PreviewHint = Loc.T("perfectloop.previewSource");
+                TryDelete(previewPath);
+                return;
+            }
+
+            var oldTemp = _seamPreviewTempPath;
+            _seamPreviewTempPath = previewPath;
+            PreviewHint = Loc.T("perfectloop.previewSource");
+            if (!string.IsNullOrWhiteSpace(oldTemp)
+                && !string.Equals(oldTemp, previewPath, StringComparison.OrdinalIgnoreCase))
+            {
+                TryDelete(oldTemp);
+            }
+        }
+        finally
+        {
+            if (epoch == _previewEpoch)
+            {
+                IsPreviewEncoding = false;
+            }
+
+            TryDelete(configPath);
+            TryDelete(outputJson);
+        }
+    }
+
+    private static void TryDelete(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+    }
+
     [RelayCommand]
     private async Task ExportAsync()
     {
@@ -325,10 +846,12 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILo
             }
         }
 
+        _previewEpoch++;
         IsBusy = true;
         var outDir = OptionalOutputDir();
         var failed = 0;
         var encoderId = FfmpegEncoderCatalog.IdFor(FfmpegEncoderCatalog.SoftHardware, SelectedEncoder);
+        var repeats = ExportLoopCount;
 
         try
         {
@@ -351,11 +874,15 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ILo
                     files = new[] { input },
                     seam_seconds = SeamSeconds,
                     seam_method = SelectedSeamMethod,
-                    smart_trim = SmartTrim,
+                    smart_trim = false,
                     min_loop_seconds = 1.5,
                     ffmpeg_encoder = encoderId,
                     target_fps = TargetFps,
                     mute_audio = true,
+                    loop_count = repeats,
+                    crf = ExportCrf,
+                    range_start_seconds = Math.Max(0, LoopStartSeconds),
+                    range_end_seconds = EffectiveLoopEnd,
                 };
 
                 try

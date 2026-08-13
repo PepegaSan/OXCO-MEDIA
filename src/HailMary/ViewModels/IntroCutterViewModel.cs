@@ -6,7 +6,7 @@ using HailMary.Services;
 
 namespace HailMary.ViewModels;
 
-public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ILocalizable
+public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ISplitPaneToolHost, ILocalizable
 {
     private readonly ToolDefinition _tool;
     private double _durationSeconds;
@@ -145,6 +145,11 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
     [ObservableProperty]
     private string _outroBarLabel = Loc.T("common.outro");
 
+    [ObservableProperty]
+    private float[]? _waveformPeaks;
+
+    public IReadOnlyList<TimelineSpan> TimelineRanges { get; private set; } = [];
+
     public bool ShowFfmpegOptions => !UseResolve;
 
     public bool ShowVideoBitrateField => ShowFfmpegOptions && !VideoBitrateAuto;
@@ -198,6 +203,21 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
     {
         HasVideo = !string.IsNullOrWhiteSpace(value) && File.Exists(value);
         UpdateCutVisualization();
+    }
+
+    public async Task LoadWaveformAsync(string? path)
+    {
+        WaveformPeaks = null;
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            return;
+        }
+
+        var peaks = await WaveformPeakExtractor.ExtractAsync(path);
+        if (string.Equals(path, PreviewVideoPath, StringComparison.OrdinalIgnoreCase))
+        {
+            WaveformPeaks = peaks;
+        }
     }
 
     private void RefreshBatchFiles()
@@ -422,6 +442,30 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
         IntroBarLabel = Loc.F("intro.introBarWithTime", intro);
         MainBarLabel = main > 0 ? Loc.F("intro.mainBarWithTime", main) : Loc.T("intro.mainBarEmpty");
         OutroBarLabel = Loc.F("intro.outroBarWithTime", outro);
+
+        var spans = new List<TimelineSpan>();
+        if (duration > 0.05)
+        {
+            if (intro > 0.02)
+            {
+                spans.Add(new TimelineSpan(0, Math.Min(intro, duration), TimelineSpanKind.Pending, IntroBarLabel));
+            }
+
+            var keepStart = Math.Min(intro, duration);
+            var keepEnd = Math.Max(keepStart, duration - outro);
+            if (keepEnd > keepStart + 0.02)
+            {
+                spans.Add(new TimelineSpan(keepStart, keepEnd, TimelineSpanKind.Scene, MainBarLabel));
+            }
+
+            if (outro > 0.02 && duration - outro < duration)
+            {
+                spans.Add(new TimelineSpan(Math.Max(0, duration - outro), duration, TimelineSpanKind.Pending, OutroBarLabel));
+            }
+        }
+
+        TimelineRanges = spans;
+        OnPropertyChanged(nameof(TimelineRanges));
 
         if (_durationSeconds > 0)
         {

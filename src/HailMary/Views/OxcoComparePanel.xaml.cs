@@ -611,4 +611,9 @@ public sealed partial class OxcoComparePanel : UserControl
 
         return null;
     }
+
+    private void TaggerTimeline_SeekRequested(object sender, double seconds)
+    {
+        ViewModel.SeekTaggerToSeconds(seconds);
+    }
 }

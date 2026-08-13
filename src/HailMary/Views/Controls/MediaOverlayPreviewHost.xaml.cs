@@ -34,6 +34,13 @@ public sealed partial class MediaOverlayPreviewHost : UserControl
     public MediaOverlayPreviewHost()
     {
         InitializeComponent();
+        RangeTimeline.SeekRequested += (_, seconds) =>
+        {
+            if (ViewModel is not null)
+            {
+                ViewModel.SliderValue = seconds;
+            }
+        };
         TimelineSlider.PointerPressed += (_, _) => _sliderDragging = true;
         TimelineSlider.PointerReleased += (_, _) =>
         {
@@ -94,6 +101,11 @@ public sealed partial class MediaOverlayPreviewHost : UserControl
             case nameof(MediaOverlayViewModel.OverlayAspect):
             case nameof(MediaOverlayViewModel.LayoutSummary):
                 UpdateGhost();
+                break;
+            case nameof(MediaOverlayViewModel.TimelineRanges):
+            case nameof(MediaOverlayViewModel.WaveformPeaks):
+                RangeTimeline.Spans = ViewModel.TimelineRanges;
+                RangeTimeline.Peaks = ViewModel.WaveformPeaks;
                 break;
         }
     }

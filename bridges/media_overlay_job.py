@@ -57,7 +57,7 @@ def build_settings(cfg: dict) -> OverlaySettings:
         end_seconds=number("end_seconds", 0.0),
         main_audio=bool(cfg.get("main_audio", True)),
         overlay_audio=bool(cfg.get("overlay_audio", False)),
-        ffmpeg_encoder=str(cfg.get("ffmpeg_encoder") or "nvidia_h264"),
+        ffmpeg_encoder=str(cfg.get("ffmpeg_encoder") or "cpu"),
         target_fps=number("target_fps", 0.0),
     )
 

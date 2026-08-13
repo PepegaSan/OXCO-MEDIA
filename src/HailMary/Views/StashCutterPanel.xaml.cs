@@ -13,7 +13,9 @@ public sealed partial class StashCutterPanel : UserControl
     {
         ViewModel = viewModel;
         InitializeComponent();
+        PreviewHost.Content = new SceneCutterVideoPreviewHost(viewModel);
         CutterContentHost.Content = new SceneCutterScenesPanel(viewModel);
+        SettingsHost.Content = new SceneCutterSettingsPanel(viewModel);
     }
 
     private async void ClipboardButton_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
@@ -46,6 +48,6 @@ public sealed partial class StashCutterPanel : UserControl
                 ViewModel.SelectedResult = row;
                 ViewModel.SceneId = row.SceneId;
             },
-            ViewModel.LoadSceneCommand);
+            ViewModel.UseSelectedResultCommand);
     }
 }

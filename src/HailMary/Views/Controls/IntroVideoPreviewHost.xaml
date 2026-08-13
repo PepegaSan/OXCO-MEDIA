@@ -17,7 +17,14 @@
             x:Name="VideoSurface"
             HorizontalAlignment="Stretch"
             MaxPreviewHeight="480"
-            MinPreviewHeight="120" />
+            MinPreviewHeight="180" />
+
+        <controls:VideoRangeTimeline
+            x:Name="RangeTimeline"
+            DurationSeconds="{x:Bind ViewModel.SliderMaximum, Mode=OneWay}"
+            PositionSeconds="{x:Bind ViewModel.SliderValue, Mode=OneWay}"
+            Peaks="{x:Bind ViewModel.WaveformPeaks, Mode=OneWay}"
+            Spans="{x:Bind ViewModel.TimelineRanges, Mode=OneWay}" />
 
         <StackPanel Spacing="6">
             <Slider
@@ -45,24 +52,7 @@
             </Grid>
         </StackPanel>
 
-        <Grid x:Name="CutBarGrid" ColumnSpacing="4" Height="28">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition />
-                <ColumnDefinition />
-                <ColumnDefinition />
-            </Grid.ColumnDefinitions>
-            <Border Grid.Column="0" Background="#C44E52" CornerRadius="4,0,0,4">
-                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" Foreground="White" Text="{x:Bind ViewModel.IntroBarLabel, Mode=OneWay}" />
-            </Border>
-            <Border Grid.Column="1" Background="#3A8F5C">
-                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" Foreground="White" Text="{x:Bind ViewModel.MainBarLabel, Mode=OneWay}" />
-            </Border>
-            <Border Grid.Column="2" Background="#C44E52" CornerRadius="0,4,4,0">
-                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" Foreground="White" Text="{x:Bind ViewModel.OutroBarLabel, Mode=OneWay}" />
-            </Border>
-        </Grid>
-
-        <StackPanel Orientation="Horizontal" Spacing="6">
+        <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="6">
             <Button Click="BtnPlay_Click" loc:Loc.Key="common.play" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
             <Button Click="BtnPause_Click" loc:Loc.Key="common.pause" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
             <Button Command="{x:Bind ViewModel.SeekToIntroEndCommand}" loc:Loc.Key="intro.seekIntroEnd" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />

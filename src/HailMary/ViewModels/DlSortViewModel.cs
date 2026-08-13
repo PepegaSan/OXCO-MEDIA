@@ -218,7 +218,7 @@ public sealed partial class DlSortProfileRow : ObservableObject
     public ObservableCollection<DlSortRuleRow> Rules { get; } = [];
 }
 
-public partial class DlSortViewModel : ObservableObject, IToolShellHost, ILocalizable
+public partial class DlSortViewModel : ObservableObject, IToolShellHost, ISplitPaneToolHost, ILocalizable
 {
     private readonly ToolDefinition _tool;
     private DlSortConfig _config;

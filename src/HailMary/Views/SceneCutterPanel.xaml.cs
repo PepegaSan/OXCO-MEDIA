@@ -12,6 +12,8 @@ public sealed partial class SceneCutterPanel : UserControl
     {
         ViewModel = viewModel;
         InitializeComponent();
+        PreviewHost.Content = new SceneCutterVideoPreviewHost(viewModel);
         ScenesHost.Content = new SceneCutterScenesPanel(viewModel);
+        SettingsHost.Content = new SceneCutterSettingsPanel(viewModel);
     }
 }

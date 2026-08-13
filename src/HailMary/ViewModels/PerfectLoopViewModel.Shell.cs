@@ -17,6 +17,8 @@ public partial class PerfectLoopViewModel
 
     public bool HasVideoPreview => false;
 
+    public bool UsesSplitPaneLayout => true;
+
     public bool HasSettings => false;
 
     public IRelayCommand? OpenSettingsCommand => null;
@@ -44,8 +46,12 @@ public partial class PerfectLoopViewModel
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(ExportButtonLabel));
         OnPropertyChanged(nameof(AnalyzeButtonLabel));
+        OnPropertyChanged(nameof(FindBestButtonLabel));
         OnPropertyChanged(nameof(SeamSecondsLabel));
         OnPropertyChanged(nameof(SeamSliderEnabled));
+        OnPropertyChanged(nameof(HasVideo));
+        RebuildSeamMethodChoices(selectId: SelectedSeamMethodItem?.Id);
+        NotifyRangeUi();
         _suppressAutoAnalyze = true;
         try
         {

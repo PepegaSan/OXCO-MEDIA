@@ -6,7 +6,7 @@ using HailMary.Services;
 
 namespace HailMary.ViewModels;
 
-public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, ILocalizable
+public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, ISplitPaneToolHost, ILocalizable
 {
     private readonly ToolDefinition _tool;
     private int _selectedSegmentIndex = -1;
@@ -47,6 +47,7 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
         BatchOutputDir = string.IsNullOrWhiteSpace(settings.LastVideoDir) ? "" : settings.LastVideoDir;
         TextToVideoConfigReader.ApplyToObservable(settings, Segments);
         BatchRows.CollectionChanged += BatchRows_OnCollectionChanged;
+        Segments.CollectionChanged += (_, _) => RebuildTimeline();
 
         if (Segments.Count > 0)
         {
@@ -344,6 +345,10 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IL
     [ObservableProperty] private byte[]? _previewImageBytes;
 
     [ObservableProperty] private bool _isPreviewPlaying;
+
+    [ObservableProperty] private float[]? _waveformPeaks;
+
+    public IReadOnlyList<TimelineSpan> TimelineRanges { get; private set; } = [];
 
     public bool IsGifExport => string.Equals(ExportContainer, "gif", StringComparison.OrdinalIgnoreCase);
 

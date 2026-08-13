@@ -1,27 +1,35 @@
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
 
 namespace HailMary.Views.Controls;
 
 internal static class AspectFitLayoutHelper
 {
     private const double DefaultFallbackWidth = 640;
-    private const double DefaultMaxColumnWidth = 960;
+    private const double DefaultMaxColumnWidth = 1200;
+    private const double ParentSlack = 8;
 
     public static double GetAvailableWidth(FrameworkElement element, double maxColumnWidth = DefaultMaxColumnWidth)
     {
-        if (element.ActualWidth > 0 && !double.IsNaN(element.ActualWidth))
-        {
-            return Math.Min(element.ActualWidth, maxColumnWidth);
-        }
-
-        for (var parent = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(element) as FrameworkElement;
+        var selfWidth = element.ActualWidth;
+        for (var parent = VisualTreeHelper.GetParent(element) as FrameworkElement;
              parent is not null;
-             parent = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(parent) as FrameworkElement)
+             parent = VisualTreeHelper.GetParent(parent) as FrameworkElement)
         {
-            if (parent.ActualWidth > 0 && !double.IsNaN(parent.ActualWidth))
+            var width = parent.ActualWidth;
+            if (width <= 0 || double.IsNaN(width))
             {
-                return Math.Min(parent.ActualWidth, maxColumnWidth);
+                continue;
             }
+
+            // Skip parents that were sized by this child — otherwise the preview
+            // locks onto its own tiny width and never grows back.
+            if (selfWidth > 0 && width <= selfWidth + ParentSlack)
+            {
+                continue;
+            }
+
+            return Math.Min(Math.Max(0, width - ParentSlack), maxColumnWidth);
         }
 
         return Math.Min(DefaultFallbackWidth, maxColumnWidth);
@@ -29,15 +37,27 @@ internal static class AspectFitLayoutHelper
 
     public static void WatchParentWidthChanges(FrameworkElement element, Action callback)
     {
-        for (var parent = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(element) as FrameworkElement;
+        FrameworkElement? fallback = null;
+        for (var parent = VisualTreeHelper.GetParent(element) as FrameworkElement;
              parent is not null;
-             parent = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(parent) as FrameworkElement)
+             parent = VisualTreeHelper.GetParent(parent) as FrameworkElement)
         {
-            if (parent.ActualWidth > 0)
+            if (parent.ActualWidth <= 0)
+            {
+                continue;
+            }
+
+            fallback = parent;
+            if (element.ActualWidth <= 0 || parent.ActualWidth > element.ActualWidth + ParentSlack)
             {
                 parent.SizeChanged += (_, _) => callback();
                 return;
             }
+        }
+
+        if (fallback is not null)
+        {
+            fallback.SizeChanged += (_, _) => callback();
         }
     }
 
@@ -48,23 +68,35 @@ internal static class AspectFitLayoutHelper
         int contentWidth,
         int contentHeight)
     {
-        var availW = availWidth > 0 && !double.IsNaN(availWidth) ? availWidth : 640;
+        var availW = availWidth > 0 && !double.IsNaN(availWidth) ? availWidth : DefaultFallbackWidth;
         var maxH = maxPreviewHeight > 0 ? maxPreviewHeight : 720;
-        var minH = minPreviewHeight > 0 ? minPreviewHeight : 120;
+        var minH = minPreviewHeight > 0 ? minPreviewHeight : 180;
+        if (minH > maxH)
+        {
+            minH = maxH;
+        }
 
         if (contentWidth <= 0 || contentHeight <= 0)
         {
             return (availW, minH, minH);
         }
 
-        var scale = Math.Min(availW / contentWidth, maxH / contentHeight);
-        if (scale <= 0 || double.IsNaN(scale) || double.IsInfinity(scale))
+        var aspect = (double)contentWidth / contentHeight;
+        var displayH = Math.Min(maxH, availW / aspect);
+        if (displayH < minH)
         {
-            scale = 1;
+            displayH = minH;
         }
 
-        var displayW = Math.Max(1, contentWidth * scale);
-        var displayH = Math.Max(1, contentHeight * scale);
+        var displayW = displayH * aspect;
+        if (displayW > availW && availW >= 1)
+        {
+            displayW = availW;
+            displayH = displayW / aspect;
+        }
+
+        displayW = Math.Max(1, displayW);
+        displayH = Math.Max(1, displayH);
         return (displayW, displayH, displayH);
     }
 }

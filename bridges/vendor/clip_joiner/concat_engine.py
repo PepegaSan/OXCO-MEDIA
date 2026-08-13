@@ -35,7 +35,7 @@ class JoinJob:
 class JoinSettings:
     output_dir: str = ""
     mode: str = "ffmpeg"  # ffmpeg | davinci | both
-    ffmpeg_encoder: str = "nvidia_h264"  # copy | nvidia_h264 | cpu | ...
+    ffmpeg_encoder: str = "cpu"  # cpu | nvidia_h264 | copy | ...
     davinci_preset: str = "YouTube - 1080p"
     davinci_timeout_s: float = 3600.0
     davinci_api_path: str = ""
@@ -152,7 +152,7 @@ def concat_ffmpeg(
     clips: Sequence[str],
     output_path: str,
     *,
-    encoder: str = "nvidia_h264",
+    encoder: str = "cpu",
     target_fps: float = 0.0,
     log: Optional[LogFn] = None,
 ) -> None:
@@ -203,7 +203,7 @@ def concat_ffmpeg(
         "nvidia_hevc": ["-c:v", "hevc_nvenc", "-preset", "p6", "-cq", "18"],
         "copy": ["-c:v", "libx264", "-preset", "fast", "-crf", "18"],
     }
-    vparams = encoder_params.get(encoder, encoder_params["nvidia_h264"])
+    vparams = encoder_params.get(encoder, encoder_params["cpu"])
 
     inputs: List[str] = []
     for clip in clips:

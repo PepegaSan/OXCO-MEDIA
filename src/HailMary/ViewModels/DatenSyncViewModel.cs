@@ -34,7 +34,7 @@ public sealed partial class DatenSyncJobRow : ObservableObject
     [ObservableProperty] private string _target = string.Empty;
 }
 
-public partial class DatenSyncViewModel : ObservableObject, IToolShellHost, ILocalizable
+public partial class DatenSyncViewModel : ObservableObject, IToolShellHost, ISplitPaneToolHost, ILocalizable
 {
     private readonly ToolDefinition _tool;
     private DatenSyncProfile _profile;

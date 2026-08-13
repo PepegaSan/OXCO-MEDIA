@@ -22,7 +22,14 @@
             x:Name="VideoSurface"
             HorizontalAlignment="Stretch"
             MaxPreviewHeight="420"
-            MinPreviewHeight="120" />
+            MinPreviewHeight="180" />
+
+        <controls:VideoRangeTimeline
+            x:Name="RangeTimeline"
+            DurationSeconds="{x:Bind ViewModel.SliderMaximum, Mode=OneWay}"
+            PositionSeconds="{x:Bind ViewModel.SliderValue, Mode=OneWay}"
+            Peaks="{x:Bind ViewModel.WaveformPeaks, Mode=OneWay}"
+            Spans="{x:Bind ViewModel.TimelineRanges, Mode=OneWay}" />
 
         <StackPanel Spacing="6">
             <Slider

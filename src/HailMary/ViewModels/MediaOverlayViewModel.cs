@@ -5,7 +5,7 @@ using HailMary.Services;
 
 namespace HailMary.ViewModels;
 
-public partial class MediaOverlayViewModel : ToolIoViewModel, IToolShellHost, ILocalizable
+public partial class MediaOverlayViewModel : ToolIoViewModel, IToolShellHost, ISplitPaneToolHost, ILocalizable
 {
     private readonly ToolDefinition _tool;
 
@@ -36,7 +36,7 @@ public partial class MediaOverlayViewModel : ToolIoViewModel, IToolShellHost, IL
     [ObservableProperty] private bool _overlayAudio;
     [ObservableProperty] private string _selectedEncoder = FfmpegEncoderCatalog.LabelFor(
         FfmpegEncoderCatalog.SoftHardware,
-        "nvidia_h264");
+        FfmpegEncoderCatalog.DefaultSoftHardwareId);
     [ObservableProperty] private double _targetFps;
     [ObservableProperty] private string _status = Loc.T("common.ready");
     [ObservableProperty] private bool _isBusy;

@@ -113,6 +113,7 @@ public partial class ToolShellViewModel : ObservableObject
             VideoPreviewKind.SceneCutter => workspace.Host as SceneCutterViewModel,
             VideoPreviewKind.IntroCutter => workspace.Host as IntroCutterViewModel,
             VideoPreviewKind.MarkerUpdater => workspace.Host as MarkerUpdaterViewModel,
+            VideoPreviewKind.PerfectLoop => workspace.Host as PerfectLoopViewModel,
             _ => null,
         };
     }

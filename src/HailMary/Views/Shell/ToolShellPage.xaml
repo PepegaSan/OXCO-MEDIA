@@ -12,6 +12,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <TabView
@@ -37,9 +38,18 @@
                     x:Name="ToolNavList"
                     SelectionMode="Single"
                     SelectionChanged="ToolNavList_OnSelectionChanged">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="MinHeight" Value="0" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
                     <ListView.ItemTemplate>
                         <DataTemplate x:DataType="viewModels:ToolNavItemViewModel" xmlns:viewModels="using:HailMary.ViewModels">
-                            <TextBlock Padding="8,10" Text="{x:Bind Label}" />
+                            <Grid Padding="12,10">
+                                <TextBlock VerticalAlignment="Center" Text="{x:Bind Label}" />
+                            </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
@@ -49,13 +59,12 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <Border
                     x:Name="PreviewHostBorder"
                     Grid.Row="0"
-                    MaxHeight="560"
+                    MaxHeight="720"
                     Padding="16,16,16,0"
                     HorizontalAlignment="Stretch"
                     Visibility="Collapsed">
@@ -89,16 +98,17 @@
                     Grid.Row="1"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Stretch"
-                    VerticalAlignment="Top"
+                    VerticalAlignment="Stretch"
+                    VerticalContentAlignment="Stretch"
                     Visibility="Collapsed" />
-
-                <Border
-                    Grid.Row="2"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="0,1,0,0">
-                    <shell:ToolActionBar x:Name="ActionBar" />
-                </Border>
             </Grid>
         </Grid>
+
+        <Border
+            Grid.Row="2"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="0,1,0,0">
+            <shell:ToolActionBar x:Name="ActionBar" />
+        </Border>
     </Grid>
 </UserControl>

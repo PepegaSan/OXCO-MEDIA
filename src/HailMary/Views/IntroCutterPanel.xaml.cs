@@ -1,5 +1,6 @@
 using HailMary.Models;
 using HailMary.ViewModels;
+using HailMary.Views.Controls;
 using Microsoft.UI.Xaml.Controls;
 
 namespace HailMary.Views;
@@ -12,6 +13,7 @@ public sealed partial class IntroCutterPanel : UserControl
     {
         ViewModel = viewModel;
         InitializeComponent();
+        PreviewHost.Content = new IntroVideoPreviewHost(viewModel);
     }
 
     private void BatchList_OnSelectionChanged(object sender, SelectionChangedEventArgs e)

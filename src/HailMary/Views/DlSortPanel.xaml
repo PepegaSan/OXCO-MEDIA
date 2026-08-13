@@ -7,13 +7,12 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:viewModels="using:HailMary.ViewModels"
     HorizontalAlignment="Stretch"
-    VerticalAlignment="Top"
+    VerticalAlignment="Stretch"
     mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
 
     <TabView
-        MaxWidth="{StaticResource HmContentWidthWide}"
         HorizontalAlignment="Stretch"
-        VerticalAlignment="Top"
+        VerticalAlignment="Stretch"
         IsAddTabButtonVisible="False"
         TabWidthMode="SizeToContent">
         <TabViewItem Header="Profile" IsClosable="False">
@@ -71,7 +70,7 @@
         </TabViewItem>
 
         <TabViewItem loc:Loc.HeaderKey="common.rules" IsClosable="False">
-            <Grid HorizontalAlignment="Stretch" MaxWidth="{StaticResource HmContentWidthStandard}" Padding="16,12" RowSpacing="10">
+            <Grid HorizontalAlignment="Stretch" Padding="16,12" RowSpacing="10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />

@@ -46,6 +46,14 @@ public sealed partial class TextToVideoPreviewHost : UserControl
 
         _positionTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
         _positionTimer.Tick += (_, _) => SyncPositionFromPlayer();
+        RangeTimeline.SeekRequested += (_, seconds) =>
+        {
+            if (ViewModel is not null)
+            {
+                ViewModel.SliderValue = seconds;
+                SeekTo(seconds);
+            }
+        };
 
         TimelineSlider.PointerPressed += (_, _) => _sliderDragging = true;
         TimelineSlider.PointerReleased += (_, _) =>
@@ -178,6 +186,12 @@ public sealed partial class TextToVideoPreviewHost : UserControl
             {
                 UpdatePlayGhost(ViewModel.SliderValue);
             }
+        }
+        else if (e.PropertyName is nameof(TextToVideoViewModel.TimelineRanges)
+                 or nameof(TextToVideoViewModel.WaveformPeaks))
+        {
+            RangeTimeline.Spans = ViewModel.TimelineRanges;
+            RangeTimeline.Peaks = ViewModel.WaveformPeaks;
         }
         else if (e.PropertyName is nameof(TextToVideoViewModel.PreviewVideoWidth)
                  or nameof(TextToVideoViewModel.PreviewVideoHeight))

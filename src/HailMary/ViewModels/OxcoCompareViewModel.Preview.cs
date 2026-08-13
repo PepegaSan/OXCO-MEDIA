@@ -58,6 +58,15 @@ public partial class OxcoCompareViewModel
 
     [ObservableProperty] private BitmapImage? _previewImage;
 
+    [ObservableProperty] private float[]? _previewWaveformPeaks;
+
+    [ObservableProperty] private double _previewDurationSeconds;
+
+    public double PreviewPositionSeconds =>
+        PreviewDurationSeconds <= 0 || PreviewFrameMax <= 0
+            ? 0
+            : PreviewFrameIndex / PreviewFrameMax * PreviewDurationSeconds;
+
     partial void OnPreviewIsPlayingChanged(bool value) =>
         OnPropertyChanged(nameof(PreviewPlayButtonText));
 
@@ -105,9 +114,40 @@ public partial class OxcoCompareViewModel
 
     partial void OnPreviewFrameIndexChanged(double value)
     {
+        OnPropertyChanged(nameof(PreviewPositionSeconds));
         if (!PreviewIsPlaying)
         {
             _ = RenderPreviewFrameDebouncedAsync();
+        }
+    }
+
+    public void SeekPreviewToSeconds(double seconds)
+    {
+        if (_previewFrameCount <= 0 || PreviewDurationSeconds <= 0)
+        {
+            return;
+        }
+
+        var t = Math.Clamp(seconds, 0, PreviewDurationSeconds);
+        PreviewFrameIndex = Math.Clamp(
+            Math.Round(t / PreviewDurationSeconds * PreviewFrameMax),
+            0,
+            PreviewFrameMax);
+    }
+
+    public async Task LoadPreviewWaveformAsync(string? path)
+    {
+        PreviewWaveformPeaks = null;
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            return;
+        }
+
+        var peaks = await WaveformPeakExtractor.ExtractAsync(path);
+        if (string.Equals(path, PreviewPathA, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(path, PreviewPathB, StringComparison.OrdinalIgnoreCase))
+        {
+            PreviewWaveformPeaks = peaks;
         }
     }
 
@@ -376,7 +416,9 @@ public partial class OxcoCompareViewModel
             PreviewFrameMax = Math.Max(1, probe.FrameCount - 1);
             PreviewFrameIndex = 0;
             PreviewIsLoaded = true;
+            PreviewDurationSeconds = probe.FrameCount / Math.Max(1.0, PreviewMaxFps);
             PreviewInfoText = Loc.F("oxco.preview.fileInfoDetailed", probe.NameA, probe.FrameCount, probe.Width, probe.Height);
+            _ = LoadPreviewWaveformAsync(pathA);
             await RenderPreviewFrameAsync((int)PreviewFrameIndex);
         }
         finally

@@ -256,8 +256,8 @@ public partial class StashCutterViewModel : SceneCutterViewModel, IToolShellHost
         }
     }
 
-    [RelayCommand]
-    private void UseSelectedResult()
+    [RelayCommand(AllowConcurrentExecutions = true)]
+    private async Task UseSelectedResultAsync()
     {
         if (SelectedResult is null)
         {
@@ -266,11 +266,14 @@ public partial class StashCutterViewModel : SceneCutterViewModel, IToolShellHost
         }
 
         SceneId = SelectedResult.SceneId;
-        _ = LoadSceneByIdAsync(SelectedResult.SceneId);
+        await LoadSceneByIdAsync(SelectedResult.SceneId);
     }
+
+    private int _loadSceneGeneration;
 
     private async Task LoadSceneByIdAsync(string sceneId)
     {
+        var generation = ++_loadSceneGeneration;
         SyncSettings();
         IsStashBusy = true;
         Status = Loc.T("stash.loadingScene");
@@ -278,20 +281,23 @@ public partial class StashCutterViewModel : SceneCutterViewModel, IToolShellHost
         {
             await EnsureStashReachableAsync();
             var scene = await _client.GetSceneAsync(sceneId);
+            if (generation != _loadSceneGeneration)
+            {
+                return;
+            }
+
             _loadedScene = scene;
             var resolved = StashPathResolver.Resolve(scene.Path, CurrentPathMap());
             var mapped = resolved.ResolvedPath;
             LoadedSummary = Loc.F("stash.loadedSummary", scene.SceneId, scene.Title, mapped);
             AppServices.Session.SetStashSceneId(scene.SceneId);
 
-            if (resolved.FileExists && !string.IsNullOrWhiteSpace(mapped))
+            if (!string.IsNullOrWhiteSpace(mapped))
             {
-                InputPath = mapped;
-                Status = Loc.T("stashcutter.sceneLoadedVideoReady");
-            }
-            else if (!string.IsNullOrWhiteSpace(mapped))
-            {
-                Status = Loc.F("stashcutter.fileNotFound", mapped);
+                ApplyPreviewPath(mapped);
+                Status = resolved.FileExists
+                    ? Loc.T("stashcutter.sceneLoadedVideoReady")
+                    : Loc.F("stashcutter.fileNotFound", mapped);
             }
             else
             {
@@ -311,13 +317,32 @@ public partial class StashCutterViewModel : SceneCutterViewModel, IToolShellHost
         }
         catch (Exception ex)
         {
+            if (generation != _loadSceneGeneration)
+            {
+                return;
+            }
+
             ConnectionInfo = Loc.T("stash.connectionFailed");
             Status = ex.Message;
         }
         finally
         {
-            IsStashBusy = false;
+            if (generation == _loadSceneGeneration)
+            {
+                IsStashBusy = false;
+            }
         }
+    }
+
+    private void ApplyPreviewPath(string mapped)
+    {
+        if (string.Equals(InputPath, mapped, StringComparison.OrdinalIgnoreCase))
+        {
+            OnPropertyChanged(nameof(InputPath));
+            return;
+        }
+
+        InputPath = mapped;
     }
 
     private CutterConfigReader.CutterConfig LoadCurrentCutterConfig() =>

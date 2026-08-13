@@ -24,7 +24,9 @@ public partial class IntroCutterViewModel
 
     public bool IsBusy => IsRunning;
 
-    public bool HasVideoPreview => true;
+    public bool HasVideoPreview => false;
+
+    public bool UsesSplitPaneLayout => true;
 
     public bool HasSettings => false;
 

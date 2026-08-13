@@ -10,9 +10,6 @@ public partial class StashCutterViewModel
 
     public string StashConnectionTooltip => StashConnectionStatus.Tooltip(ConnectionInfo);
 
-    // Wie Scene Cutter: gesamtes Tab scrollt über ToolContentScroll, nicht einzelne Spalten.
-    public bool UsesSplitPaneLayout => false;
-
     bool IToolShellHost.HasSettings => true;
 
     IRelayCommand? IToolShellHost.OpenSettingsCommand => SaveSettingsCommand;

@@ -10,7 +10,7 @@ public partial class StashPathfinderViewModel
 
     public string StashConnectionTooltip => StashConnectionStatus.Tooltip(ConnectionInfo);
 
-    public bool UsesSplitPaneLayout => false;
+    public bool UsesSplitPaneLayout => true;
 
     public string PrimaryActionLabel => Loc.T("stashpathfinder.primaryAction");
 

@@ -50,4 +50,9 @@ public sealed partial class OxcoComparePreviewHost : UserControl
             e.Handled = true;
         }
     }
+
+    private void PreviewTimeline_SeekRequested(object sender, double seconds)
+    {
+        ViewModel?.SeekPreviewToSeconds(seconds);
+    }
 }

@@ -28,6 +28,7 @@ public sealed partial class MarkerUpdaterVideoPreviewHost : UserControl
         _positionTimer.Tick += (_, _) => SyncPositionFromPlayer();
 
         ViewModel.PropertyChanged += ViewModel_OnPropertyChanged;
+        RangeTimeline.SeekRequested += (_, seconds) => SeekTo(seconds);
 
         TimelineSlider.PointerPressed += (_, _) => _sliderDragging = true;
         TimelineSlider.PointerReleased += (_, _) =>
@@ -110,6 +111,11 @@ public sealed partial class MarkerUpdaterVideoPreviewHost : UserControl
                 break;
             case nameof(MarkerUpdaterViewModel.PlaybackSpeed):
                 ApplyPlaybackSpeed();
+                break;
+            case nameof(MarkerUpdaterViewModel.TimelineRanges):
+            case nameof(MarkerUpdaterViewModel.WaveformPeaks):
+                RangeTimeline.Spans = ViewModel.TimelineRanges;
+                RangeTimeline.Peaks = ViewModel.WaveformPeaks;
                 break;
         }
     }
@@ -200,6 +206,7 @@ public sealed partial class MarkerUpdaterVideoPreviewHost : UserControl
             ViewModel.MarkVideoLoaded(true);
             ApplyPlaybackSpeed();
             SeekTo(0);
+            _ = ViewModel.LoadWaveformAsync(path);
         }
         catch (Exception ex)
         {

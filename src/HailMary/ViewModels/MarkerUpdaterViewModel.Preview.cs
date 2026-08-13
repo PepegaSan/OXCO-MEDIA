@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using HailMary.Models;
 using HailMary.Services;
 
 namespace HailMary.ViewModels;
@@ -26,6 +27,10 @@ public partial class MarkerUpdaterViewModel
     [ObservableProperty] private double _coarseStepSeconds = 100;
 
     [ObservableProperty] private double _playbackSpeed = 1;
+
+    [ObservableProperty] private float[]? _waveformPeaks;
+
+    public IReadOnlyList<TimelineSpan> TimelineRanges { get; private set; } = [];
 
     private static IReadOnlyList<double> FineStepOptions { get; } = [1, 5, 10];
 
@@ -61,6 +66,45 @@ public partial class MarkerUpdaterViewModel
         _videoDuration = Math.Max(0, seconds);
         SliderMaximum = Math.Max(0.001, _videoDuration);
         DurationDisplay = TimecodeHelper.FormatDisplay(_videoDuration);
+        RebuildTimeline();
+    }
+
+    public async Task LoadWaveformAsync(string? path)
+    {
+        WaveformPeaks = null;
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            return;
+        }
+
+        var peaks = await WaveformPeakExtractor.ExtractAsync(path);
+        if (string.Equals(path, VideoPath, StringComparison.OrdinalIgnoreCase))
+        {
+            WaveformPeaks = peaks;
+        }
+    }
+
+    public void RebuildTimeline()
+    {
+        var spans = new List<TimelineSpan>();
+        foreach (var marker in Markers)
+        {
+            if (!TimecodeHelper.TryParseFlexible(marker.SecondsText, out var start, out _))
+            {
+                continue;
+            }
+
+            var end = start + Math.Max(0.35, _videoDuration * 0.012);
+            if (TimecodeHelper.TryParseFlexible(marker.EndSecondsText, out var parsedEnd, out _) && parsedEnd > start)
+            {
+                end = parsedEnd;
+            }
+
+            spans.Add(new TimelineSpan(start, end, TimelineSpanKind.Scene, marker.Title));
+        }
+
+        TimelineRanges = spans;
+        OnPropertyChanged(nameof(TimelineRanges));
     }
 
     public void SetPosition(double seconds)

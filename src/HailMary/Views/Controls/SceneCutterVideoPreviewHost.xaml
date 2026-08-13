@@ -18,7 +18,14 @@
             x:Name="VideoSurface"
             HorizontalAlignment="Stretch"
             MaxPreviewHeight="480"
-            MinPreviewHeight="120" />
+            MinPreviewHeight="180" />
+
+        <controls:VideoRangeTimeline
+            x:Name="RangeTimeline"
+            DurationSeconds="{x:Bind ViewModel.SliderMaximum, Mode=OneWay}"
+            PositionSeconds="{x:Bind ViewModel.SliderValue, Mode=OneWay}"
+            Peaks="{x:Bind ViewModel.WaveformPeaks, Mode=OneWay}"
+            Spans="{x:Bind ViewModel.TimelineRanges, Mode=OneWay}" />
 
         <StackPanel Spacing="6">
             <Slider
@@ -46,12 +53,12 @@
             </Grid>
         </StackPanel>
 
-        <StackPanel Orientation="Horizontal" Spacing="6">
+        <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="6">
             <Button Click="BtnPlay_Click" loc:Loc.Key="common.play" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
             <Button Click="BtnPause_Click" loc:Loc.Key="common.pause" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
             <Button Click="BtnStop_Click" loc:Loc.Key="common.stopButton" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Click="BtnMarkIn_Click" Content="Mark In (I)" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Click="BtnMarkOut_Click" Content="Mark Out (O)" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
+            <Button Click="BtnMarkIn_Click" loc:Loc.Key="common.markIn" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
+            <Button Click="BtnMarkOut_Click" loc:Loc.Key="common.markOut" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
             <Button Command="{x:Bind ViewModel.AddSceneCommand}" loc:Loc.Key="cutter.addScene" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
             <Button Command="{x:Bind ViewModel.AddFullVideoSceneCommand}" loc:Loc.Key="cutter.addFullVideo" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
         </StackPanel>

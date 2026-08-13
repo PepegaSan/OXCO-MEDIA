@@ -24,7 +24,7 @@ public sealed partial class AutotaggerCategoryRow : ObservableObject
     [ObservableProperty] private bool _isSelected;
 }
 
-public partial class AutotaggerViewModel : ObservableObject, IToolShellHost, ILocalizable
+public partial class AutotaggerViewModel : ObservableObject, IToolShellHost, ISplitPaneToolHost, ILocalizable
 {
     private readonly ToolDefinition _tool;
     private AutotaggerSettings _settings;

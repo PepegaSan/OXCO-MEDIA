@@ -27,7 +27,7 @@ class OverlaySettings:
     end_seconds: float = 0.0  # 0 = until end of main
     main_audio: bool = True
     overlay_audio: bool = False
-    ffmpeg_encoder: str = "nvidia_h264"
+    ffmpeg_encoder: str = "cpu"
     target_fps: float = 0.0
 
 
@@ -66,7 +66,7 @@ def encoder_args(encoder: str) -> list[str]:
         "nvidia_h264": ["-c:v", "h264_nvenc", "-preset", "p6", "-cq", "18"],
         "nvidia_hevc": ["-c:v", "hevc_nvenc", "-preset", "p6", "-cq", "18"],
     }
-    return list(table.get(encoder, table["nvidia_h264"]))
+    return list(table.get(encoder, table["cpu"]))
 
 
 def _run_ffprobe(path: str) -> dict:

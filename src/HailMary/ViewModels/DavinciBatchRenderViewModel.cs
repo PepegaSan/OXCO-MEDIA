@@ -28,7 +28,7 @@ public sealed partial class DavinciBatchRenderQueueRow : ObservableObject
         Status = BatchItemLogParser.ToDisplayStatus(StatusCode);
 }
 
-public partial class DavinciBatchRenderViewModel : ObservableObject, IToolShellHost, ILocalizable
+public partial class DavinciBatchRenderViewModel : ObservableObject, IToolShellHost, ISplitPaneToolHost, ILocalizable
 {
     private readonly ToolDefinition _tool;
     private readonly List<string> _queue = [];

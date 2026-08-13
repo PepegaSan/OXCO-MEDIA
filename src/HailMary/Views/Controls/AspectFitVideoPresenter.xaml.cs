@@ -11,7 +11,7 @@ public sealed partial class AspectFitVideoPresenter : UserControl
             nameof(MinPreviewHeight),
             typeof(double),
             typeof(AspectFitVideoPresenter),
-            new PropertyMetadata(120d, OnLayoutPropertyChanged));
+            new PropertyMetadata(180d, OnLayoutPropertyChanged));
 
     public static readonly DependencyProperty MaxPreviewHeightProperty =
         DependencyProperty.Register(
@@ -133,9 +133,16 @@ public sealed partial class AspectFitVideoPresenter : UserControl
             _videoWidth,
             _videoHeight);
 
+        if (Math.Abs(VideoChrome.Width - displayW) < 0.5
+            && Math.Abs(VideoChrome.Height - displayH) < 0.5
+            && Math.Abs(Root.MinHeight - rootMin) < 0.5)
+        {
+            return;
+        }
+
         VideoChrome.Width = displayW;
         VideoChrome.Height = displayH;
         Root.MinHeight = rootMin;
-        Root.Width = _videoWidth > 0 ? displayW : double.NaN;
+        Root.Width = double.NaN;
     }
 }

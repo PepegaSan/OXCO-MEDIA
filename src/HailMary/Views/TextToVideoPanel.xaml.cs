@@ -1,3 +1,4 @@
+using HailMary.Models;
 using HailMary.Services;
 using HailMary.ViewModels;
 using Microsoft.UI.Xaml;
@@ -16,11 +17,7 @@ public sealed partial class TextToVideoPanel : UserControl
         ViewModel = viewModel;
         ViewModel.ConfirmAsync = ConfirmAsync;
         InitializeComponent();
-        ViewModel.RequestSegmentListSelection += index => SegmentList.SelectedIndex = index;
-        if (ViewModel.SelectedSegmentIndex is int idx)
-        {
-            SegmentList.SelectedIndex = idx;
-        }
+        ViewModel.RequestSegmentListSelection += _ => { };
 
         BuildColorPalette();
         RebuildStylePresets();
@@ -168,9 +165,24 @@ public sealed partial class TextToVideoPanel : UserControl
         }
     }
 
-    private void SegmentList_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void SegmentItem_Click(object sender, RoutedEventArgs e)
     {
-        ViewModel.SetSelectedSegmentIndex(SegmentList.SelectedIndex);
+        TextOverlaySegment? segment = null;
+        if (sender is FrameworkElement el)
+        {
+            segment = el.Tag as TextOverlaySegment ?? el.DataContext as TextOverlaySegment;
+        }
+
+        if (segment is null)
+        {
+            return;
+        }
+
+        var index = ViewModel.Segments.IndexOf(segment);
+        if (index >= 0)
+        {
+            ViewModel.SetSelectedSegmentIndex(index);
+        }
     }
 
     private void InsertFrom_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyPlayheadToFrom();

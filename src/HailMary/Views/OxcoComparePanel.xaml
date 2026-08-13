@@ -9,7 +9,7 @@
     xmlns:controls="using:HailMary.Views.Controls"
     xmlns:drop="using:HailMary.Views.Helpers"
     HorizontalAlignment="Stretch"
-    VerticalAlignment="Top"
+    VerticalAlignment="Stretch"
     mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
 
     <UserControl.Resources>
@@ -113,23 +113,13 @@
     </UserControl.Resources>
 
     <TabView
-        MaxWidth="{StaticResource HmContentWidthWide}"
         HorizontalAlignment="Stretch"
-        VerticalAlignment="Top"
+        VerticalAlignment="Stretch"
         IsAddTabButtonVisible="False"
         TabWidthMode="Equal">
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup>
-                <VisualState x:Name="NarrowLayout">
-                    <VisualState.Setters>
-                        <Setter Target="WorkflowRightColumn.Width" Value="0" />
-                        <Setter Target="DeepfakeCard.(Grid.Column)" Value="0" />
-                        <Setter Target="DeepfakeCard.(Grid.Row)" Value="1" />
-                        <Setter Target="TaggerRightColumn.Width" Value="0" />
-                        <Setter Target="TaggerPreview.(Grid.Column)" Value="0" />
-                        <Setter Target="TaggerPreview.(Grid.Row)" Value="1" />
-                    </VisualState.Setters>
-                </VisualState>
+                <VisualState x:Name="NarrowLayout" />
                 <VisualState x:Name="WideLayout">
                     <VisualState.StateTriggers>
                         <AdaptiveTrigger MinWindowWidth="1100" />
@@ -231,7 +221,7 @@
                     <Grid ColumnSpacing="10" RowSpacing="10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition x:Name="WorkflowRightColumn" Width="0" />
+                            <ColumnDefinition x:Name="WorkflowRightColumn" Width="*" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -278,7 +268,7 @@
                                 </Border>
                             </Grid>
                         </Border>
-                        <Border x:Name="DeepfakeCard" Grid.Row="1" Grid.Column="0" Style="{StaticResource ToolShellCard}">
+                        <Border x:Name="DeepfakeCard" Grid.Row="0" Grid.Column="1" Style="{StaticResource ToolShellCard}">
                             <Grid RowSpacing="4">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -410,7 +400,7 @@
                             <Grid x:Name="TaggerSectionGrid" ColumnSpacing="8" RowSpacing="8" MinHeight="320">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="1.25*" MinWidth="200" />
-                                    <ColumnDefinition x:Name="TaggerRightColumn" Width="0" />
+                                    <ColumnDefinition x:Name="TaggerRightColumn" Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -473,7 +463,7 @@
                                         </ListView.ItemTemplate>
                                     </ListView>
                                 </Grid>
-                                <Grid x:Name="TaggerPreview" Grid.Row="1" Grid.Column="0" RowSpacing="6">
+                                <Grid x:Name="TaggerPreview" Grid.Row="0" Grid.Column="1" RowSpacing="6">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
@@ -485,13 +475,14 @@
                                     <controls:AspectFitImagePresenter
                                         Grid.Row="1"
                                         MaxPreviewHeight="480"
-                                        MinPreviewHeight="120"
+                                        MinPreviewHeight="180"
                                         ImageSource="{x:Bind ViewModel.TaggerPreviewImage, Mode=OneWay}" />
-                                    <Slider
+                                    <controls:VideoRangeTimeline
                                         Grid.Row="2"
-                                        IsEnabled="{x:Bind ViewModel.TaggerPreviewIsLoaded, Mode=OneWay}"
-                                        Maximum="{x:Bind ViewModel.TaggerPreviewFrameMax, Mode=OneWay}"
-                                        Value="{x:Bind ViewModel.TaggerPreviewFrameIndex, Mode=TwoWay}" />
+                                        DurationSeconds="{x:Bind ViewModel.TaggerDurationSeconds, Mode=OneWay}"
+                                        PositionSeconds="{x:Bind ViewModel.TaggerPositionSeconds, Mode=OneWay}"
+                                        Peaks="{x:Bind ViewModel.TaggerWaveformPeaks, Mode=OneWay}"
+                                        SeekRequested="TaggerTimeline_SeekRequested" />
                                     <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="6">
                                         <Button Command="{x:Bind ViewModel.ToggleTaggerPreviewPlayCommand}" Content="{x:Bind ViewModel.TaggerPreviewPlayText, Mode=OneWay}" />
                                         <Button Command="{x:Bind ViewModel.TaggerPreviewStepBackCommand}" Content="◀" />
@@ -515,7 +506,7 @@
         </TabViewItem>
 
         <TabViewItem loc:Loc.HeaderKey="common.paths" IsClosable="False">
-            <StackPanel Padding="16,12" MaxWidth="{StaticResource HmContentWidthStandard}" HorizontalAlignment="Stretch" Spacing="10">
+            <StackPanel Padding="16,12" HorizontalAlignment="Stretch" Spacing="10">
                     <Border Style="{StaticResource ToolShellCard}">
                         <StackPanel Spacing="8">
                             <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="common.paths" />
@@ -567,7 +558,7 @@
         </TabViewItem>
 
         <TabViewItem loc:Loc.HeaderKey="oxco.filterTab" IsClosable="False">
-            <StackPanel Padding="16,12" MaxWidth="{StaticResource HmContentWidthStandard}" HorizontalAlignment="Stretch" Spacing="10">
+            <StackPanel Padding="16,12" HorizontalAlignment="Stretch" Spacing="10">
                     <Border Style="{StaticResource ToolShellCard}">
                         <StackPanel Spacing="8">
                             <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="oxco.filterCompareSection" />

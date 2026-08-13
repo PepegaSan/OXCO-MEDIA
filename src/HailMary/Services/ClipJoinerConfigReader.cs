@@ -10,7 +10,7 @@ public sealed class ClipJoinerSettings
 
     public string Mode { get; set; } = "ffmpeg";
 
-    public string FfmpegEncoder { get; set; } = "nvidia_h264";
+    public string FfmpegEncoder { get; set; } = FfmpegEncoderCatalog.DefaultSoftHardwareId;
 
     public string DavinciPreset { get; set; } = "YouTube - 1080p";
 
@@ -70,7 +70,8 @@ public static class ClipJoinerConfigReader
         OutputDir = root.TryGetProperty("output_dir", out var od) ? od.GetString() ?? "" : "",
         OutputName = root.TryGetProperty("output_name", out var on) ? on.GetString() ?? "joined" : "joined",
         Mode = root.TryGetProperty("mode", out var m) ? m.GetString() ?? "ffmpeg" : "ffmpeg",
-        FfmpegEncoder = root.TryGetProperty("ffmpeg_encoder", out var fe) ? fe.GetString() ?? "nvidia_h264" : "nvidia_h264",
+        FfmpegEncoder = NormalizeEncoder(
+            root.TryGetProperty("ffmpeg_encoder", out var fe) ? fe.GetString() : null),
         DavinciPreset = root.TryGetProperty("davinci_preset", out var dp) ? dp.GetString() ?? "YouTube - 1080p" : "YouTube - 1080p",
         DavinciTimeoutSeconds = root.TryGetProperty("davinci_timeout_s", out var dt) && dt.TryGetDouble(out var t) ? t : 3600,
     };
@@ -84,4 +85,15 @@ public static class ClipJoinerConfigReader
         ["davinci_preset"] = settings.DavinciPreset,
         ["davinci_timeout_s"] = settings.DavinciTimeoutSeconds,
     };
+
+    private static string NormalizeEncoder(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)
+            || value.Equals("nvidia_h264", StringComparison.OrdinalIgnoreCase))
+        {
+            return FfmpegEncoderCatalog.DefaultSoftHardwareId;
+        }
+
+        return value;
+    }
 }

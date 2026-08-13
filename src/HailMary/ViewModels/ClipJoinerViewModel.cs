@@ -25,7 +25,7 @@ public sealed partial class ClipJoinerBatchRow : ObservableObject
     public string Summary => Loc.F("clipjoiner.batchSummary", OutputName, Files.Count);
 }
 
-public partial class ClipJoinerViewModel : ObservableObject, IToolShellHost, ILocalizable
+public partial class ClipJoinerViewModel : ObservableObject, IToolShellHost, ISplitPaneToolHost, ILocalizable
 {
     private readonly ToolDefinition _tool;
     private readonly List<string> _clips = [];
@@ -65,7 +65,7 @@ public partial class ClipJoinerViewModel : ObservableObject, IToolShellHost, ILo
     [ObservableProperty] private string _selectedMode = "ffmpeg";
     [ObservableProperty] private string _selectedEncoder = FfmpegEncoderCatalog.LabelFor(
         FfmpegEncoderCatalog.SoftHardwareWithCopy,
-        "nvidia_h264");
+        FfmpegEncoderCatalog.DefaultSoftHardwareId);
     [ObservableProperty] private double _targetFps;
     [ObservableProperty] private string _davinciPreset = "YouTube - 1080p";
     [ObservableProperty] private double _davinciTimeoutSeconds = 3600;

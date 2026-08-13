@@ -146,6 +146,10 @@ public sealed partial class ToolShellPage : UserControl
                 PreviewHost.Content = new MarkerUpdaterVideoPreviewHost(markerVm);
                 PreviewHostBorder.Visibility = Visibility.Visible;
                 break;
+            case VideoPreviewKind.PerfectLoop when _viewModel.ActivePreviewViewModel is PerfectLoopViewModel loopVm:
+                PreviewHost.Content = new PerfectLoopPreviewHost(loopVm);
+                PreviewHostBorder.Visibility = Visibility.Visible;
+                break;
         }
     }
 

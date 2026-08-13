@@ -21,6 +21,7 @@ public sealed partial class IntroVideoPreviewHost : UserControl
         _positionTimer.Tick += (_, _) => SyncPositionFromPlayer();
 
         ViewModel.PropertyChanged += ViewModel_OnPropertyChanged;
+        RangeTimeline.SeekRequested += (_, seconds) => SeekTo(seconds);
 
         TimelineSlider.PointerPressed += (_, _) => _sliderDragging = true;
         TimelineSlider.PointerReleased += (_, _) =>
@@ -39,7 +40,11 @@ public sealed partial class IntroVideoPreviewHost : UserControl
             SeekTo(ViewModel.SliderValue);
         };
 
-        UpdateCutBarColumns();
+        Unloaded += (_, _) =>
+        {
+            ViewModel.PropertyChanged -= ViewModel_OnPropertyChanged;
+            _positionTimer.Stop();
+        };
         _ = LoadVideoAsync();
     }
 
@@ -58,29 +63,17 @@ public sealed partial class IntroVideoPreviewHost : UserControl
                 SeekTo(ViewModel.SliderValue);
             }
         }
-        else if (e.PropertyName is nameof(IntroCutterViewModel.IntroBarWeight)
-                 or nameof(IntroCutterViewModel.MainBarWeight)
-                 or nameof(IntroCutterViewModel.OutroBarWeight))
+        else if (e.PropertyName is nameof(IntroCutterViewModel.TimelineRanges)
+                 or nameof(IntroCutterViewModel.WaveformPeaks))
         {
-            UpdateCutBarColumns();
+            RangeTimeline.Spans = ViewModel.TimelineRanges;
+            RangeTimeline.Peaks = ViewModel.WaveformPeaks;
         }
     }
 
     private MediaPlayerElement PreviewPlayer => VideoSurface.Player;
 
     private MediaPlayer? Player => PreviewPlayer.MediaPlayer;
-
-    private void UpdateCutBarColumns()
-    {
-        if (CutBarGrid.ColumnDefinitions.Count < 3)
-        {
-            return;
-        }
-
-        CutBarGrid.ColumnDefinitions[0].Width = new GridLength(ViewModel.IntroBarWeight, GridUnitType.Star);
-        CutBarGrid.ColumnDefinitions[1].Width = new GridLength(ViewModel.MainBarWeight, GridUnitType.Star);
-        CutBarGrid.ColumnDefinitions[2].Width = new GridLength(ViewModel.OutroBarWeight, GridUnitType.Star);
-    }
 
     private async Task LoadVideoAsync()
     {
@@ -110,6 +103,7 @@ public sealed partial class IntroVideoPreviewHost : UserControl
             ViewModel.SetDuration(duration);
             ViewModel.SetPosition(0);
             SeekTo(0);
+            _ = ViewModel.LoadWaveformAsync(path);
         }
         catch (Exception ex)
         {

@@ -46,7 +46,7 @@ public sealed partial class BitrateRowViewModel : ObservableObject
     }
 }
 
-public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost, ILocalizable
+public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost, ISplitPaneToolHost, ILocalizable
 {
     private readonly ToolDefinition _tool;
     private BitrateChangerSettings _settings;

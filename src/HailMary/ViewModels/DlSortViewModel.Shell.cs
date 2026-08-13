@@ -25,6 +25,8 @@ public partial class DlSortViewModel
 
     public bool HasVideoPreview => false;
 
+    public bool UsesSplitPaneLayout => true;
+
     public bool HasSettings => false;
 
     public IRelayCommand? OpenSettingsCommand => null;

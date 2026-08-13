@@ -1,3 +1,4 @@
+using HailMary.Services;
 using HailMary.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -13,6 +14,7 @@ public sealed partial class SceneCutterVideoPreviewHost : UserControl
     private readonly DispatcherTimer _positionTimer;
     private bool _sliderDragging;
     private bool _suppressSliderSeek;
+    private int _loadGeneration;
 
     public SceneCutterVideoPreviewHost(SceneCutterViewModel viewModel)
     {
@@ -23,6 +25,7 @@ public sealed partial class SceneCutterVideoPreviewHost : UserControl
         _positionTimer.Tick += (_, _) => SyncPositionFromPlayer();
 
         ViewModel.PropertyChanged += ViewModel_OnPropertyChanged;
+        RangeTimeline.SeekRequested += (_, seconds) => SeekTo(seconds);
 
         TimelineSlider.PointerPressed += (_, _) => _sliderDragging = true;
         TimelineSlider.PointerReleased += (_, _) =>
@@ -42,7 +45,8 @@ public sealed partial class SceneCutterVideoPreviewHost : UserControl
         };
 
         IsTabStop = true;
-        _ = LoadVideoAsync();
+        Loaded += (_, _) => _ = LoadVideoAsync();
+        Unloaded += (_, _) => _positionTimer.Stop();
     }
 
     public SceneCutterViewModel ViewModel { get; }
@@ -52,6 +56,12 @@ public sealed partial class SceneCutterVideoPreviewHost : UserControl
         if (e.PropertyName == nameof(SceneCutterViewModel.InputPath))
         {
             _ = LoadVideoAsync();
+        }
+        else if (e.PropertyName is nameof(SceneCutterViewModel.TimelineRanges)
+                 or nameof(SceneCutterViewModel.WaveformPeaks))
+        {
+            RangeTimeline.Spans = ViewModel.TimelineRanges;
+            RangeTimeline.Peaks = ViewModel.WaveformPeaks;
         }
         else if (e.PropertyName == nameof(SceneCutterViewModel.SliderValue))
         {
@@ -68,11 +78,12 @@ public sealed partial class SceneCutterVideoPreviewHost : UserControl
 
     private async Task LoadVideoAsync()
     {
+        var generation = ++_loadGeneration;
         StopPlayback();
         var path = ViewModel.InputPath;
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
         {
-            PreviewPlayer.Source = null;
+            ClearSource();
             VideoSurface.ClearVideoDimensions();
             ViewModel.SetDuration(1);
             ViewModel.SetPosition(0);
@@ -82,8 +93,30 @@ public sealed partial class SceneCutterVideoPreviewHost : UserControl
         try
         {
             await VideoSurface.SetVideoDimensionsFromPathAsync(path);
-            PreviewPlayer.Source = MediaSource.CreateFromUri(new Uri(path));
+            if (generation != _loadGeneration)
+            {
+                return;
+            }
+
+            var source = await CreateMediaSourceAsync(path);
+            if (generation != _loadGeneration)
+            {
+                source?.Dispose();
+                return;
+            }
+
+            ClearSource();
+            if (source is null)
+            {
+                throw new InvalidOperationException("Videoquelle konnte nicht erstellt werden.");
+            }
+
+            PreviewPlayer.Source = source;
             await Task.Delay(400);
+            if (generation != _loadGeneration)
+            {
+                return;
+            }
 
             var duration = Player?.NaturalDuration.TotalSeconds ?? 0;
             if (duration <= 0 || double.IsNaN(duration))
@@ -91,13 +124,40 @@ public sealed partial class SceneCutterVideoPreviewHost : UserControl
                 duration = await TryProbeDurationAsync(path) ?? 1;
             }
 
+            if (generation != _loadGeneration)
+            {
+                return;
+            }
+
             ViewModel.SetDuration(duration);
             ViewModel.SetPosition(0);
             SeekTo(0);
+            _ = ViewModel.LoadWaveformAsync(path);
         }
         catch (Exception ex)
         {
-            HailMary.Services.AppServices.Log.Error($"Vorschau: {ex.Message}");
+            AppServices.Log.Error($"Vorschau: {ex.Message}");
+        }
+    }
+
+    private void ClearSource()
+    {
+        var previous = PreviewPlayer.Source;
+        PreviewPlayer.Source = null;
+        (previous as IDisposable)?.Dispose();
+    }
+
+    private static async Task<MediaSource?> CreateMediaSourceAsync(string path)
+    {
+        try
+        {
+            var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(path);
+            return MediaSource.CreateFromStorageFile(file);
+        }
+        catch
+        {
+            var uri = VideoPreviewUriHelper.ToMediaUri(path);
+            return uri is null ? null : MediaSource.CreateFromUri(uri);
         }
     }
 

@@ -18,6 +18,8 @@ public partial class OxcoCompareViewModel
 
     public bool HasVideoPreview => false;
 
+    public bool UsesSplitPaneLayout => true;
+
     public bool HasSettings => true;
 
     IRelayCommand? IToolShellHost.OpenSettingsCommand => SaveSettingsCommand;

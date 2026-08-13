@@ -11,6 +11,7 @@ public enum VideoPreviewKind
     SceneCutter,
     IntroCutter,
     MarkerUpdater,
+    PerfectLoop,
 }
 
 public sealed class ToolWorkspace

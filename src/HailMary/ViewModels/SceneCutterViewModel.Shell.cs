@@ -11,6 +11,7 @@ public partial class SceneCutterViewModel
     private void Scenes_OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         OnPropertyChanged(nameof(IsPrimaryActionEnabled));
+        RebuildTimeline();
 
         if (e.NewItems is not null)
         {
@@ -35,6 +36,12 @@ public partial class SceneCutterViewModel
         {
             ScheduleAutosave();
         }
+        else if (e.PropertyName is nameof(SceneEntry.StartSeconds)
+                 or nameof(SceneEntry.EndSeconds)
+                 or nameof(SceneEntry.Number))
+        {
+            RebuildTimeline();
+        }
     }
 
     public string PrimaryActionLabel => UseDavinciExport ? Loc.T("scenecutter.startDavinciExport") : Loc.T("scenecutter.startExport");
@@ -47,7 +54,9 @@ public partial class SceneCutterViewModel
 
     public bool IsBusy => IsRunning;
 
-    public bool HasVideoPreview => true;
+    public bool HasVideoPreview => false;
+
+    public bool UsesSplitPaneLayout => true;
 
     public bool HasSettings => true;
 

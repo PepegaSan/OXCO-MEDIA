@@ -1,5 +1,6 @@
 using HailMary.Models;
 using HailMary.ViewModels;
+using HailMary.Views.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -15,6 +16,7 @@ public sealed partial class MarkerUpdaterPanel : UserControl
         ViewModel = viewModel;
         ViewModel.ConfirmAsync = ConfirmAsync;
         InitializeComponent();
+        PreviewHost.Content = new MarkerUpdaterVideoPreviewHost(viewModel);
         ViewModel.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(MarkerUpdaterViewModel.SelectedResult))

@@ -20,7 +20,7 @@ public partial class MarkerUpdaterViewModel
 
     bool IToolShellHost.IsBusy => IsBusy;
 
-    public bool HasVideoPreview => true;
+    public bool HasVideoPreview => false;
 
     public bool UsesSplitPaneLayout => true;
 

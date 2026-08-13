@@ -62,6 +62,7 @@ public partial class MarkerUpdaterViewModel : SessionAwareViewModel, IToolShellH
         RefreshFromSessionStashId();
         _client.Configure(Endpoint, ApiKey);
         InitQuickPresets();
+        Markers.CollectionChanged += (_, _) => RebuildTimeline();
     }
 
     private void OnGlobalStashConnected(string version)

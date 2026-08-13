@@ -6,7 +6,7 @@ using HailMary.Services;
 
 namespace HailMary.ViewModels;
 
-public partial class OxcoCompareViewModel : ObservableObject, IToolShellHost, ILocalizable
+public partial class OxcoCompareViewModel : ObservableObject, IToolShellHost, ISplitPaneToolHost, ILocalizable
 {
     private readonly ToolDefinition _tool;
     private OxcoCompareSettings _settings;

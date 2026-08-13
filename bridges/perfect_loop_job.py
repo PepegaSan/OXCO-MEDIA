@@ -22,9 +22,11 @@ def build_jobs(cfg: dict) -> list[LoopSettings]:
     seam = float(cfg.get("seam_seconds") or 0.25)
     smart = bool(cfg.get("smart_trim") or False)
     min_loop = float(cfg.get("min_loop_seconds") or 1.5)
-    encoder = str(cfg.get("ffmpeg_encoder") or "nvidia_h264")
+    encoder = str(cfg.get("ffmpeg_encoder") or "cpu")
     mute = bool(cfg.get("mute_audio", True))
     method = str(cfg.get("seam_method") or "auto")
+    loop_count = max(1, int(cfg.get("loop_count") or 1))
+    preview_max_width = max(0, int(cfg.get("preview_max_width") or 0))
 
     files = cfg.get("files") or []
     if not files and cfg.get("input"):
@@ -49,6 +51,11 @@ def build_jobs(cfg: dict) -> list[LoopSettings]:
                 mute_audio=mute,
                 seam_method=method,
                 target_fps=float(cfg.get("target_fps") or 0),
+                loop_count=loop_count,
+                preview_max_width=preview_max_width,
+                crf=max(0, min(51, int(cfg.get("crf") or 0))),
+                range_start_seconds=float(cfg.get("range_start_seconds") or 0),
+                range_end_seconds=float(cfg.get("range_end_seconds") or 0),
             )
         )
     return jobs
@@ -66,6 +73,8 @@ def detail_from_analyze(result) -> dict:
         "duration_seconds": round(result.duration_seconds, 3),
         "recommended_seam_seconds": result.recommended_seam_seconds,
         "recommended_seam_method": result.recommended_seam_method,
+        "range_start_seconds": round(result.range_start_seconds, 3),
+        "range_end_seconds": round(result.range_end_seconds, 3),
     }
 
 
@@ -107,6 +116,11 @@ def main() -> int:
                 result = analyze_loop(settings, log=emit, progress=progress)
                 details.append(detail_from_analyze(result))
             else:
+                if mode == "preview":
+                    settings.loop_count = 1
+                    settings.ffmpeg_encoder = "cpu"
+                    if not settings.preview_max_width:
+                        settings.preview_max_width = 640
                 result = run_loop(settings, log=emit, progress=progress)
                 outputs.append(result.output_path)
                 details.append(

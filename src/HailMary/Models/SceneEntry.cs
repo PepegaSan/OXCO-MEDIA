@@ -27,6 +27,8 @@ public partial class SceneEntry : ObservableObject
     public string Display =>
         $"{TimecodeHelper.FormatDisplay(StartSeconds)} → {TimecodeHelper.FormatDisplay(EndSeconds)}";
 
+    public string Title => Loc.F("cutter.sceneN", Number);
+
     public static SceneEntry FromSeconds(double start, double end, int number)
     {
         var entry = new SceneEntry
@@ -66,7 +68,11 @@ public partial class SceneEntry : ObservableObject
         return true;
     }
 
-    partial void OnNumberChanged(int value) => OnPropertyChanged(nameof(Display));
+    partial void OnNumberChanged(int value)
+    {
+        OnPropertyChanged(nameof(Display));
+        OnPropertyChanged(nameof(Title));
+    }
 
     partial void OnStartInputChanged(string value) => OnPropertyChanged(nameof(Display));
 

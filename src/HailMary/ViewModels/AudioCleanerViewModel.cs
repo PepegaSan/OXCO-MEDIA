@@ -14,7 +14,7 @@ namespace HailMary.ViewModels;
 
 
 
-public partial class AudioCleanerViewModel : ToolIoViewModel, IToolShellHost, ILocalizable
+public partial class AudioCleanerViewModel : ToolIoViewModel, IToolShellHost, ISplitPaneToolHost, ILocalizable
 
 {
 

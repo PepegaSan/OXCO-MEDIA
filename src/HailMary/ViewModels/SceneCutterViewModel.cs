@@ -7,7 +7,7 @@ using HailMary.Services;
 
 namespace HailMary.ViewModels;
 
-public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ILocalizable
+public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ISplitPaneToolHost, ILocalizable
 {
     private readonly ToolDefinition _tool;
     private readonly CutterWorkspacePaths _workspace;
@@ -61,6 +61,9 @@ public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
     [ObservableProperty] private string _davinciPreset = "YouTube - 1080p";
     [ObservableProperty] private string _davinciOutputDir = string.Empty;
     [ObservableProperty] private string _ffmpegOutputDir = string.Empty;
+    [ObservableProperty] private float[]? _waveformPeaks;
+
+    public IReadOnlyList<TimelineSpan> TimelineRanges { get; private set; } = [];
 
     protected virtual string CutterLocPrefix => "scenecutter";
 
@@ -96,6 +99,7 @@ public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
             Scenes.Clear();
             _pendingIn = null;
             _pendingOut = null;
+            WaveformPeaks = null;
             UpdatePendingMarks();
             return;
         }
@@ -108,6 +112,7 @@ public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
         _videoDuration = Math.Max(0, seconds);
         SliderMaximum = Math.Max(0.001, _videoDuration);
         DurationDisplay = FormatTime(_videoDuration);
+        RebuildTimeline();
     }
 
     public void SetPosition(double seconds)
@@ -236,6 +241,7 @@ public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
     {
         if (entry.TryApplyTimes(out var error))
         {
+            RebuildTimeline();
             ScheduleAutosave();
             return;
         }
@@ -586,6 +592,51 @@ public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ILo
         var ins = _pendingIn.HasValue ? FormatTime(_pendingIn.Value) : "—";
         var outs = _pendingOut.HasValue ? FormatTime(_pendingOut.Value) : "—";
         PendingMarks = Loc.F($"{CutterLocPrefix}.pendingMarks", ins, outs);
+        RebuildTimeline();
+    }
+
+    public async Task LoadWaveformAsync(string? path)
+    {
+        WaveformPeaks = null;
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            return;
+        }
+
+        var peaks = await WaveformPeakExtractor.ExtractAsync(path);
+        if (string.Equals(path, InputPath, StringComparison.OrdinalIgnoreCase))
+        {
+            WaveformPeaks = peaks;
+        }
+    }
+
+    public void RebuildTimeline()
+    {
+        var spans = new List<TimelineSpan>();
+        foreach (var scene in Scenes)
+        {
+            if (scene.EndSeconds > scene.StartSeconds)
+            {
+                spans.Add(new TimelineSpan(
+                    scene.StartSeconds,
+                    scene.EndSeconds,
+                    TimelineSpanKind.Scene,
+                    Loc.F("cutter.sceneN", scene.Number)));
+            }
+        }
+
+        if (_pendingIn is { } pin && _pendingOut is { } pout && pout > pin)
+        {
+            spans.Add(new TimelineSpan(pin, pout, TimelineSpanKind.Pending, Loc.T("common.selection")));
+        }
+        else if (_pendingIn is { } onlyIn)
+        {
+            var end = Math.Min(_videoDuration, onlyIn + Math.Max(0.4, _videoDuration * 0.02));
+            spans.Add(new TimelineSpan(onlyIn, end, TimelineSpanKind.Pending));
+        }
+
+        TimelineRanges = spans;
+        OnPropertyChanged(nameof(TimelineRanges));
     }
 
     private static string FormatTime(double sec) => TimecodeHelper.FormatDisplay(sec);

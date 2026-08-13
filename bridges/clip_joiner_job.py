@@ -20,7 +20,7 @@ def build_settings(cfg: dict) -> JoinSettings:
     return JoinSettings(
         output_dir=str(cfg.get("output_dir") or ""),
         mode=str(cfg.get("mode") or "ffmpeg"),
-        ffmpeg_encoder=str(cfg.get("ffmpeg_encoder") or "nvidia_h264"),
+        ffmpeg_encoder=str(cfg.get("ffmpeg_encoder") or "cpu"),
         davinci_preset=str(cfg.get("davinci_preset") or "YouTube - 1080p"),
         davinci_timeout_s=float(cfg.get("davinci_timeout_s") or 3600),
         davinci_api_path=str(cfg.get("davinci_api_path") or ""),

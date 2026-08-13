@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
+using HailMary.Models;
 using HailMary.Services;
 
 namespace HailMary.ViewModels;
@@ -25,6 +26,9 @@ public partial class MediaOverlayViewModel
     [ObservableProperty] private bool _hasVideo;
     [ObservableProperty] private string _videoInfoLine = string.Empty;
     [ObservableProperty] private string _previewHint = string.Empty;
+    [ObservableProperty] private float[]? _waveformPeaks;
+
+    public IReadOnlyList<TimelineSpan> TimelineRanges { get; private set; } = [];
 
     public int VideoPixelWidth => _videoWidth;
     public int VideoPixelHeight => _videoHeight;
@@ -75,6 +79,7 @@ public partial class MediaOverlayViewModel
 
     partial void OnStartSecondsTextChanged(string value)
     {
+        RebuildTimeline();
         if (!_layoutDragging)
         {
             SchedulePreviewRefresh();
@@ -83,6 +88,7 @@ public partial class MediaOverlayViewModel
 
     partial void OnEndSecondsTextChanged(string value)
     {
+        RebuildTimeline();
         if (!_layoutDragging)
         {
             SchedulePreviewRefresh();
@@ -126,6 +132,48 @@ public partial class MediaOverlayViewModel
     private void UpdateTimeDisplay()
     {
         TimeDisplay = TimecodeHelper.FormatDisplay(SliderValue);
+    }
+
+    public async Task LoadWaveformAsync(string? path)
+    {
+        WaveformPeaks = null;
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            return;
+        }
+
+        var peaks = await WaveformPeakExtractor.ExtractAsync(path);
+        if (string.Equals(path, InputPath, StringComparison.OrdinalIgnoreCase))
+        {
+            WaveformPeaks = peaks;
+        }
+    }
+
+    public void RebuildTimeline()
+    {
+        var spans = new List<TimelineSpan>();
+        var duration = Math.Max(0, _probeDurationSec);
+        if (TryParseSeconds(StartSecondsText, out var start))
+        {
+            var end = duration;
+            if (TryParseSeconds(EndSecondsText, out var parsedEnd) && parsedEnd > start)
+            {
+                end = parsedEnd;
+            }
+            else if (duration > start)
+            {
+                end = duration;
+            }
+            else
+            {
+                end = start + 0.4;
+            }
+
+            spans.Add(new TimelineSpan(start, end, TimelineSpanKind.Loop, Loc.T("mediaoverlay.overlayHeader")));
+        }
+
+        TimelineRanges = spans;
+        OnPropertyChanged(nameof(TimelineRanges));
     }
 
     public void BeginLayoutDrag()
@@ -480,6 +528,8 @@ public partial class MediaOverlayViewModel
             OnPropertyChanged(nameof(OverlayAspect));
             OnPropertyChanged(nameof(LayoutSummary));
             UpdateTimeDisplay();
+            RebuildTimeline();
+            _ = LoadWaveformAsync(InputPath);
             SchedulePreviewRefresh(immediate: true);
         }
         finally

@@ -19,15 +19,15 @@
             <controls:AspectFitVideoPresenter
                 x:Name="VideoSurface"
                 HorizontalAlignment="Left"
-                MaxPreviewHeight="720"
-                MinPreviewHeight="320"
+                MaxPreviewHeight="480"
+                MinPreviewHeight="200"
                 Opacity="0"
                 IsHitTestVisible="False" />
             <controls:AspectFitImagePresenter
                 x:Name="PreviewPresenter"
                 HorizontalAlignment="Left"
-                MaxPreviewHeight="720"
-                MinPreviewHeight="320"
+                MaxPreviewHeight="480"
+                MinPreviewHeight="200"
                 IsHitTestVisible="False" />
             <Border
                 x:Name="HitLayer"
@@ -69,6 +69,13 @@
                 </Border>
             </Canvas>
         </Grid>
+
+        <controls:VideoRangeTimeline
+            x:Name="RangeTimeline"
+            DurationSeconds="{x:Bind ViewModel.SliderMaximum, Mode=OneWay}"
+            PositionSeconds="{x:Bind ViewModel.SliderValue, Mode=OneWay}"
+            Peaks="{x:Bind ViewModel.WaveformPeaks, Mode=OneWay}"
+            Spans="{x:Bind ViewModel.TimelineRanges, Mode=OneWay}" />
 
         <Grid ColumnSpacing="8">
             <Grid.ColumnDefinitions>

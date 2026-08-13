@@ -5,19 +5,22 @@ public static class FfmpegEncoderCatalog
 {
     public sealed record Option(string Id, string Label);
 
+    public const string DefaultSoftHardwareId = "cpu";
+    public const string DefaultLibx264Id = "libx264";
+
     /// <summary>Perfect Loop / Clip Joiner / Media Overlay (ids: nvidia_*, cpu*).</summary>
     public static IReadOnlyList<Option> SoftHardware { get; } =
     [
-        new("nvidia_h264", "NVENC H.264"),
-        new("nvidia_hevc", "NVENC H.265"),
         new("cpu", "libx H.264"),
         new("cpu_hevc", "libx H.265"),
+        new("nvidia_h264", "NVENC H.264"),
+        new("nvidia_hevc", "NVENC H.265"),
     ];
 
     public static IReadOnlyList<Option> SoftHardwareWithCopy { get; } =
     [
-        new("copy", "Copy (ohne Re-Encode)"),
         ..SoftHardware,
+        new("copy", "Copy (ohne Re-Encode)"),
     ];
 
     /// <summary>Scene / Intro / Audio / Bitrate style (ids: libx264, h264_nvenc, …).</summary>

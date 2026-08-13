@@ -72,7 +72,16 @@ public partial class OxcoCompareViewModel
 
     [ObservableProperty] private BitmapImage? _taggerPreviewImage;
 
+    [ObservableProperty] private float[]? _taggerWaveformPeaks;
+
+    [ObservableProperty] private double _taggerDurationSeconds;
+
     [ObservableProperty] private string _taggerPreviewInfo = Loc.T("oxco.noFileSelected");
+
+    public double TaggerPositionSeconds =>
+        TaggerDurationSeconds <= 0 || TaggerPreviewFrameMax <= 0
+            ? 0
+            : TaggerPreviewFrameIndex / TaggerPreviewFrameMax * TaggerDurationSeconds;
 
     public string TaggerPreviewPlayText => TaggerPreviewIsPlaying ? Loc.T("common.pause") : Loc.T("common.play");
 
@@ -420,9 +429,39 @@ public partial class OxcoCompareViewModel
 
     partial void OnTaggerPreviewFrameIndexChanged(double value)
     {
+        OnPropertyChanged(nameof(TaggerPositionSeconds));
         if (!TaggerPreviewIsPlaying)
         {
             _ = RenderTaggerPreviewFrameDebouncedAsync();
+        }
+    }
+
+    public void SeekTaggerToSeconds(double seconds)
+    {
+        if (_taggerFrameCount <= 0 || TaggerDurationSeconds <= 0)
+        {
+            return;
+        }
+
+        var t = Math.Clamp(seconds, 0, TaggerDurationSeconds);
+        TaggerPreviewFrameIndex = Math.Clamp(
+            Math.Round(t / TaggerDurationSeconds * TaggerPreviewFrameMax),
+            0,
+            TaggerPreviewFrameMax);
+    }
+
+    public async Task LoadTaggerWaveformAsync(string? path)
+    {
+        TaggerWaveformPeaks = null;
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            return;
+        }
+
+        var peaks = await WaveformPeakExtractor.ExtractAsync(path);
+        if (string.Equals(path, TaggerPreviewPath, StringComparison.OrdinalIgnoreCase))
+        {
+            TaggerWaveformPeaks = peaks;
         }
     }
 
@@ -463,7 +502,9 @@ public partial class OxcoCompareViewModel
             TaggerPreviewFrameMax = Math.Max(1, probe.FrameCount - 1);
             TaggerPreviewFrameIndex = 0;
             TaggerPreviewIsLoaded = true;
+            TaggerDurationSeconds = probe.FrameCount / 24.0;
             TaggerPreviewInfo = $"{Path.GetFileName(path)} — {probe.FrameCount} Frames";
+            _ = LoadTaggerWaveformAsync(path);
             await RenderTaggerPreviewFrameAsync(0, token);
         }
         catch (OperationCanceledException)

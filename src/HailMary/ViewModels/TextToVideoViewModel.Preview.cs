@@ -1,4 +1,5 @@
 using System.Globalization;
+using HailMary.Models;
 using HailMary.Services;
 
 namespace HailMary.ViewModels;
@@ -67,6 +68,8 @@ public partial class TextToVideoViewModel
 
             UpdateTimeDisplay();
             PersistSettings();
+            RebuildTimeline();
+            _ = LoadWaveformAsync(VideoPath);
             await RefreshPreviewAsync();
             Status = VideoInfoLine;
         }
@@ -153,5 +156,43 @@ public partial class TextToVideoViewModel
         {
             // ignore
         }
+    }
+
+    public async Task LoadWaveformAsync(string? path)
+    {
+        WaveformPeaks = null;
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            return;
+        }
+
+        var peaks = await WaveformPeakExtractor.ExtractAsync(path);
+        if (string.Equals(path, VideoPath, StringComparison.OrdinalIgnoreCase))
+        {
+            WaveformPeaks = peaks;
+        }
+    }
+
+    public void RebuildTimeline()
+    {
+        var spans = new List<TimelineSpan>();
+        foreach (var seg in Segments)
+        {
+            if (!TimeFieldHelper.TryParseSeconds(seg.From, out var from))
+            {
+                continue;
+            }
+
+            var to = from + 0.4;
+            if (TimeFieldHelper.TryParseSeconds(seg.To, out var parsedTo) && parsedTo > from)
+            {
+                to = parsedTo;
+            }
+
+            spans.Add(new TimelineSpan(from, to, TimelineSpanKind.Scene, seg.ListLabel));
+        }
+
+        TimelineRanges = spans;
+        OnPropertyChanged(nameof(TimelineRanges));
     }
 }
