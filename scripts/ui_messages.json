@@ -1515,6 +1515,74 @@
     "de": "Video-Pfad",
     "en": "Video path"
   },
+  "texttovideo.layoutCurrent": {
+    "de": "Layout: {0}",
+    "en": "Layout: {0}"
+  },
+  "texttovideo.layoutNone": {
+    "de": "Kein Layout — Video wählen, Zeiten einmal setzen.",
+    "en": "No layout — pick a video and set timings once."
+  },
+  "texttovideo.layoutPick": {
+    "de": "Anderes Layout",
+    "en": "Other layout"
+  },
+  "texttovideo.layoutPickPlaceholder": {
+    "de": "Layout wählen…",
+    "en": "Choose layout…"
+  },
+  "texttovideo.layoutApply": {
+    "de": "Übernehmen",
+    "en": "Apply"
+  },
+  "texttovideo.layoutApplyConfirm": {
+    "de": "Die aktuellen {2} Abschnitt(e) von „{1}“ durch das Layout „{0}“ ersetzen?",
+    "en": "Replace the current {2} segment(s) of \"{1}\" with layout \"{0}\"?"
+  },
+  "texttovideo.layoutApplyConfirmTitle": {
+    "de": "Layout übernehmen?",
+    "en": "Apply layout?"
+  },
+  "texttovideo.layoutDelete": {
+    "de": "Löschen",
+    "en": "Delete"
+  },
+  "texttovideo.layoutDeleteConfirm": {
+    "de": "Layout „{0}“ und seine gespeicherten Zeiten löschen?",
+    "en": "Delete layout \"{0}\" and its saved timings?"
+  },
+  "texttovideo.layoutDeleteConfirmTitle": {
+    "de": "Layout löschen?",
+    "en": "Delete layout?"
+  },
+  "texttovideo.status.layoutLoaded": {
+    "de": "Layout „{0}“ geladen — Zeiten bleiben, Text anpassen.",
+    "en": "Layout \"{0}\" loaded — timings kept, edit the text."
+  },
+  "texttovideo.status.layoutNew": {
+    "de": "Neues Layout „{0}“ — Zeiten einmal setzen, danach nur noch Text.",
+    "en": "New layout \"{0}\" — set timings once, then only edit text."
+  },
+  "texttovideo.status.layoutApplied": {
+    "de": "Layout „{0}“ auf „{1}“ übernommen — Text anpassen.",
+    "en": "Applied layout \"{0}\" to \"{1}\" — edit the text."
+  },
+  "texttovideo.status.layoutDeleted": {
+    "de": "Layout „{0}“ gelöscht.",
+    "en": "Layout \"{0}\" deleted."
+  },
+  "texttovideo.status.layoutMissing": {
+    "de": "Layout nicht gefunden: {0}",
+    "en": "Layout not found: {0}"
+  },
+  "texttovideo.status.layoutNoKey": {
+    "de": "Bitte zuerst ein Video laden.",
+    "en": "Load a video first."
+  },
+  "texttovideo.status.layoutPickFirst": {
+    "de": "Bitte ein Layout wählen.",
+    "en": "Choose a layout first."
+  },
   "texttovideo.segmentsHeader": {
     "de": "Text-Abschnitte",
     "en": "Text segments"

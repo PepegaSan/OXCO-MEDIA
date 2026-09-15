@@ -32,6 +32,33 @@
                             <TextBox Grid.Column="0" loc:Loc.HeaderKey="texttovideo.videoPath" Text="{x:Bind ViewModel.VideoPath, Mode=TwoWay}" />
                             <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.PickVideoCommand}" loc:Loc.Key="common.addDots" />
                         </Grid>
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ComboBox
+                                Grid.Column="0"
+                                HorizontalAlignment="Stretch"
+                                loc:Loc.HeaderKey="texttovideo.layoutPick"
+                                loc:Loc.PlaceholderKey="texttovideo.layoutPickPlaceholder"
+                                ItemsSource="{x:Bind ViewModel.LayoutNames, Mode=OneWay}"
+                                SelectedItem="{x:Bind ViewModel.SelectedLayoutName, Mode=TwoWay}" />
+                            <Button
+                                Grid.Column="1"
+                                VerticalAlignment="Bottom"
+                                Command="{x:Bind ViewModel.ApplyLayoutCommand}"
+                                IsEnabled="{x:Bind ViewModel.CanApplyLayout, Mode=OneWay}"
+                                loc:Loc.Key="texttovideo.layoutApply" />
+                            <Button
+                                Grid.Column="2"
+                                VerticalAlignment="Bottom"
+                                Command="{x:Bind ViewModel.DeleteLayoutCommand}"
+                                IsEnabled="{x:Bind ViewModel.CanDeleteLayout, Mode=OneWay}"
+                                loc:Loc.Key="texttovideo.layoutDelete" />
+                        </Grid>
+                        <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.LayoutDisplay, Mode=OneWay}" />
                         <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.VideoInfoLine, Mode=OneWay}" />
                         <controls:TextToVideoPreviewHost ViewModel="{x:Bind ViewModel, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasVideo, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
                     </StackPanel>

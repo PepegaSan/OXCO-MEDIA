@@ -217,9 +217,14 @@ public static class Loc
         }
 
         var text = T(key);
-        if (element is TextBox tb)
+        switch (element)
         {
-            tb.PlaceholderText = text;
+            case TextBox tb:
+                tb.PlaceholderText = text;
+                break;
+            case ComboBox cb:
+                cb.PlaceholderText = text;
+                break;
         }
     }
 

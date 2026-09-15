@@ -142,6 +142,63 @@ AppServices.Initialize();
     }
 }
 
+// --- Text-to-Video layout keys ---
+{
+    const string area = "TextToVideoLayout";
+    Assert(area, "Strip Pro timestamp suffix",
+        TextToVideoLayoutKey.FromFileName("Sample Title_260915121526_Pro") == "Sample Title");
+    Assert(area, "Strip Hyb timestamp suffix",
+        TextToVideoLayoutKey.FromFileName("Clip-12 A_260908110541_Hyb") == "Clip-12 A");
+    Assert(area, "FromPath uses filename",
+        TextToVideoLayoutKey.FromPath(@"D:\out\Sample Title_260915121526_Pro.mp4") == "Sample Title");
+    Assert(area, "Unsuffixed name stays intact",
+        TextToVideoLayoutKey.FromFileName("plain_clip") == "plain_clip");
+    Assert(area, "Empty path is empty key",
+        TextToVideoLayoutKey.FromPath("") == "");
+
+    var tempDir = Path.Combine(Path.GetTempPath(), "HailMaryVerify_" + Guid.NewGuid().ToString("N")[..8]);
+    Directory.CreateDirectory(tempDir);
+    var origRoot = AppServices.Settings.Current.ProjectsRoot;
+    try
+    {
+        AppServices.Settings.Current.ProjectsRoot = tempDir;
+        var settings = new TextToVideoSettings
+        {
+            LastVideoPath = @"D:\out\Sample Title_260915121526_Pro.mp4",
+            OverlaySegments =
+            [
+                new TextOverlaySegment { Text = "Hello", From = "1", To = "2" },
+            ],
+        };
+        TextToVideoLayoutStore.MigrateFromSettings(settings);
+        Assert(area, "Migrate clears global segments", settings.OverlaySegments.Count == 0);
+        var layout = TextToVideoLayoutStore.TryLoad("Sample Title");
+        Assert(area, "Migrate writes title layout",
+            layout is not null && layout.OverlaySegments.Count == 1 && layout.OverlaySegments[0].Text == "Hello",
+            layout is null ? "layout missing" : $"{layout.OverlaySegments.Count} segs",
+            "layout missing");
+        Assert(area, "ListKeys contains title",
+            TextToVideoLayoutStore.ListKeys().Contains("Sample Title", StringComparer.OrdinalIgnoreCase));
+
+        TextToVideoLayoutStore.Save("Sample Title", @"D:\out\Sample Title_260920000000_Hyb.mp4",
+        [
+            new TextOverlaySegment { Text = "Updated", From = "3", To = "4" },
+        ]);
+        var reloaded = TextToVideoLayoutStore.TryLoad("Sample Title");
+        Assert(area, "Save round-trip text",
+            reloaded?.OverlaySegments[0].Text == "Updated");
+
+        TextToVideoLayoutStore.Delete("Sample Title");
+        Assert(area, "Delete removes layout",
+            TextToVideoLayoutStore.TryLoad("Sample Title") is null);
+    }
+    finally
+    {
+        AppServices.Settings.Current.ProjectsRoot = origRoot;
+        try { Directory.Delete(tempDir, true); } catch { /* ignore */ }
+    }
+}
+
 // --- Tool registry ---
 {
     const string area = "ToolRegistry";

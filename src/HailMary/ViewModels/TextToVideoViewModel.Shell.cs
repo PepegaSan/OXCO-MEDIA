@@ -53,6 +53,7 @@ public partial class TextToVideoViewModel
         OnPropertyChanged(nameof(SegmentEditorTitle));
         OnPropertyChanged(nameof(SegmentModeHint));
         OnPropertyChanged(nameof(CommitSegmentLabel));
+        OnPropertyChanged(nameof(LayoutDisplay));
     }
 
 }

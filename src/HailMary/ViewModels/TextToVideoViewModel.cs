@@ -30,8 +30,11 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IS
     public TextToVideoViewModel(ToolDefinition tool)
     {
         _tool = tool;
+        EditorSegment = new TextOverlaySegment();
         var settings = TextToVideoConfigReader.Load();
-        VideoPath = settings.LastVideoPath;
+        TextToVideoLayoutStore.MigrateFromSettings(settings);
+        TextToVideoConfigReader.Save(settings);
+        _suspendLayoutSwitch = true;
         Codec = FfmpegEncoderCatalog.LabelFor(FfmpegEncoderCatalog.TextToVideo, settings.Codec);
         Bitrate = settings.Bitrate;
         ExportContainer = settings.ExportContainer;
@@ -45,21 +48,24 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IS
         DavinciOutputDir = settings.DavinciOutputDir;
         UseLastFfmpegForResolve = settings.UseLastFfmpegForResolve;
         BatchOutputDir = string.IsNullOrWhiteSpace(settings.LastVideoDir) ? "" : settings.LastVideoDir;
-        TextToVideoConfigReader.ApplyToObservable(settings, Segments);
         BatchRows.CollectionChanged += BatchRows_OnCollectionChanged;
         Segments.CollectionChanged += (_, _) => RebuildTimeline();
 
-        if (Segments.Count > 0)
+        if (settings.OverlaySegments.Count > 0)
         {
-            _selectedSegmentIndex = 0;
-            EditorSegment = Segments[0].Clone();
-            RequestSegmentListSelection?.Invoke(0);
-        }
-        else
-        {
-            EditorSegment = new TextOverlaySegment();
+            ApplySegmentList(settings.OverlaySegments);
         }
 
+        _layoutKey = TextToVideoLayoutKey.FromPath(settings.LastVideoPath);
+        var layout = string.IsNullOrWhiteSpace(_layoutKey) ? null : TextToVideoLayoutStore.TryLoad(_layoutKey);
+        if (layout is not null)
+        {
+            ApplySegmentList(layout.OverlaySegments);
+        }
+
+        VideoPath = settings.LastVideoPath;
+        _suspendLayoutSwitch = false;
+        RefreshLayoutNames();
         SyncSelectedFontFromEditor();
         UpdateSegmentEditorChrome();
     }
@@ -369,6 +375,11 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IS
 
     partial void OnVideoPathChanged(string value)
     {
+        if (!_suspendLayoutSwitch)
+        {
+            SwitchLayoutForVideo(value);
+        }
+
         if (!string.IsNullOrWhiteSpace(value) && File.Exists(value))
         {
             _ = LoadVideoAsync();
@@ -513,7 +524,11 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IS
         OverlaySegments = Segments.Select(s => s.Clone()).ToList(),
     };
 
-    public void PersistSettings() => TextToVideoConfigReader.Save(CollectSettings());
+    public void PersistSettings()
+    {
+        TextToVideoConfigReader.Save(CollectSettings());
+        PersistCurrentLayoutIfNeeded();
+    }
 
     [RelayCommand]
     private void SaveSettings()

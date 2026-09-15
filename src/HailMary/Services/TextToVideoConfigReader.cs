@@ -116,7 +116,8 @@ public static class TextToVideoConfigReader
         data["resolve_modules"] = settings.ResolveModules;
         data["resolve_dll"] = settings.ResolveDll;
         data["resolve_exe"] = settings.ResolveExe;
-        data["overlay_segments"] = settings.OverlaySegments.Select(s => s.ToJsonObject()).ToList();
+        // Segments live in Sub/layouts/{title}.json — keep this key empty so old files don't resurrect.
+        data["overlay_segments"] = Array.Empty<object>();
 
         Directory.CreateDirectory(ConfigDirectory);
         File.WriteAllText(ConfigPath, JsonSerializer.Serialize(data, JsonOptions));
