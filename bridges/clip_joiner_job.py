@@ -11,9 +11,9 @@ BRIDGE_DIR = Path(__file__).resolve().parent
 VENDOR_DIR = BRIDGE_DIR / "vendor" / "clip_joiner"
 sys.path.insert(0, str(VENDOR_DIR))
 
-from concat_engine import JoinJob, JoinSettings, run_batch, run_job  # noqa: E402
+from concat_engine import JoinJob, JoinSettings, run_batch, run_job, set_progress_callback  # noqa: E402
 
-from bridge_io import configure_stdio, emit  # noqa: E402
+from bridge_io import configure_stdio, emit, emit_progress  # noqa: E402
 
 
 def build_settings(cfg: dict) -> JoinSettings:
@@ -44,6 +44,7 @@ def main() -> int:
         return 1
 
     settings = build_settings(cfg)
+    set_progress_callback(emit_progress)
     batch_jobs = cfg.get("batch_jobs") or []
 
     def log(msg: str) -> None:

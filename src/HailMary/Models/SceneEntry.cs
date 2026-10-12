@@ -29,6 +29,9 @@ public partial class SceneEntry : ObservableObject
 
     public string Title => Loc.F("cutter.sceneN", Number);
 
+    public string DurationDisplay =>
+        EndSeconds > StartSeconds ? TimecodeHelper.FormatDisplay(EndSeconds - StartSeconds) : string.Empty;
+
     public static SceneEntry FromSeconds(double start, double end, int number)
     {
         var entry = new SceneEntry
@@ -56,7 +59,7 @@ public partial class SceneEntry : ObservableObject
 
         if (end <= start)
         {
-            error = "Ende muss nach Start liegen";
+            error = Loc.T("scenecutter.outAfterIn");
             return false;
         }
 
@@ -65,6 +68,7 @@ public partial class SceneEntry : ObservableObject
         StartInput = TimecodeHelper.FormatForEditor(start);
         EndInput = TimecodeHelper.FormatForEditor(end);
         OnPropertyChanged(nameof(Display));
+        OnPropertyChanged(nameof(DurationDisplay));
         return true;
     }
 

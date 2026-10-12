@@ -1,4 +1,5 @@
 using HailMary.Models;
+using HailMary.Services;
 using HailMary.ViewModels;
 using HailMary.Views.Controls;
 using Microsoft.UI.Xaml;
@@ -59,8 +60,8 @@ public sealed partial class MarkerUpdaterPanel : UserControl
         {
             Title = title,
             Content = new TextBlock { Text = message, TextWrapping = TextWrapping.WrapWholeWords },
-            PrimaryButtonText = "Fortfahren",
-            CloseButtonText = "Abbrechen",
+            PrimaryButtonText = Loc.T("common.continue"),
+            CloseButtonText = Loc.T("common.cancel"),
             DefaultButton = ContentDialogButton.Primary,
             XamlRoot = XamlRoot,
         };
@@ -73,9 +74,49 @@ public sealed partial class MarkerUpdaterPanel : UserControl
         ViewModel.SelectedResult = ResultsList.SelectedItem as StashSceneRowViewModel;
     }
 
-    private void SceneTagsList_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void ResultsList_OnItemClick(object sender, ItemClickEventArgs e)
     {
-        ViewModel.SelectedSceneTag = SceneTagsList.SelectedItem as string;
+        if (e.ClickedItem is StashSceneRowViewModel row)
+        {
+            await ViewModel.OpenResultCommand.ExecuteAsync(row);
+        }
+    }
+
+    private void FindBox_OnKeyDown(object sender, KeyRoutedEventArgs e) =>
+        StashPanelInteraction.SearchBox_OnKeyDown(sender, e, ViewModel.FindOrLoadCommand);
+
+    private async void TagMarkerHere_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: string tag })
+        {
+            await ViewModel.MarkerWithTagHereCommand.ExecuteAsync(tag);
+        }
+    }
+
+    private void TagRemove_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: string tag })
+        {
+            ViewModel.RemoveSceneTagCommand.Execute(tag);
+        }
+    }
+
+    private async void DeleteMarker_Click(object sender, RoutedEventArgs e)
+    {
+        var marker = ViewModel.SelectedMarker;
+        if (marker is null)
+        {
+            return;
+        }
+
+        if (!await ConfirmAsync(
+                Loc.T("markerupdater.deleteMarker"),
+                Loc.F("markerupdater.deleteMarkerConfirm", marker.TitleText, marker.RangeText)))
+        {
+            return;
+        }
+
+        await ViewModel.DeleteSelectedMarkerCommand.ExecuteAsync(null);
     }
 
     private void MarkersList_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -83,21 +124,13 @@ public sealed partial class MarkerUpdaterPanel : UserControl
         ViewModel.SelectedMarker = MarkersList.SelectedItem as StashMarkerRowViewModel;
     }
 
-    private void QuickPresetButton_Click(object sender, RoutedEventArgs e)
+    // Click anywhere on the row toggles its checkbox (a double-click toggles twice and opens the scene).
+    private void BatchList_OnItemClick(object sender, ItemClickEventArgs e)
     {
-        if (sender is Button { Tag: MarkerQuickPreset preset })
+        if (e.ClickedItem is MarkerBatchSceneRowViewModel row)
         {
-            ViewModel.SelectQuickPresetCommand.Execute(preset);
+            row.IsChecked = !row.IsChecked;
         }
-    }
-
-    private void BatchList_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        var selected = BatchList.SelectedItems
-            .OfType<MarkerBatchSceneRowViewModel>()
-            .ToList();
-        ViewModel.SetBatchSelection(selected);
-        ViewModel.SelectedBatchMatch = selected.FirstOrDefault();
     }
 
     private void CleanupClampList_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -112,28 +145,8 @@ public sealed partial class MarkerUpdaterPanel : UserControl
             CleanupDeleteList.SelectedItems.OfType<MarkerCleanupRowViewModel>());
     }
 
-    private void SearchBox_OnKeyDown(object sender, KeyRoutedEventArgs e) =>
-        StashPanelInteraction.SearchBox_OnKeyDown(sender, e, ViewModel.SearchCommand);
-
-    private void SceneIdBox_OnKeyDown(object sender, KeyRoutedEventArgs e) =>
-        StashPanelInteraction.SceneIdBox_OnKeyDown(sender, e, ViewModel.LoadSceneCommand);
-
     private void BatchSearchBox_OnKeyDown(object sender, KeyRoutedEventArgs e) =>
         StashPanelInteraction.SearchBox_OnKeyDown(sender, e, ViewModel.BatchSearchCommand);
-
-    private void ResultsList_OnDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
-    {
-        StashPanelInteraction.ResultsList_OnDoubleTapped(
-            sender,
-            e,
-            ResultsList,
-            row =>
-            {
-                ViewModel.SelectedResult = row;
-                ViewModel.SceneId = row.SceneId;
-            },
-            ViewModel.UseSelectedResultCommand);
-    }
 
     private async void BatchList_OnDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
     {
@@ -142,27 +155,24 @@ public sealed partial class MarkerUpdaterPanel : UserControl
             return;
         }
 
-        // Extended selection: SelectedItem is often not the row under the pointer.
-        BatchList.SelectedItem = row;
         ViewModel.SelectedBatchMatch = row;
         ViewModel.SceneId = row.SceneId;
         e.Handled = true;
 
         if (ViewModel.LoadSceneCommand.CanExecute(null))
         {
+            RootTabs.SelectedIndex = 0;
             await ViewModel.LoadSceneCommand.ExecuteAsync(null);
         }
     }
 
     private void BatchSelectAll_OnClick(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
-        BatchList.SelectAll();
         ViewModel.BatchSelectAllRows();
     }
 
     private void BatchClearSelection_OnClick(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
-        BatchList.SelectedItems.Clear();
         ViewModel.BatchClearSelection();
     }
 

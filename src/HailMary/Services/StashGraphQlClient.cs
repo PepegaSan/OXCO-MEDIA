@@ -54,7 +54,7 @@ public sealed record StashOverflowMarkerItem(
     double EndSeconds,
     double Duration);
 
-public sealed class StashGraphQlClient : IDisposable
+public sealed partial class StashGraphQlClient : IDisposable
 {
     private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(25) };
     private string _endpoint = string.Empty;

@@ -32,6 +32,58 @@
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource ToolShellCard}">
+                    <StackPanel Spacing="10">
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock VerticalAlignment="Center" Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="audiocleaner.previewHeader" />
+                            <ProgressRing Grid.Column="1" Width="18" Height="18" IsActive="{x:Bind ViewModel.IsPreviewRendering, Mode=OneWay}" />
+                        </Grid>
+                        <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.8" loc:Loc.Key="audiocleaner.previewHint" TextWrapping="WrapWholeWords" />
+                        <TextBlock Text="{x:Bind ViewModel.PreviewStartLabel, Mode=OneWay}" />
+                        <Slider
+                            Maximum="{x:Bind ViewModel.PreviewMaxStart, Mode=OneWay}"
+                            Minimum="0"
+                            StepFrequency="1"
+                            Value="{x:Bind ViewModel.PreviewStartSeconds, Mode=TwoWay}" />
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Button Command="{x:Bind ViewModel.RenderPreviewCommand}" Style="{StaticResource AccentButtonStyle}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE767;" />
+                                    <TextBlock loc:Loc.Key="audiocleaner.renderPreview" />
+                                </StackPanel>
+                            </Button>
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Visibility="{x:Bind ViewModel.IsPreviewStale, Mode=OneWay, Converter={StaticResource BoolToVisibility}}"
+                                loc:Loc.Key="audiocleaner.previewStale" />
+                        </StackPanel>
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="6"
+                            Visibility="{x:Bind ViewModel.HasPreview, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                            <Button x:Name="PreviewPlayButton" Width="40" Height="34" Padding="0" Click="PreviewPlay_Click" loc:Loc.ToolTipKey="common.play">
+                                <FontIcon x:Name="PreviewPlayIcon" FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE768;" />
+                            </Button>
+                            <StackPanel
+                                Padding="3"
+                                Background="{ThemeResource ControlAltFillColorSecondaryBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Orientation="Horizontal"
+                                Spacing="2">
+                                <ToggleButton x:Name="ABOriginal" MinWidth="110" Checked="ABOriginal_Checked" Unchecked="AB_Unchecked" loc:Loc.Key="audiocleaner.abOriginal" />
+                                <ToggleButton x:Name="ABCleaned" MinWidth="110" Checked="ABCleaned_Checked" Unchecked="AB_Unchecked" loc:Loc.Key="audiocleaner.abCleaned" />
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource ToolShellCard}">
                     <StackPanel Spacing="8">
                         <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="audiocleaner.filesHeader" />
                         <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.BatchSummary, Mode=OneWay}" />
@@ -63,10 +115,15 @@
                         <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="audiocleaner.cleanHeader" />
                     </Expander.Header>
                     <StackPanel Padding="0,8,0,0" Spacing="8">
-                        <ComboBox loc:Loc.HeaderKey="common.preset" ItemsSource="{x:Bind ViewModel.PresetOptions, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedPreset, Mode=TwoWay}" />
+                        <ComboBox HorizontalAlignment="Stretch" loc:Loc.HeaderKey="common.preset" SelectedIndex="{x:Bind ViewModel.PresetIndex, Mode=TwoWay}">
+                            <ComboBoxItem loc:Loc.Key="audiocleaner.preset.low" />
+                            <ComboBoxItem loc:Loc.Key="audiocleaner.preset.mid" />
+                            <ComboBoxItem loc:Loc.Key="audiocleaner.preset.high" />
+                        </ComboBox>
                         <CheckBox loc:Loc.Key="audiocleaner.focusEcho" IsChecked="{x:Bind ViewModel.FocusEcho, Mode=TwoWay}" />
                         <CheckBox loc:Loc.Key="audiocleaner.focusNoise" IsChecked="{x:Bind ViewModel.FocusNoise, Mode=TwoWay}" />
-                        <TextBox loc:Loc.HeaderKey="audiocleaner.boostHeader" Text="{x:Bind ViewModel.BoostPercent, Mode=TwoWay}" />
+                        <TextBlock Text="{x:Bind ViewModel.BoostLabel, Mode=OneWay}" />
+                        <Slider Minimum="50" Maximum="200" StepFrequency="1" Value="{x:Bind ViewModel.BoostPercent, Mode=TwoWay}" />
                     </StackPanel>
                 </Expander>
                 <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" IsExpanded="True">
@@ -77,7 +134,7 @@
                         <ComboBox loc:Loc.HeaderKey="audiocleaner.videoCodec" ItemsSource="{x:Bind ViewModel.VideoCodecOptions, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedVideoCodec, Mode=TwoWay}" />
                         <NumberBox loc:Loc.HeaderKey="common.targetFps" Minimum="0" Maximum="240" SmallChange="1" LargeChange="5" SpinButtonPlacementMode="Compact" Value="{x:Bind ViewModel.TargetFps, Mode=TwoWay}" />
                         <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="common.targetFpsHint" TextWrapping="WrapWholeWords" />
-                        <TextBox loc:Loc.HeaderKey="audiocleaner.videoBitrate" Text="{x:Bind ViewModel.VideoBitrateKbps, Mode=TwoWay}" />
+                        <NumberBox loc:Loc.HeaderKey="audiocleaner.videoBitrate" Minimum="100" Maximum="200000" SmallChange="500" LargeChange="2000" SpinButtonPlacementMode="Compact" Value="{x:Bind ViewModel.VideoBitrateKbps, Mode=TwoWay}" />
                     </StackPanel>
                 </Expander>
             </StackPanel>

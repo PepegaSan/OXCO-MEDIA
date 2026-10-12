@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
-from bridge_io import configure_stdio, emit
+from bridge_io import configure_stdio, emit, emit_progress
 
 configure_stdio()
 
@@ -46,17 +46,35 @@ def main() -> int:
         return 1
 
     sys.path.insert(0, str(tool_dir))
+    mode = (data.get("mode") or "per_file").strip()
+    options = data.get("options") or {}
+    engine = str(data.get("engine") or options.get("engine") or "davinci").strip().lower()
+
+    def log(msg: str) -> None:
+        emit(str(msg))
+
+    if engine == "ffmpeg":
+        try:
+            from ffmpeg_export import run_ffmpeg_export
+            from resolve_timeline_export import path_kwargs_from_options
+        except ImportError as exc:
+            emit(f"Import fehlgeschlagen: {exc}")
+            return 1
+        try:
+            outputs = run_ffmpeg_export(mode, rows, options, path_kwargs_from_options(options), log, emit_progress)
+        except Exception as exc:
+            emit(f"ERROR: {exc}")
+            return 1
+        emit("FFmpeg-Export abgeschlossen.")
+        if outputs:
+            emit(f"OUTPUT:{outputs[-1]}")
+        return 0
+
     try:
         from resolve_timeline_export import run_export_in_scripting_thread
     except ImportError as exc:
         emit(f"Import fehlgeschlagen: {exc}")
         return 1
-
-    mode = (data.get("mode") or "per_file").strip()
-    options = data.get("options") or {}
-
-    def log(msg: str) -> None:
-        emit(str(msg))
 
     try:
         run_export_in_scripting_thread(mode, rows, options, log)

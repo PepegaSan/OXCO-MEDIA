@@ -40,6 +40,27 @@ public partial class TextOverlaySegment : ObservableObject
 
     [ObservableProperty] private bool _strike;
 
+    // "left" | "center" | "right" — alignment of lines inside the text block.
+    [ObservableProperty] private string _align = "left";
+
+    [ObservableProperty] private int _outlineWidth;
+
+    [ObservableProperty] private string _outlineColor = "000000";
+
+    [ObservableProperty] private bool _shadow;
+
+    [ObservableProperty] private string _boxColor = "000000";
+
+    // Background opacity in percent (0–100).
+    [ObservableProperty] private int _boxOpacity = 35;
+
+    [ObservableProperty] private int _boxRadius = 10;
+
+    // "none" | "fade" | "slide" | "pop" — applied at From/To.
+    [ObservableProperty] private string _animation = "none";
+
+    [ObservableProperty] private double _animDuration = 0.4;
+
     public string ListLabel
     {
         get
@@ -84,8 +105,9 @@ public partial class TextOverlaySegment : ObservableObject
     public object ToJsonObject() => new
     {
         text = Text,
-        from = From,
-        to = To,
+        // Bridges parse plain seconds; "1:30" or "30s" would otherwise be ignored there.
+        from = NormalizeTimeField(From),
+        to = NormalizeTimeField(To),
         fontsize = Fontsize,
         color = Color,
         px = PosX,
@@ -100,7 +122,44 @@ public partial class TextOverlaySegment : ObservableObject
         bold = Bold ? 1 : 0,
         italic = Italic ? 1 : 0,
         strike = Strike ? 1 : 0,
+        align = Align,
+        outline_width = OutlineWidth,
+        outline_color = OutlineColor,
+        shadow = Shadow ? 1 : 0,
+        box_color = BoxColor,
+        box_opacity = BoxOpacity,
+        box_radius = BoxRadius,
+        animation = Animation,
+        anim_duration = AnimDuration,
     };
+
+    /// <summary>
+    /// Identity of the rendered sprite: every field that changes its pixels.
+    /// Position, timing and animation are applied on top and are deliberately excluded.
+    /// </summary>
+    public string RasterKey => System.Text.Json.JsonSerializer.Serialize(new
+    {
+        Text,
+        Fontsize,
+        Color,
+        LayoutWidth,
+        LayoutHeight,
+        LineSpacing,
+        BoxBorder,
+        BoxEnabled,
+        FontPath,
+        ItalicFontPath,
+        Bold,
+        Italic,
+        Strike,
+        Align,
+        OutlineWidth,
+        OutlineColor,
+        Shadow,
+        BoxColor,
+        BoxOpacity,
+        BoxRadius,
+    });
 
     public static TextOverlaySegment FromJson(System.Text.Json.JsonElement el) => new()
     {
@@ -126,7 +185,19 @@ public partial class TextOverlaySegment : ObservableObject
         Bold = el.TryGetProperty("bold", out var b) && ReadBool(b),
         Italic = el.TryGetProperty("italic", out var i) && ReadBool(i),
         Strike = el.TryGetProperty("strike", out var s) && ReadBool(s),
+        Align = el.TryGetProperty("align", out var al) ? al.GetString() ?? "left" : "left",
+        OutlineWidth = el.TryGetProperty("outline_width", out var ow) ? ow.GetInt32() : 0,
+        OutlineColor = el.TryGetProperty("outline_color", out var oc) ? (oc.GetString() ?? "000000").Trim().TrimStart('#') : "000000",
+        Shadow = el.TryGetProperty("shadow", out var sh) && ReadBool(sh),
+        BoxColor = el.TryGetProperty("box_color", out var bc) ? (bc.GetString() ?? "000000").Trim().TrimStart('#') : "000000",
+        BoxOpacity = el.TryGetProperty("box_opacity", out var bo) ? bo.GetInt32() : 35,
+        BoxRadius = el.TryGetProperty("box_radius", out var br) ? br.GetInt32() : 10,
+        Animation = el.TryGetProperty("animation", out var an) ? an.GetString() ?? "none" : "none",
+        AnimDuration = el.TryGetProperty("anim_duration", out var ad) ? ad.GetDouble() : 0.4,
     };
+
+    private static string NormalizeTimeField(string raw) =>
+        TimeFieldHelper.TryParseSeconds(raw, out var sec) ? TimeFieldHelper.FormatForField(sec) : raw;
 
     private static bool ReadBool(System.Text.Json.JsonElement el) => el.ValueKind switch
     {
@@ -154,6 +225,15 @@ public partial class TextOverlaySegment : ObservableObject
         Bold = Bold,
         Italic = Italic,
         Strike = Strike,
+        Align = Align,
+        OutlineWidth = OutlineWidth,
+        OutlineColor = OutlineColor,
+        Shadow = Shadow,
+        BoxColor = BoxColor,
+        BoxOpacity = BoxOpacity,
+        BoxRadius = BoxRadius,
+        Animation = Animation,
+        AnimDuration = AnimDuration,
     };
 
     public void ApplyFrom(TextOverlaySegment source)
@@ -175,6 +255,15 @@ public partial class TextOverlaySegment : ObservableObject
         Bold = source.Bold;
         Italic = source.Italic;
         Strike = source.Strike;
+        Align = source.Align;
+        OutlineWidth = source.OutlineWidth;
+        OutlineColor = source.OutlineColor;
+        Shadow = source.Shadow;
+        BoxColor = source.BoxColor;
+        BoxOpacity = source.BoxOpacity;
+        BoxRadius = source.BoxRadius;
+        Animation = source.Animation;
+        AnimDuration = source.AnimDuration;
         // Ensure list bindings refresh even when Text/From/To values were unchanged.
         OnPropertyChanged(nameof(ListLabel));
     }

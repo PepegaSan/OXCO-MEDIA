@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Hail Mary bridge: Text-to-Video — preview frame with overlays."""
+"""Hail Mary bridge: Text-to-Video — preview video frame (SRT burned in, text overlays excluded).
+
+Text overlays are rendered separately by text_to_video_sprites_job.py and composited by the app,
+so moving or restyling text never needs a new frame decode.
+"""
 from __future__ import annotations
 
 import argparse
@@ -12,7 +16,7 @@ BRIDGE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(BRIDGE_DIR))
 
 from bridge_io import configure_stdio, emit  # noqa: E402
-from text_to_video_sub import ensure_sub_imports, overlays_from_config  # noqa: E402
+from text_to_video_sub import ensure_sub_imports  # noqa: E402
 
 
 def main() -> int:
@@ -30,20 +34,16 @@ def main() -> int:
 
     time_sec = float(cfg.get("time_sec") or 0)
     srt_path = (cfg.get("srt_path") or "").strip()
-    segments = cfg.get("overlay_segments") or []
-    draft = cfg.get("draft_segment")
 
     try:
         ensure_sub_imports()
-        from overlay_core import extract_preview_frame_with_overlay, probe_video  # noqa: E402
+        from overlay_core import extract_preview_frame, probe_video  # noqa: E402
 
         info = probe_video(video_path)
-        overlays = overlays_from_config(segments, draft if isinstance(draft, dict) else None)
         srt = srt_path if srt_path and Path(srt_path).is_file() else None
-        png = extract_preview_frame_with_overlay(
+        png = extract_preview_frame(
             video_path,
             time_sec,
-            overlays=overlays,
             srt_path=srt,
             cached_info=info,
             width_max=int(cfg.get("width_max") or 960),

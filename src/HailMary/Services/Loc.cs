@@ -169,8 +169,17 @@ public static class Loc
             case RadioButton rb:
                 rb.Content = text;
                 break;
+            case Microsoft.UI.Xaml.Controls.Primitives.ToggleButton tgb:
+                tgb.Content = text;
+                break;
             case HyperlinkButton hb:
                 hb.Content = text;
+                break;
+            case ComboBoxItem cbi:
+                cbi.Content = text;
+                break;
+            case MenuFlyoutItem mfi:
+                mfi.Text = text;
                 break;
             case Expander exp:
                 exp.Header = text;
@@ -199,6 +208,15 @@ public static class Loc
                 break;
             case NumberBox nb:
                 nb.Header = text;
+                break;
+            case Slider sl:
+                sl.Header = text;
+                break;
+            case ToggleSwitch ts:
+                ts.Header = text;
+                break;
+            case RadioButtons rbs:
+                rbs.Header = text;
                 break;
             case Expander exp:
                 exp.Header = text;
@@ -236,6 +254,32 @@ public static class Loc
             return;
         }
 
-        ToolTipService.SetToolTip(element, T(key));
+        var text = T(key);
+        ToolTipService.SetToolTip(element, text);
+
+        // Icon-only buttons have no text for screen readers — the tooltip is their name.
+        if (element is not Microsoft.UI.Xaml.Controls.Primitives.ButtonBase button)
+        {
+            return;
+        }
+
+        if (button.Content is IconElement)
+        {
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(button, text);
+        }
+        else if (button.Content is null)
+        {
+            // XAML sets attributes before child content; check again once the button is loaded.
+            void OnLoaded(object sender, RoutedEventArgs e)
+            {
+                button.Loaded -= OnLoaded;
+                if (button.Content is IconElement)
+                {
+                    Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(button, T(GetToolTipKey(button)));
+                }
+            }
+
+            button.Loaded += OnLoaded;
+        }
     }
 }

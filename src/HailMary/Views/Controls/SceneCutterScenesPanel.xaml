@@ -19,29 +19,45 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Spacing="8">
-            <TextBlock
-                Style="{StaticResource ToolShellSectionHeader}"
-                loc:Loc.Key="cutter.scenesHeader" />
-            <Grid ColumnSpacing="8" RowSpacing="8">
+            <Grid ColumnSpacing="8">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
+                <TextBlock
+                    VerticalAlignment="Center"
+                    Style="{StaticResource ToolShellSectionHeader}"
+                    loc:Loc.Key="cutter.scenesHeader" />
+                <TextBlock
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Style="{StaticResource CaptionTextBlockStyle}"
+                    Opacity="0.8"
+                    Text="{x:Bind ViewModel.ScenesSummary, Mode=OneWay}" />
+            </Grid>
+            <StackPanel Orientation="Horizontal" Spacing="6">
                 <Button
-                    Grid.Column="0"
-                    HorizontalAlignment="Stretch"
                     Command="{x:Bind ViewModel.TogglePartialSelectModeCommand}"
                     Content="{x:Bind ViewModel.PartialSelectButtonText, Mode=OneWay}" />
                 <CheckBox
-                    Grid.Column="1"
                     VerticalAlignment="Center"
                     loc:Loc.Key="cutter.chronologicalSort"
                     IsChecked="{x:Bind ViewModel.ChronologicalSort, Mode=TwoWay}" />
-            </Grid>
-            <Button
-                HorizontalAlignment="Left"
-                Command="{x:Bind ViewModel.ClearScenesCommand}"
-                loc:Loc.Key="cutter.clearScenes" />
+                <Button Command="{x:Bind ViewModel.ClearScenesCommand}" loc:Loc.ToolTipKey="cutter.clearScenes">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="12" Glyph="&#xE74D;" />
+                        <TextBlock loc:Loc.Key="cutter.clearScenes" />
+                    </StackPanel>
+                </Button>
+                <Button
+                    Command="{x:Bind ViewModel.UndoClearScenesCommand}"
+                    Visibility="{x:Bind ViewModel.CanUndoClear, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="12" Glyph="&#xE7A7;" />
+                        <TextBlock loc:Loc.Key="common.undo" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
         </StackPanel>
 
         <ListView
@@ -55,7 +71,7 @@
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                    <Setter Property="Padding" Value="0,4" />
+                    <Setter Property="Padding" Value="0,3" />
                     <Setter Property="MinHeight" Value="0" />
                 </Style>
             </ListView.ItemContainerStyle>
@@ -70,52 +86,73 @@
                         <Grid ColumnSpacing="10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <CheckBox
+                                MinWidth="0"
                                 VerticalAlignment="Center"
                                 IsChecked="{x:Bind IsSelected, Mode=TwoWay}"
                                 Visibility="{Binding ElementName=RootPanel, Path=ViewModel.ShowSceneCheckboxes, Converter={StaticResource BoolToVisibility}}" />
-                            <StackPanel Grid.Column="1" Spacing="6">
-                                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="{x:Bind Title, Mode=OneWay}" />
-                                <TextBlock
-                                    FontFamily="Consolas"
-                                    Style="{StaticResource CaptionTextBlockStyle}"
-                                    Text="{x:Bind Display, Mode=OneWay}" />
-                                <Grid ColumnSpacing="8">
+                            <!-- Number badge; type a new position and press Enter to move the scene -->
+                            <TextBox
+                                Grid.Column="1"
+                                Width="44"
+                                VerticalAlignment="Center"
+                                FontFamily="Consolas"
+                                KeyDown="ScenePosition_KeyDown"
+                                PlaceholderText="{x:Bind Number, Mode=OneWay}"
+                                Tag="{x:Bind}"
+                                TextAlignment="Center"
+                                Text="{x:Bind PositionInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                loc:Loc.ToolTipKey="cutter.positionTooltip" />
+                            <StackPanel Grid.Column="2" Spacing="6">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="{x:Bind Title, Mode=OneWay}" />
+                                    <TextBlock
+                                        VerticalAlignment="Bottom"
+                                        Style="{StaticResource CaptionTextBlockStyle}"
+                                        Opacity="0.75"
+                                        Text="{x:Bind DurationDisplay, Mode=OneWay}" />
+                                </StackPanel>
+                                <Grid ColumnSpacing="6">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="52" />
                                         <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
                                     <TextBox
                                         FontFamily="Consolas"
-                                        KeyDown="ScenePosition_KeyDown"
-                                        PlaceholderText="#"
-                                        Tag="{x:Bind}"
-                                        Text="{x:Bind PositionInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                    <TextBox
-                                        Grid.Column="1"
-                                        FontFamily="Consolas"
                                         LostFocus="SceneTime_LostFocus"
+                                        KeyDown="SceneTime_KeyDown"
                                         loc:Loc.PlaceholderKey="actionBar.start"
                                         Tag="{x:Bind}"
                                         Text="{x:Bind StartInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Grid.Column="1" VerticalAlignment="Center" Opacity="0.6" Text="→" />
                                     <TextBox
                                         Grid.Column="2"
                                         FontFamily="Consolas"
                                         LostFocus="SceneTime_LostFocus"
+                                        KeyDown="SceneTime_KeyDown"
                                         loc:Loc.PlaceholderKey="common.end"
                                         Tag="{x:Bind}"
                                         Text="{x:Bind EndInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 </Grid>
                             </StackPanel>
-                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal" Spacing="4">
-                                <Button Click="MoveSceneUp_Click" Content="↑" Tag="{x:Bind}" />
-                                <Button Click="MoveSceneDown_Click" Content="↓" Tag="{x:Bind}" />
-                                <Button Click="SeekScene_Click" Content="▶" Tag="{x:Bind}" />
-                                <Button Click="RemoveScene_Click" Content="×" Tag="{x:Bind}" />
+                            <StackPanel Grid.Column="3" VerticalAlignment="Center" Orientation="Horizontal" Spacing="2">
+                                <Button Width="34" Height="32" Padding="0" Click="SeekScene_Click" Tag="{x:Bind}" loc:Loc.ToolTipKey="cutter.playScene">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="12" Glyph="&#xE768;" />
+                                </Button>
+                                <Button Width="34" Height="32" Padding="0" Click="MoveSceneUp_Click" Tag="{x:Bind}" loc:Loc.ToolTipKey="cutter.moveUp">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="12" Glyph="&#xE70E;" />
+                                </Button>
+                                <Button Width="34" Height="32" Padding="0" Click="MoveSceneDown_Click" Tag="{x:Bind}" loc:Loc.ToolTipKey="cutter.moveDown">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="12" Glyph="&#xE70D;" />
+                                </Button>
+                                <Button Width="34" Height="32" Padding="0" Click="RemoveScene_Click" Tag="{x:Bind}" loc:Loc.ToolTipKey="common.delete">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="12" Glyph="&#xE74D;" />
+                                </Button>
                             </StackPanel>
                         </Grid>
                     </Border>

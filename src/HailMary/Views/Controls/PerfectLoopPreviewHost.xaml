@@ -9,26 +9,73 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:drop="using:HailMary.Views.Helpers"
     xmlns:loc="using:HailMary.Services"
+    xmlns:vm="using:HailMary.ViewModels"
     HorizontalAlignment="Stretch"
     VerticalAlignment="Top"
     mc:Ignorable="d"
     KeyDown="RootHost_KeyDown">
 
-    <StackPanel HorizontalAlignment="Stretch" Spacing="8" drop:VideoDrop.AllowFolders="True" drop:VideoDrop.IsEnabled="True">
+    <StackPanel HorizontalAlignment="Stretch" Spacing="10" drop:VideoDrop.AllowFolders="True" drop:VideoDrop.IsEnabled="True">
+        <!-- Original vs. rendered loop -->
+        <Grid ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel
+                Padding="3"
+                Background="{ThemeResource ControlAltFillColorSecondaryBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="6"
+                Orientation="Horizontal"
+                Spacing="2">
+                <ToggleButton
+                    x:Name="ModeOriginalButton"
+                    MinWidth="110"
+                    Checked="ModeOriginal_Checked"
+                    Unchecked="Mode_Unchecked"
+                    IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
+                    loc:Loc.Key="perfectloop.modeOriginal" />
+                <ToggleButton
+                    x:Name="ModeLoopButton"
+                    MinWidth="110"
+                    Checked="ModeLoop_Checked"
+                    Unchecked="Mode_Unchecked"
+                    IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
+                    loc:Loc.Key="perfectloop.modeLoop" />
+            </StackPanel>
+            <StackPanel
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="8">
+                <ProgressRing
+                    Width="16"
+                    Height="16"
+                    IsActive="{x:Bind ViewModel.IsPreviewEncoding, Mode=OneWay}" />
+                <TextBlock
+                    VerticalAlignment="Center"
+                    Style="{StaticResource CaptionTextBlockStyle}"
+                    Text="{x:Bind ViewModel.PreviewHint, Mode=OneWay}"
+                    TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+        </Grid>
+
         <controls:AspectFitVideoPresenter
             x:Name="VideoSurface"
             HorizontalAlignment="Stretch"
             MaxPreviewHeight="480"
             MinPreviewHeight="180" />
 
-        <controls:VideoRangeTimeline
-            x:Name="RangeTimeline"
-            DurationSeconds="{x:Bind ViewModel.SliderMaximum, Mode=OneWay}"
-            PositionSeconds="{x:Bind ViewModel.SliderValue, Mode=OneWay}"
-            Peaks="{x:Bind ViewModel.WaveformPeaks, Mode=OneWay}"
-            Spans="{x:Bind ViewModel.TimelineRanges, Mode=OneWay}" />
-
-        <StackPanel Spacing="6">
+        <!-- Range editing only makes sense on the original -->
+        <StackPanel x:Name="RangeEditor" Spacing="6">
+            <controls:VideoRangeTimeline
+                x:Name="RangeTimeline"
+                DurationSeconds="{x:Bind ViewModel.SliderMaximum, Mode=OneWay}"
+                PositionSeconds="{x:Bind ViewModel.SliderValue, Mode=OneWay}"
+                Peaks="{x:Bind ViewModel.WaveformPeaks, Mode=OneWay}"
+                Spans="{x:Bind ViewModel.TimelineRanges, Mode=OneWay}" />
             <Slider
                 x:Name="TimelineSlider"
                 IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
@@ -54,28 +101,178 @@
             </Grid>
         </StackPanel>
 
-        <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="6">
-            <Button Click="BtnPlay_Click" loc:Loc.Key="common.play" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Click="BtnPause_Click" loc:Loc.Key="common.pause" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Click="BtnStop_Click" loc:Loc.Key="common.stopButton" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Click="BtnMarkIn_Click" loc:Loc.Key="common.markIn" IsEnabled="{x:Bind ViewModel.CanMarkRange, Mode=OneWay}" />
-            <Button Click="BtnMarkOut_Click" loc:Loc.Key="common.markOut" IsEnabled="{x:Bind ViewModel.CanMarkRange, Mode=OneWay}" />
+        <Grid ColumnSpacing="6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" Spacing="4">
+                <Button
+                    x:Name="BtnPlayPause"
+                    Width="40"
+                    Height="34"
+                    Padding="0"
+                    Click="BtnPlayPause_Click"
+                    IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
+                    loc:Loc.ToolTipKey="common.play">
+                    <FontIcon x:Name="PlayPauseIcon" FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE768;" />
+                </Button>
+                <Button
+                    Width="40"
+                    Height="34"
+                    Padding="0"
+                    Click="BtnStop_Click"
+                    IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
+                    loc:Loc.ToolTipKey="common.stopButton">
+                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE71A;" />
+                </Button>
+            </StackPanel>
+            <StackPanel
+                x:Name="RangeButtons"
+                Grid.Column="1"
+                HorizontalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="4">
+                <Button Click="BtnMarkIn_Click" IsEnabled="{x:Bind ViewModel.CanMarkRange, Mode=OneWay}" loc:Loc.ToolTipKey="perfectloop.markInTooltip">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="12" Glyph="&#xE892;" />
+                        <TextBlock loc:Loc.Key="perfectloop.markStart" />
+                    </StackPanel>
+                </Button>
+                <Button Click="BtnMarkOut_Click" IsEnabled="{x:Bind ViewModel.CanMarkRange, Mode=OneWay}" loc:Loc.ToolTipKey="perfectloop.markOutTooltip">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock loc:Loc.Key="perfectloop.markEnd" />
+                        <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="12" Glyph="&#xE893;" />
+                    </StackPanel>
+                </Button>
+                <Button
+                    Width="40"
+                    Height="34"
+                    Padding="0"
+                    Command="{x:Bind ViewModel.ResetLoopRangeCommand}"
+                    IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
+                    loc:Loc.ToolTipKey="perfectloop.resetRange">
+                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE72C;" />
+                </Button>
+            </StackPanel>
             <Button
-                Command="{x:Bind ViewModel.ResetLoopRangeCommand}"
-                loc:Loc.Key="perfectloop.resetRange"
-                IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button
+                Grid.Column="2"
                 Command="{x:Bind ViewModel.FindBestLoopInRangeCommand}"
-                loc:Loc.Key="perfectloop.findBest"
-                IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-        </StackPanel>
+                IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
+                Style="{StaticResource AccentButtonStyle}">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE721;" />
+                    <TextBlock loc:Loc.Key="perfectloop.findBest" />
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <!-- Seam quality card -->
+        <Border
+            Padding="14,12"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8">
+            <Grid ColumnSpacing="16" RowSpacing="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Border
+                    x:Name="QualityBadge"
+                    Grid.RowSpan="2"
+                    Width="76"
+                    Height="76"
+                    VerticalAlignment="Top"
+                    CornerRadius="38"
+                    BorderThickness="4">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontSize="18"
+                            FontWeight="SemiBold"
+                            Text="{x:Bind ViewModel.QualityBadgeText, Mode=OneWay}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            Style="{StaticResource CaptionTextBlockStyle}"
+                            Opacity="0.75"
+                            loc:Loc.Key="perfectloop.seamLabel" />
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock
+                        Style="{StaticResource BodyStrongTextBlockStyle}"
+                        Text="{x:Bind ViewModel.QualityVerdict, Mode=OneWay}" />
+                    <TextBlock
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        Opacity="0.85"
+                        Text="{x:Bind ViewModel.QualityHint, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+
+                <!-- Frames right before and after the jump -->
+                <StackPanel
+                    x:Name="SeamStrip"
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Spacing="4"
+                    Visibility="Collapsed">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <Image x:Name="SeamThumb0" Height="56" Stretch="Uniform" />
+                        <Image x:Name="SeamThumb1" Height="56" Stretch="Uniform" />
+                        <Border Width="3" Margin="4,0" CornerRadius="1.5" Background="#FFFF4FA3" />
+                        <Image x:Name="SeamThumb2" Height="56" Stretch="Uniform" />
+                        <Image x:Name="SeamThumb3" Height="56" Stretch="Uniform" />
+                    </StackPanel>
+                    <TextBlock
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        Opacity="0.7"
+                        loc:Loc.Key="perfectloop.seamStripHint" />
+                </StackPanel>
+
+                <!-- Alternatives from the search -->
+                <StackPanel
+                    Grid.Row="2"
+                    Grid.ColumnSpan="2"
+                    Spacing="6"
+                    Visibility="{x:Bind ViewModel.HasCandidates, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="perfectloop.candidatesHeader" />
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.Candidates, Mode=OneWay}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="6" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:LoopCandidateItem">
+                                <Button
+                                    Padding="10,4"
+                                    Click="Candidate_Click"
+                                    CornerRadius="14"
+                                    Tag="{x:Bind}"
+                                    ToolTipService.ToolTip="{x:Bind Tooltip}">
+                                    <TextBlock Text="{x:Bind Label}" />
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Grid>
+        </Border>
 
         <TextBlock
+            x:Name="RangeHintText"
             Style="{StaticResource CaptionTextBlockStyle}"
-            Text="{x:Bind ViewModel.PreviewHint, Mode=OneWay}"
-            TextWrapping="WrapWholeWords" />
-        <TextBlock
-            Style="{StaticResource CaptionTextBlockStyle}"
+            Opacity="0.75"
             loc:Loc.Key="perfectloop.rangeHint"
             TextWrapping="WrapWholeWords" />
     </StackPanel>

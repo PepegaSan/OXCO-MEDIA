@@ -252,6 +252,41 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ISp
 
     public double ParsedOutroSec => ParseSec(OutroSec);
 
+    /// <summary>Intro ends at the current player position.</summary>
+    [RelayCommand]
+    private void SetIntroFromPosition()
+    {
+        var pos = Math.Round(SliderValue, 3);
+        if (_durationSeconds > 0 && pos + ParsedOutroSec >= _durationSeconds)
+        {
+            Status = Loc.T("intro.lengthsTooLong");
+            return;
+        }
+
+        IntroSec = pos.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+        Status = Loc.F("intro.introSetStatus", IntroSec);
+    }
+
+    /// <summary>Outro starts at the current player position (length = rest of the video).</summary>
+    [RelayCommand]
+    private void SetOutroFromPosition()
+    {
+        if (_durationSeconds <= 0)
+        {
+            return;
+        }
+
+        var outro = Math.Round(Math.Max(0, _durationSeconds - SliderValue), 3);
+        if (ParsedIntroSec + outro >= _durationSeconds)
+        {
+            Status = Loc.T("intro.lengthsTooLong");
+            return;
+        }
+
+        OutroSec = outro.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+        Status = Loc.F("intro.outroSetStatus", OutroSec);
+    }
+
     [RelayCommand]
     private void SeekToIntroEnd()
     {
@@ -349,8 +384,9 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ISp
             {
                 var input = files[i];
                 var label = Path.GetFileName(input);
+                var number = i + 1;
                 UiDispatcher.Run(() => Status = files.Count > 1
-                    ? Loc.F("intro.runningBatch", i + 1, files.Count, label)
+                    ? Loc.F("intro.runningBatch", number, files.Count, label)
                     : Loc.T("common.running"));
                 AppServices.Log.Info($"--- {label} ---");
 
@@ -358,18 +394,19 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ISp
                 var result = await AppServices.JobRunner.RunBridgeAsync(_tool.Bridge ?? "intro_cutter_job.py", args);
                 if (!result.Success)
                 {
+                    // One broken file (too short, unreadable…) must not stop the rest of the batch.
                     failed++;
                     AppServices.Log.Error($"Fehler bei {label}");
-                    break;
                 }
             }
 
-            var ok = failed == 0;
-            UiDispatcher.Run(() => Status = ok
+            UiDispatcher.Run(() => Status = failed == 0
                 ? files.Count > 1
                     ? Loc.F("intro.batchDone", files.Count)
                     : Loc.T("common.done")
-                : Loc.T("intro.abortedSeeLog"));
+                : files.Count > 1
+                    ? Loc.F("intro.batchPartialFailed", failed, files.Count)
+                    : Loc.T("intro.abortedSeeLog"));
         }
         finally
         {
@@ -481,6 +518,12 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ISp
     {
         intro = ParseSec(IntroSec);
         outro = ParseSec(OutroSec);
+        if (!IsValidSeconds(IntroSec) || !IsValidSeconds(OutroSec))
+        {
+            error = Loc.T("intro.invalidLengths");
+            return false;
+        }
+
         if (intro < 0 || outro < 0)
         {
             error = Loc.T("intro.negativeLengths");
@@ -496,6 +539,11 @@ public partial class IntroCutterViewModel : ToolIoViewModel, IToolShellHost, ISp
         error = string.Empty;
         return true;
     }
+
+    private static bool IsValidSeconds(string value) =>
+        string.IsNullOrWhiteSpace(value)
+        || double.TryParse(value.Trim().Replace(",", "."), System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out _);
 
     private static double ParseSec(string value)
     {

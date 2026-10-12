@@ -37,7 +37,8 @@ from marker_math import (
 
 
 def _extra_bases_from_options(options: Dict[str, Any]) -> Optional[List[Path]]:
-    raw = options.get("path_extra_bases")
+    # Die App schickt den Medien-Stammordner als "media_root".
+    raw = options.get("path_extra_bases") or options.get("media_root")
     if raw is None:
         return None
     if isinstance(raw, (list, tuple)):
@@ -76,6 +77,18 @@ def _use_backup_from_options(options: Dict[str, Any]) -> bool:
     if isinstance(v, bool):
         return v
     return str(v or "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def path_kwargs_from_options(options: Dict[str, Any]) -> Dict[str, Any]:
+    """Pfad-Zuordnung (Stammordner, NAS → Windows, Backup) als kwargs für rows_to_timeline_segments."""
+    d_prefix, w_root = _remap_from_options(options)
+    return {
+        "path_extra_bases": _extra_bases_from_options(options),
+        "docker_path_prefix": d_prefix,
+        "windows_path_root": w_root,
+        "backup_path_prefix": _backup_prefix_from_options(options),
+        "use_backup": _use_backup_from_options(options),
+    }
 
 
 def _log_path_issues(status_callback: LogFn, not_found: List[str]) -> None:

@@ -207,13 +207,15 @@ def _replace_original_with_cut(src: Path, cut_path: Path, log=print) -> Path:
         log(f"Replace unnoetig (Cut == Quelle): {src}")
         return src
 
+    # Same name as the original; only the extension follows the cut (webm source → mp4 cut).
+    target = src.with_suffix(cut_path.suffix) if cut_path.suffix.lower() != src.suffix.lower() else src
     bak = src.with_name(src.name + ".hm_precut_bak")
     try:
         if bak.exists():
             bak.unlink()
         src.rename(bak)
         try:
-            shutil.move(str(cut_path), str(src))
+            shutil.move(str(cut_path), str(target))
         except Exception:
             try:
                 if not src.exists() and bak.exists():
@@ -228,10 +230,19 @@ def _replace_original_with_cut(src: Path, cut_path: Path, log=print) -> Path:
                 bak.unlink()
         except OSError as exc:
             log(f"WARN: Backup konnte nicht geloescht werden ({bak}): {exc}")
-        log(f"Original ersetzt durch Cut: {src}")
-        return src
+        log(f"Original ersetzt durch Cut: {target}")
+        return target
     except Exception as exc:
         raise RuntimeError(f"Original ersetzen fehlgeschlagen: {exc}") from exc
+
+
+# H.264/HEVC + AAC are not allowed in these containers — write .mp4 instead.
+_REMUX_TO_MP4 = {".webm", ".wmv", ".flv", ".ogv", ".3gp", ".mpg", ".mpeg", ".ts", ".m2ts", ".mts", ".vob"}
+
+
+def _output_suffix(src: Path) -> str:
+    suffix = (src.suffix or ".mp4").lower()
+    return ".mp4" if suffix in _REMUX_TO_MP4 else (src.suffix or ".mp4")
 
 
 def export_scenes(
@@ -243,6 +254,7 @@ def export_scenes(
     safe_output: bool = True,
     replace_original: bool = False,
     target_fps: float | None = None,
+    progress=None,
 ) -> Path:
     if not scenes:
         raise ValueError("Keine Szenen zum Export.")
@@ -251,12 +263,13 @@ def export_scenes(
 
     # Local import keeps vendor module usable standalone
     try:
-        from ffmpeg_fps import apply_fps_to_vchains, fps_output_args, normalize_target_fps
+        from ffmpeg_fps import fps_filter_clause, fps_output_args, normalize_target_fps
+        from ffmpeg_progress import run_ffmpeg
     except ImportError:
-        import sys
         from pathlib import Path as _P
         sys.path.insert(0, str(_P(__file__).resolve().parents[2]))
-        from ffmpeg_fps import apply_fps_to_vchains, fps_output_args, normalize_target_fps
+        from ffmpeg_fps import fps_filter_clause, fps_output_args, normalize_target_fps
+        from ffmpeg_progress import run_ffmpeg
 
     fps = normalize_target_fps(target_fps)
     src = input_path.resolve()
@@ -264,86 +277,53 @@ def export_scenes(
         raise FileNotFoundError(f"Quelle nicht gefunden: {src}")
 
     v_extra = list(FFMPEG_CODECS[codec_key])
-    r_args = fps_output_args(fps)
     out_dir = output_dir if output_dir else src.parent
     out_dir.mkdir(parents=True, exist_ok=True)
-    base_out = out_dir / f"{src.stem}_cut{src.suffix or '.mp4'}"
+    suffix = _output_suffix(src)
+    if suffix.lower() != (src.suffix or "").lower():
+        log(f"Container {src.suffix} unterstützt H.264/AAC nicht — Ausgabe als {suffix}")
+    base_out = out_dir / f"{src.stem}_cut{suffix}"
     out_path = _unique_output(base_out) if safe_output else base_out
 
     log(f"Export -> {out_path}")
     log(f"Szenen: {len(scenes)}, Codec: {codec_key}" + (f", FPS: {fps:g}" if fps else ""))
 
-    if len(scenes) == 1:
-        st, en = scenes[0]
-        command = [
-            "ffmpeg",
-            "-y",
-            "-i",
-            str(src),
-            "-ss",
-            str(st),
-            "-to",
-            str(en),
-            *v_extra,
-            *r_args,
-            "-c:a",
-            "aac",
-            "-b:a",
-            "320k",
-            str(out_path),
-        ]
-        _run_tool(command, log=log)
-    else:
-        vchains: list[str] = []
-        achains: list[str] = []
-        for i, (st, en) in enumerate(scenes):
-            stf = f"{st:.6f}"
-            enf = f"{en:.6f}"
-            vchains.append(f"[0:v]trim=start={stf}:end={enf},setpts=PTS-STARTPTS[v{i}]")
-            achains.append(f"[0:a]atrim=start={stf}:end={enf},asetpts=PTS-STARTPTS[a{i}]")
-        vchains = apply_fps_to_vchains(vchains, fps)
-        n = len(scenes)
-        concat_in = "".join(f"[v{i}][a{i}]" for i in range(n))
-        has_audio = _ffprobe_has_audio_stream(src)
+    has_audio = _ffprobe_has_audio_stream(src)
+    ffmpeg = _resolve_tool("ffmpeg")
+    # Each scene is its own input with a fast seek in front of -i: FFmpeg jumps straight to the
+    # scene (frame-accurate when re-encoding) instead of decoding the file from the start.
+    command: list[str] = [ffmpeg, "-y", "-hide_banner"]
+    for st, en in scenes:
+        command += ["-ss", f"{st:.6f}", "-t", f"{en - st:.6f}", "-i", str(src)]
+
+    n = len(scenes)
+    if n == 1:
+        command += ["-map", "0:v:0"]
         if has_audio:
-            fc = ";".join(vchains + achains) + f";{concat_in}concat=n={n}:v=1:a=1[outv][outa]"
-            command = [
-                "ffmpeg",
-                "-y",
-                "-i",
-                str(src),
-                "-filter_complex",
-                fc,
-                "-map",
-                "[outv]",
-                "-map",
-                "[outa]",
-                *v_extra,
-                *r_args,
-                "-c:a",
-                "aac",
-                "-b:a",
-                "320k",
-                str(out_path),
-            ]
+            command += ["-map", "0:a:0"]
+        if fps:
+            command += ["-vf", f"fps={fps:g}"]
+    else:
+        clause = fps_filter_clause(fps)
+        chains = [f"[{i}:v:0]setpts=PTS-STARTPTS{clause}[v{i}]" for i in range(n)]
+        if has_audio:
+            chains += [f"[{i}:a:0]asetpts=PTS-STARTPTS[a{i}]" for i in range(n)]
+            pads = "".join(f"[v{i}][a{i}]" for i in range(n))
+            chains.append(f"{pads}concat=n={n}:v=1:a=1[outv][outa]")
+            command += ["-filter_complex", ";".join(chains), "-map", "[outv]", "-map", "[outa]"]
         else:
-            concat_v = "".join(f"[v{i}]" for i in range(n))
-            fc = ";".join(vchains) + f";{concat_v}concat=n={n}:v=1:a=0[outv]"
-            command = [
-                "ffmpeg",
-                "-y",
-                "-i",
-                str(src),
-                "-filter_complex",
-                fc,
-                "-map",
-                "[outv]",
-                *v_extra,
-                *r_args,
-                "-an",
-                str(out_path),
-            ]
-        _run_tool(command, log=log)
+            pads = "".join(f"[v{i}]" for i in range(n))
+            chains.append(f"{pads}concat=n={n}:v=1:a=0[outv]")
+            command += ["-filter_complex", ";".join(chains), "-map", "[outv]"]
+
+    command += [*v_extra, *fps_output_args(fps)]
+    command += ["-c:a", "aac", "-b:a", "320k"] if has_audio else ["-an"]
+    if suffix.lower() in (".mp4", ".m4v", ".mov"):
+        command += ["-movflags", "+faststart"]
+    command.append(str(out_path))
+
+    total = sum(en - st for st, en in scenes)
+    run_ffmpeg(command, total_seconds=total, progress=progress, label="Export", log=log)
 
     if not out_path.is_file():
         raise RuntimeError(f"Export-Datei wurde nicht erstellt: {out_path}")
@@ -352,5 +332,3 @@ def export_scenes(
         out_path = _replace_original_with_cut(src, out_path, log=log)
 
     return out_path
-
-

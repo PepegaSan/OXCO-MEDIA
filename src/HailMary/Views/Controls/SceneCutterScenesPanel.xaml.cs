@@ -25,11 +25,21 @@ public sealed partial class SceneCutterScenesPanel : UserControl
         }
     }
 
+    // Enter commits a typed time right away (like leaving the field).
+    private void SceneTime_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key == VirtualKey.Enter && sender is TextBox { Tag: SceneEntry entry })
+        {
+            ViewModel.CommitSceneTimes(entry);
+            e.Handled = true;
+        }
+    }
+
     private void SeekScene_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button { Tag: SceneEntry entry })
         {
-            ViewModel.SeekToScene(entry);
+            ViewModel.PlayScene(entry);
         }
     }
 

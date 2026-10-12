@@ -106,6 +106,38 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IS
         UpdateTimeHints();
         UpdateSegmentEditorChrome();
         SyncSelectedFontFromEditor();
+        OnPropertyChanged(nameof(EditorAlignIndex));
+        OnPropertyChanged(nameof(EditorAnimationIndex));
+    }
+
+    private static readonly string[] AlignValues = ["left", "center", "right"];
+
+    private static readonly string[] AnimationValues = ["none", "fade", "slide", "pop"];
+
+    /// <summary>RadioButtons index for <see cref="TextOverlaySegment.Align"/>.</summary>
+    public int EditorAlignIndex
+    {
+        get => Math.Max(0, Array.IndexOf(AlignValues, EditorSegment.Align));
+        set
+        {
+            if (value >= 0 && value < AlignValues.Length)
+            {
+                EditorSegment.Align = AlignValues[value];
+            }
+        }
+    }
+
+    /// <summary>ComboBox index for <see cref="TextOverlaySegment.Animation"/>.</summary>
+    public int EditorAnimationIndex
+    {
+        get => Math.Max(0, Array.IndexOf(AnimationValues, EditorSegment.Animation));
+        set
+        {
+            if (value >= 0 && value < AnimationValues.Length)
+            {
+                EditorSegment.Animation = AnimationValues[value];
+            }
+        }
     }
 
     public void ApplySystemFont(WindowsFontChoice choice)
@@ -194,8 +226,26 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IS
             or nameof(TextOverlaySegment.Italic)
             or nameof(TextOverlaySegment.Strike)
             or nameof(TextOverlaySegment.FontPath)
-            or nameof(TextOverlaySegment.ItalicFontPath))
+            or nameof(TextOverlaySegment.ItalicFontPath)
+            or nameof(TextOverlaySegment.Align)
+            or nameof(TextOverlaySegment.OutlineWidth)
+            or nameof(TextOverlaySegment.OutlineColor)
+            or nameof(TextOverlaySegment.Shadow)
+            or nameof(TextOverlaySegment.BoxColor)
+            or nameof(TextOverlaySegment.BoxOpacity)
+            or nameof(TextOverlaySegment.BoxRadius)
+            or nameof(TextOverlaySegment.Animation)
+            or nameof(TextOverlaySegment.AnimDuration))
         {
+            if (e.PropertyName is nameof(TextOverlaySegment.Align))
+            {
+                OnPropertyChanged(nameof(EditorAlignIndex));
+            }
+            else if (e.PropertyName is nameof(TextOverlaySegment.Animation))
+            {
+                OnPropertyChanged(nameof(EditorAnimationIndex));
+            }
+
             if (e.PropertyName is nameof(TextOverlaySegment.From) or nameof(TextOverlaySegment.To))
             {
                 UpdateTimeHints();
@@ -221,7 +271,14 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IS
                      or nameof(TextOverlaySegment.BoxBorder)
                      or nameof(TextOverlaySegment.LineSpacing)
                      or nameof(TextOverlaySegment.FontPath)
-                     or nameof(TextOverlaySegment.ItalicFontPath))
+                     or nameof(TextOverlaySegment.ItalicFontPath)
+                     or nameof(TextOverlaySegment.Align)
+                     or nameof(TextOverlaySegment.OutlineWidth)
+                     or nameof(TextOverlaySegment.OutlineColor)
+                     or nameof(TextOverlaySegment.Shadow)
+                     or nameof(TextOverlaySegment.BoxColor)
+                     or nameof(TextOverlaySegment.BoxOpacity)
+                     or nameof(TextOverlaySegment.BoxRadius))
             {
                 // Timed overlays are invisible outside From/To — jump into range so edits show up.
                 EnsurePlayheadShowsEditorSegment();
@@ -261,10 +318,12 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IS
             return;
         }
 
+        // Land after the intro animation so edits show the text fully visible.
+        var settle = EditorSegment.Animation is "none" or "" ? 0.35 : EditorSegment.AnimDuration + 0.05;
         double target;
         if (hasFrom && hasTo && toSec > fromSec)
         {
-            target = fromSec + Math.Min(0.35, (toSec - fromSec) * 0.1);
+            target = fromSec + Math.Min(settle, (toSec - fromSec) * 0.5);
         }
         else if (hasFrom)
         {
@@ -413,7 +472,11 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IS
     partial void OnSliderValueChanged(double value)
     {
         UpdateTimeDisplay();
-        SchedulePreviewRefresh();
+        // While playing the preview host animates overlays itself from the player clock.
+        if (!IsPreviewPlaying)
+        {
+            SchedulePreviewRefresh();
+        }
     }
 
     public void SetSelectedSegmentIndex(int index)
@@ -458,6 +521,21 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IS
         EnsurePlayheadShowsEditorSegment();
         SchedulePreviewRefresh();
         Status = Loc.F("texttovideo.status.editingSegment", index + 1);
+    }
+
+    /// <summary>
+    /// Select a segment by clicking it in the preview. Edits made by dragging there feel direct,
+    /// so the segment being edited is kept instead of silently discarding its draft.
+    /// </summary>
+    public void SelectSegmentFromPreview(int index)
+    {
+        if (IsEditingExistingSegment && index != _selectedSegmentIndex && TryValidateAndNormalizeEditorTimes())
+        {
+            Segments[_selectedSegmentIndex].ApplyFrom(EditorSegment);
+            PersistSettings();
+        }
+
+        SetSelectedSegmentIndex(index);
     }
 
     private static void NormalizeSegmentTimes(TextOverlaySegment segment)
@@ -573,22 +651,8 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IS
         SliderValue = seconds;
     }
 
-    public void SetPositionFromPreviewClick(double normalizedX, double normalizedY, bool deferPreviewRefresh = false)
-    {
-        if (deferPreviewRefresh)
-        {
-            BeginOverlayPositionDrag();
-            ApplyMoveFromPreview(normalizedX, normalizedY);
-            return;
-        }
-
-        BeginOverlayPositionDrag();
-        ApplyMoveFromPreview(normalizedX, normalizedY);
-        EndOverlayPositionDrag();
-    }
-
-    /// <summary>Rough drawtext/Pillow box in source pixels (prefer slightly large so the frame contains glyphs).</summary>
-    public (int Width, int Height) EstimateEditorOverlayBox()
+    /// <summary>Rough box in source pixels — only used until the real sprite has been rendered.</summary>
+    private (int Width, int Height) EstimateEditorOverlayBox()
     {
         var seg = EditorSegment;
         // Same split as overlay_core._overlay_visual_lines (keeps empty lines after Enter).
@@ -713,7 +777,7 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IS
             return;
         }
 
-        var (w, h) = EstimateEditorOverlayBox();
+        var (w, h) = EditorOverlayBox();
         var x = (int)Math.Clamp(Math.Round(nx * _videoWidth), 0, Math.Max(0, _videoWidth - w));
         var y = (int)Math.Clamp(Math.Round(ny * _videoHeight), 0, Math.Max(0, _videoHeight - h));
         EditorSegment.PosX = x;
@@ -757,7 +821,7 @@ public partial class TextToVideoViewModel : ObservableObject, IToolShellHost, IS
             EditorSegment.Fontsize = Math.Clamp(EditorSegment.Fontsize + dFontsize, 12, 200);
         }
 
-        var (w, h) = EstimateEditorOverlayBox();
+        var (w, h) = EditorOverlayBox();
         EditorSegment.PosX = Math.Clamp(EditorSegment.PosX + dxPx, 0, Math.Max(0, _videoWidth - w));
         EditorSegment.PosY = Math.Clamp(EditorSegment.PosY + dyPx, 0, Math.Max(0, _videoHeight - h));
         SchedulePreviewRefresh();

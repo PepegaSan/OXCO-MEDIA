@@ -10,6 +10,8 @@
     xmlns:controls="using:HailMary.Views.Controls"
     HorizontalAlignment="Stretch"
     VerticalAlignment="Top"
+    IsTabStop="True"
+    KeyDown="RootHost_KeyDown"
     mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
 
     <StackPanel HorizontalAlignment="Stretch" Spacing="8" drop:VideoDrop.AllowFolders="True" drop:VideoDrop.IsEnabled="True">
@@ -52,11 +54,58 @@
             </Grid>
         </StackPanel>
 
-        <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="6">
-            <Button Click="BtnPlay_Click" loc:Loc.Key="common.play" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Click="BtnPause_Click" loc:Loc.Key="common.pause" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Command="{x:Bind ViewModel.SeekToIntroEndCommand}" loc:Loc.Key="intro.seekIntroEnd" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Command="{x:Bind ViewModel.SeekToOutroStartCommand}" loc:Loc.Key="intro.seekOutroStart" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-        </StackPanel>
+        <Grid ColumnSpacing="6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" Spacing="4">
+                <Button
+                    x:Name="BtnPlayPause"
+                    Width="40"
+                    Height="34"
+                    Padding="0"
+                    Click="BtnPlayPause_Click"
+                    IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
+                    loc:Loc.ToolTipKey="common.play">
+                    <FontIcon x:Name="PlayPauseIcon" FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE768;" />
+                </Button>
+                <Button
+                    Width="40"
+                    Height="34"
+                    Padding="0"
+                    Click="BtnStop_Click"
+                    IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
+                    loc:Loc.ToolTipKey="common.stopButton">
+                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE71A;" />
+                </Button>
+            </StackPanel>
+            <StackPanel
+                Grid.Column="1"
+                HorizontalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="4">
+                <Button Command="{x:Bind ViewModel.SetIntroFromPositionCommand}" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" Style="{StaticResource AccentButtonStyle}" loc:Loc.ToolTipKey="intro.setIntroHereTooltip">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="12" Glyph="&#xE892;" />
+                        <TextBlock loc:Loc.Key="intro.setIntroHere" />
+                    </StackPanel>
+                </Button>
+                <Button Command="{x:Bind ViewModel.SetOutroFromPositionCommand}" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" Style="{StaticResource AccentButtonStyle}" loc:Loc.ToolTipKey="intro.setOutroHereTooltip">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock loc:Loc.Key="intro.setOutroHere" />
+                        <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="12" Glyph="&#xE893;" />
+                    </StackPanel>
+                </Button>
+                <Border Width="1" Margin="6,6" Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
+                <Button Command="{x:Bind ViewModel.SeekToIntroEndCommand}" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" loc:Loc.Key="intro.seekIntroEnd" />
+                <Button Command="{x:Bind ViewModel.SeekToOutroStartCommand}" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" loc:Loc.Key="intro.seekOutroStart" />
+            </StackPanel>
+        </Grid>
+        <TextBlock
+            Style="{StaticResource CaptionTextBlockStyle}"
+            Opacity="0.7"
+            loc:Loc.Key="intro.shortcutHint"
+            TextWrapping="WrapWholeWords" />
     </StackPanel>
 </UserControl>

@@ -9,8 +9,18 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional, Sequence
 
+import base64
+
 import cv2
 import numpy as np
+
+from loop_detect import (
+    LoopCandidate,
+    cost_to_score,
+    find_loop_candidates,
+    frame_feature,
+    score_sparse,
+)
 
 LogFn = Callable[[str], None]
 ProgressFn = Callable[[float, str], None]
@@ -30,6 +40,7 @@ class LoopSettings:
     # cut = export segment as-is (best when already similar)
     # crossfade = short alpha blend, no warp
     # morph = optical-flow morph (only for harder mismatches)
+    # pingpong = forward then backward (boomerang) — always seamless, changes the look
     # auto = pick from quality score
     seam_method: str = "auto"
     target_fps: float = 0.0
@@ -69,6 +80,12 @@ class AnalyzeResult:
     recommended_seam_method: str
     range_start_seconds: float = 0.0
     range_end_seconds: float = 0.0
+    #: Seam cost in "typical frame steps" (0 = perfect).
+    seam_cost: float = 0.0
+    #: Best alternatives from the search, (start_s, end_s, score) — empty without search.
+    candidates: list = None  # type: ignore[assignment]
+    #: JPEG base64 of the frames before / after the seam: [end-2, end-1, start, start+1].
+    seam_thumbs: list = None  # type: ignore[assignment]
 
 
 def _log(log: Optional[LogFn], msg: str) -> None:
@@ -87,23 +104,6 @@ def find_ffmpeg() -> Optional[str]:
 
 def find_ffprobe() -> Optional[str]:
     return shutil.which("ffprobe")
-
-
-def frame_similarity(a: np.ndarray, b: np.ndarray) -> float:
-    """Higher is better (1.0 = identical). MSE plus histogram correlation."""
-    if a.shape != b.shape:
-        b = cv2.resize(b, (a.shape[1], a.shape[0]), interpolation=cv2.INTER_AREA)
-    ga = cv2.cvtColor(a, cv2.COLOR_BGR2GRAY)
-    gb = cv2.cvtColor(b, cv2.COLOR_BGR2GRAY)
-    mse = float(np.mean((ga.astype(np.float32) - gb.astype(np.float32)) ** 2))
-    mse_score = 1.0 / (1.0 + mse / 100.0)
-    ha = cv2.calcHist([ga], [0], None, [48], [0, 256])
-    hb = cv2.calcHist([gb], [0], None, [48], [0, 256])
-    cv2.normalize(ha, ha)
-    cv2.normalize(hb, hb)
-    hist = float(cv2.compareHist(ha, hb, cv2.HISTCMP_CORREL))
-    hist_score = max(0.0, min(1.0, (hist + 1.0) * 0.5))
-    return 0.72 * mse_score + 0.28 * hist_score
 
 
 def read_video_meta(path: str) -> tuple[float, int, int, int]:
@@ -223,6 +223,87 @@ def load_frames(
     return frames, fps
 
 
+def extract_features(
+    path: str,
+    start: int,
+    end: int,
+    *,
+    progress: Optional[ProgressFn] = None,
+) -> tuple[np.ndarray, tuple[int, int], float]:
+    """Stream-decode ``[start, end)`` into compact features (no full frames kept in memory)."""
+    fps, total, _, _ = read_video_meta(path)
+    end = min(end, total)
+    cap = cv2.VideoCapture(path)
+    if not cap.isOpened():
+        raise RuntimeError(f"Cannot open video: {path}")
+    if start > 0:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, float(start))
+    feats: list[np.ndarray] = []
+    shape = (0, 0)
+    expected = max(1, end - start)
+    while start + len(feats) < end:
+        ok, frame = cap.read()
+        if not ok or frame is None:
+            break
+        if not feats:
+            shape = frame.shape[:2]
+        feats.append(frame_feature(frame))
+        if len(feats) % 30 == 0:
+            _progress(progress, 5.0 + 45.0 * (len(feats) / expected), "Frames analysieren…")
+    cap.release()
+    if len(feats) < 4:
+        raise RuntimeError(f"Need at least 4 frames, got {len(feats)} from {path}")
+    return np.stack(feats), shape, fps
+
+
+def _read_indices(path: str, indices: Sequence[int]) -> dict[int, np.ndarray]:
+    """Decode a few frames by index (sequential reads inside each contiguous run)."""
+    out: dict[int, np.ndarray] = {}
+    cap = cv2.VideoCapture(path)
+    if not cap.isOpened():
+        raise RuntimeError(f"Cannot open video: {path}")
+    pos = -1
+    for i in sorted(set(indices)):
+        if i != pos:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, float(i))
+        ok, frame = cap.read()
+        pos = i + 1
+        if ok and frame is not None:
+            out[i] = frame
+    cap.release()
+    return out
+
+
+def range_seam_cost(path: str, start: int, end: int, total: int) -> tuple[float, dict[int, np.ndarray]]:
+    """Seam cost of a fixed range from small frame windows around both ends (fast)."""
+    idx = [i for i in range(start - 3, start + 4) if 0 <= i < total]
+    idx += [i for i in range(end - 4, end + 3) if 0 <= i < total]
+    # A mid-clip window makes the typical frame step less dependent on the ends.
+    mid = (start + end) // 2
+    idx += [i for i in range(mid - 3, mid + 3) if start <= i < end]
+    frames = _read_indices(path, idx)
+    if not frames:
+        raise RuntimeError(f"Cannot read frames: {path}")
+    shape = next(iter(frames.values())).shape[:2]
+    feats = {i: frame_feature(f) for i, f in frames.items()}
+    cost, _ = score_sparse(feats, shape, start, end)
+    return cost, frames
+
+
+def seam_thumbnails(frames: dict[int, np.ndarray], start: int, end: int, width: int = 200) -> list[str]:
+    """[end-2, end-1 | start, start+1] as JPEG base64 (missing frames are skipped)."""
+    out: list[str] = []
+    for i in (end - 2, end - 1, start, start + 1):
+        f = frames.get(i)
+        if f is None:
+            out.append("")
+            continue
+        f = _maybe_downscale(f, width)
+        ok, buf = cv2.imencode(".jpg", f, [int(cv2.IMWRITE_JPEG_QUALITY), 82])
+        out.append(base64.b64encode(buf.tobytes()).decode("ascii") if ok else "")
+    return out
+
+
 def recommend_seam_seconds(quality_score: float, duration_seconds: float) -> float:
     """Suggest longer seam when start/end match is weak (crossfade/morph only)."""
     if quality_score >= 0.75:
@@ -237,17 +318,20 @@ def recommend_seam_seconds(quality_score: float, duration_seconds: float) -> flo
 
 
 def recommend_seam_method(quality_score: float) -> str:
-    """Pick gentlest method that usually works for the match quality."""
+    """Pick gentlest method that usually works for the match quality.
+
+    Ping-pong is never chosen automatically — it changes how the clip looks.
+    """
     if quality_score >= 0.70:
         return "cut"
-    if quality_score >= 0.45:
+    if quality_score >= 0.40:
         return "crossfade"
     return "morph"
 
 
 def resolve_seam_method(requested: str, quality_score: float) -> str:
     method = (requested or "auto").strip().lower()
-    if method in ("cut", "crossfade", "morph"):
+    if method in ("cut", "crossfade", "morph", "pingpong"):
         return method
     return recommend_seam_method(quality_score)
 
@@ -257,65 +341,16 @@ def smart_trim_range(
     fps: float,
     *,
     min_loop_seconds: float = 1.5,
-    sample_width: int = 160,
-    stride: int = 2,
     log: Optional[LogFn] = None,
     progress: Optional[ProgressFn] = None,
 ) -> tuple[int, int, float]:
-    """Find best (start, end_exclusive) loop window via downscaled similarity search."""
-    n = len(frames)
-    min_len = max(4, int(round(min_loop_seconds * fps)))
-    if n < min_len + 2:
-        _log(log, "Smart trim skipped — clip shorter than min loop length")
-        return 0, n, frame_similarity(frames[0], frames[-1])
-
-    thumbs: list[np.ndarray] = []
-    hists: list[np.ndarray] = []
-    for i in range(0, n, stride):
-        f = frames[i]
-        h, w = f.shape[:2]
-        tw = sample_width
-        th = max(1, int(round(h * (tw / max(1, w)))))
-        small = cv2.resize(f, (tw, th), interpolation=cv2.INTER_AREA)
-        gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
-        thumbs.append(gray.astype(np.float32))
-        hist = cv2.calcHist([gray], [0], None, [32], [0, 256])
-        cv2.normalize(hist, hist)
-        hists.append(hist)
-
-    thumb_n = len(thumbs)
-    min_thumb_span = max(2, min_len // stride)
-    best_score = -1.0
-    best_a = 0
-    best_b = thumb_n - 1
-    pairs = 0
-    total_pairs = max(1, (thumb_n - min_thumb_span) * (thumb_n // 2))
-
-    for ai in range(0, thumb_n - min_thumb_span):
-        for bi in range(ai + min_thumb_span, thumb_n):
-            mse = float(np.mean((thumbs[ai] - thumbs[bi]) ** 2))
-            mse_score = 1.0 / (1.0 + mse / 100.0)
-            hist = float(cv2.compareHist(hists[ai], hists[bi], cv2.HISTCMP_CORREL))
-            hist_score = max(0.0, min(1.0, (hist + 1.0) * 0.5))
-            score = 0.75 * mse_score + 0.25 * hist_score
-            # Prefer mid-length loops slightly when scores are close
-            length_bias = 0.02 * (1.0 - abs((bi - ai) / max(1, thumb_n - 1) - 0.55))
-            score += length_bias
-            if score > best_score:
-                best_score = score
-                best_a = ai
-                best_b = bi
-            pairs += 1
-            if pairs % 200 == 0:
-                _progress(progress, 40.0 + 20.0 * (pairs / total_pairs), "Abschnitt suchen…")
-
-    start = best_a * stride
-    end = min(n, best_b * stride + 1)
-    if end - start < min_len:
-        end = min(n, start + min_len)
-    score = frame_similarity(frames[start], frames[end - 1])
-    _log(log, f"Smart trim: frames {start}..{end - 1} (score={score:.3f})")
-    return start, end, score
+    """Best (start, end_exclusive) inside already loaded frames."""
+    feats = np.stack([frame_feature(f) for f in frames])
+    best = find_loop_candidates(
+        feats, frames[0].shape[:2], fps, min_loop_seconds=min_loop_seconds, max_candidates=1, progress=progress
+    )[0]
+    _log(log, f"Smart trim: frames {best.start}..{best.end - 1} (score={best.score:.3f})")
+    return best.start, best.end, best.score
 
 
 def _warp_flow(img: np.ndarray, flow: np.ndarray, factor: float) -> np.ndarray:
@@ -391,6 +426,11 @@ def build_loop_frames(
     """Build export frames. 'cut' keeps the segment intact (best for good loops)."""
     method = (method or "cut").lower()
     n = len(frames)
+    if method == "pingpong":
+        _log(log, "Seam method: ping-pong (forward + reverse)")
+        _progress(progress, 85.0, "Ping-Pong…")
+        # Drop both turnaround frames from the reverse pass so no frame is shown twice.
+        return list(frames) + list(frames[-2:0:-1])
     if method == "cut" or seam_frames <= 0 or n < 6:
         _log(log, "Seam method: cut (segment as-is, no blend)")
         _progress(progress, 85.0, "Schnitt…")
@@ -624,7 +664,7 @@ def analyze_loop(
     log: Optional[LogFn] = None,
     progress: Optional[ProgressFn] = None,
 ) -> AnalyzeResult:
-    """Pre-check: Start↔Ende similarity. Seam duration does not affect this score."""
+    """Pre-check of the seam. With smart_trim, searches the best loop window and alternatives."""
     path = settings.input_path
     if not path or not os.path.isfile(path):
         raise FileNotFoundError(f"Input not found: {path}")
@@ -636,48 +676,29 @@ def analyze_loop(
     )
     trim_start, trim_end = win_start, win_end
     smart_used = False
+    candidates: list[LoopCandidate] = []
 
     if settings.smart_trim:
-        _progress(progress, 15.0, "Abschnitt suchen…")
-        frames, fps = load_frames(
-            path, start=win_start, end=win_end, max_width=160, log=log, progress=progress
+        # One extra frame so the window end can be judged against its successor.
+        feats, shape, fps = extract_features(path, win_start, min(total, win_end + 1), progress=progress)
+        candidates = find_loop_candidates(
+            feats, shape, fps, min_loop_seconds=settings.min_loop_seconds, progress=progress
         )
-        local_s, local_e, quality = smart_trim_range(
-            frames,
-            fps,
-            min_loop_seconds=settings.min_loop_seconds,
-            log=log,
-            progress=progress,
-        )
-        trim_start = win_start + local_s
-        trim_end = win_start + local_e
+        best = candidates[0]
+        trim_start = win_start + best.start
+        trim_end = win_start + best.end
         smart_used = True
-        frame_count = max(0, trim_end - trim_start)
-    else:
-        first = read_frame_at(path, trim_start)
-        last = read_frame_at(path, max(trim_start, trim_end - 1))
-        quality = frame_similarity(first, last)
-        frame_count = max(0, trim_end - trim_start)
 
+    _progress(progress, 90.0, "Naht bewerten…")
+    cost, frames = range_seam_cost(path, trim_start, trim_end, total)
+    quality = cost_to_score(cost)
+    frame_count = max(0, trim_end - trim_start)
     duration = frame_count / max(fps, 1e-6)
     quality_warning = quality < 0.55
     recommended = recommend_seam_seconds(quality, duration)
     method = recommend_seam_method(quality)
     _progress(progress, 100.0, "Prüfung fertig")
-
-    if quality_warning:
-        _log(
-            log,
-            f"Start/Ende-Aehnlichkeit: {quality:.3f} (niedrig). "
-            f"Empfehlung: Methode '{method}', Seam ~{recommended:.2f}s"
-            + (" oder Smart-Trim." if not smart_used else "."),
-        )
-    else:
-        _log(
-            log,
-            f"Start/Ende-Aehnlichkeit: {quality:.3f} — gut. "
-            f"Empfehlung: Methode '{method}' (Morph oft unnötig und erzeugt Geisterbilder).",
-        )
+    _log(log, f"Naht: {cost:.2f} Bildschritte Abweichung → Score {quality:.3f}, Empfehlung '{method}'")
 
     return AnalyzeResult(
         quality_score=quality,
@@ -692,6 +713,16 @@ def analyze_loop(
         recommended_seam_method=method,
         range_start_seconds=trim_start / max(fps, 1e-6),
         range_end_seconds=trim_end / max(fps, 1e-6),
+        seam_cost=cost,
+        candidates=[
+            (
+                (win_start + c.start) / max(fps, 1e-6),
+                (win_start + c.end) / max(fps, 1e-6),
+                c.score,
+            )
+            for c in candidates
+        ],
+        seam_thumbs=seam_thumbnails(frames, trim_start, trim_end),
     )
 
 
@@ -731,7 +762,8 @@ def run_loop(
         trim_end = win_start + local_e
         smart_used = True
 
-    quality = frame_similarity(frames[0], frames[-1])
+    cost, _ = range_seam_cost(path, trim_start, trim_end, total)
+    quality = cost_to_score(cost)
     quality_warning = quality < 0.55
     duration = len(frames) / max(fps, 1e-6)
     recommended = recommend_seam_seconds(quality, duration)
@@ -745,7 +777,7 @@ def run_loop(
     else:
         _log(log, f"Start/Ende-Aehnlichkeit: {quality:.3f} — Methode={method}")
 
-    seam_frames = 0 if method == "cut" else max(2, int(round(settings.seam_seconds * fps)))
+    seam_frames = 0 if method in ("cut", "pingpong") else max(2, int(round(settings.seam_seconds * fps)))
     _progress(progress, 60.0, "Naht…")
     looped = build_loop_frames(frames, seam_frames, method, log=log, progress=progress)
 

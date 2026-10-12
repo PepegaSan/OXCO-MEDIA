@@ -306,218 +306,197 @@
             <StackPanel Padding="16,12" Spacing="12">
                 <TextBlock Text="{x:Bind ViewModel.Description, Mode=OneWay}" TextWrapping="WrapWholeWords" />
                 <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.Status, Mode=OneWay}" />
-            <Border Style="{StaticResource ToolShellCard}">
+            <StackPanel Spacing="10">
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        Style="{StaticResource ToolShellSectionHeader}"
+                        loc:Loc.Key="bitrate.optionsHeader" />
+                    <Button
+                        Grid.Column="1"
+                        Padding="8,4"
+                        Click="ScenarioHelp_Click"
+                        loc:Loc.ToolTipKey="bitrate.scenarioHelpTooltip">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon FontSize="14" Glyph="&#xE946;" />
+                            <TextBlock VerticalAlignment="Center" loc:Loc.Key="bitrate.scenarioHelpButton" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
 
-                <StackPanel Spacing="8">
-
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                <!-- What to look for -->
+                <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" IsExpanded="True">
+                    <Expander.Header>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon FontSize="16" Glyph="&#xE721;" />
+                            <TextBlock loc:Loc.Key="bitrate.section.scan" />
+                        </StackPanel>
+                    </Expander.Header>
+                    <StackPanel Spacing="8">
+                        <ComboBox
+                            HorizontalAlignment="Stretch"
+                            loc:Loc.HeaderKey="bitrate.scanModeHeader"
+                            SelectedIndex="{x:Bind ViewModel.ScanModeIndex, Mode=TwoWay}">
+                            <ComboBoxItem loc:Loc.Key="bitrate.scanMode.bitrate" />
+                            <ComboBoxItem loc:Loc.Key="bitrate.scanMode.problemCodecs" />
+                            <ComboBoxItem loc:Loc.Key="bitrate.scanMode.bitrateOrCodecs" />
+                        </ComboBox>
                         <TextBlock
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            Style="{StaticResource ToolShellSectionHeader}"
-                            loc:Loc.Key="bitrate.optionsHeader" />
-                        <Button
-                            Grid.Column="1"
-                            MinWidth="36"
-                            Padding="8,4"
-                            Click="ScenarioHelp_Click"
-                            loc:Loc.ToolTipKey="bitrate.scenarioHelpTooltip">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <FontIcon FontSize="14" Glyph="&#xE946;" />
-                                <TextBlock VerticalAlignment="Center" loc:Loc.Key="bitrate.scenarioHelpButton" />
-                            </StackPanel>
-                        </Button>
-                    </Grid>
+                            Opacity="0.7"
+                            Style="{StaticResource CaptionTextBlockStyle}"
+                            loc:Loc.Key="bitrate.scanModeHint"
+                            TextWrapping="WrapWholeWords" />
+                        <CheckBox loc:Loc.Key="bitrate.scanSubfolders" IsChecked="{x:Bind ViewModel.Recursive, Mode=TwoWay}" />
+                        <CheckBox loc:Loc.Key="bitrate.onlyLower" IsChecked="{x:Bind ViewModel.OnlyLower, Mode=TwoWay}" />
+                    </StackPanel>
+                </Expander>
 
-                    <Grid ColumnSpacing="12" RowSpacing="8">
+                <!-- How to encode -->
+                <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" IsExpanded="True">
+                    <Expander.Header>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon FontSize="16" Glyph="&#xE714;" />
+                            <TextBlock loc:Loc.Key="bitrate.section.encode" />
+                        </StackPanel>
+                    </Expander.Header>
+                    <StackPanel Spacing="8">
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <ComboBox
+                                HorizontalAlignment="Stretch"
+                                loc:Loc.HeaderKey="audiocleaner.videoCodec"
+                                ItemsSource="{x:Bind ViewModel.CodecOptions, Mode=OneWay}"
+                                SelectedItem="{x:Bind ViewModel.SelectedCodec, Mode=TwoWay}" />
+                            <ComboBox
+                                Grid.Column="1"
+                                HorizontalAlignment="Stretch"
+                                loc:Loc.HeaderKey="oxco.audioHeader"
+                                SelectedIndex="{x:Bind ViewModel.AudioModeIndex, Mode=TwoWay}">
+                                <ComboBoxItem loc:Loc.Key="bitrate.audio.copy" />
+                                <ComboBoxItem loc:Loc.Key="bitrate.audio.aac" />
+                            </ComboBox>
+                        </Grid>
+                        <ComboBox
+                            HorizontalAlignment="Stretch"
+                            loc:Loc.HeaderKey="bitrate.rateControlHeader"
+                            loc:Loc.ToolTipKey="bitrate.rateControlHint"
+                            SelectedIndex="{x:Bind ViewModel.RateControlIndex, Mode=TwoWay}">
+                            <ComboBoxItem loc:Loc.Key="bitrate.rateControl.auto" />
+                            <ComboBoxItem loc:Loc.Key="bitrate.rateControl.bitrate" />
+                            <ComboBoxItem loc:Loc.Key="bitrate.rateControl.crf" />
+                        </ComboBox>
+                        <Grid
+                            ColumnSpacing="8"
+                            Visibility="{x:Bind ViewModel.ShowCrfControls, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="96" />
+                            </Grid.ColumnDefinitions>
+                            <ComboBox
+                                HorizontalAlignment="Stretch"
+                                loc:Loc.HeaderKey="bitrate.crfPresetHeader"
+                                loc:Loc.ToolTipKey="bitrate.crfHint"
+                                SelectedIndex="{x:Bind ViewModel.CrfPresetIndex, Mode=TwoWay}">
+                                <ComboBoxItem loc:Loc.Key="bitrate.crfPreset.quality" />
+                                <ComboBoxItem loc:Loc.Key="bitrate.crfPreset.balanced" />
+                                <ComboBoxItem loc:Loc.Key="bitrate.crfPreset.compact" />
+                                <ComboBoxItem loc:Loc.Key="bitrate.crfPreset.tiny" />
+                            </ComboBox>
+                            <NumberBox
+                                Grid.Column="1"
+                                loc:Loc.HeaderKey="bitrate.crfValueHeader"
+                                Minimum="0"
+                                Maximum="51"
+                                SpinButtonPlacementMode="Compact"
+                                Value="{x:Bind ViewModel.CrfValue, Mode=TwoWay}" />
+                        </Grid>
+                        <NumberBox
+                            loc:Loc.HeaderKey="common.targetFps"
+                            loc:Loc.ToolTipKey="common.targetFpsHint"
+                            Minimum="0"
+                            Maximum="240"
+                            SmallChange="1"
+                            LargeChange="5"
+                            SpinButtonPlacementMode="Compact"
+                            Value="{x:Bind ViewModel.TargetFps, Mode=TwoWay}" />
+                    </StackPanel>
+                </Expander>
 
-                        <Grid.ColumnDefinitions>
+                <!-- What happens with the files -->
+                <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" IsExpanded="True">
+                    <Expander.Header>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon FontSize="16" Glyph="&#xE8B7;" />
+                            <TextBlock loc:Loc.Key="bitrate.section.output" />
+                        </StackPanel>
+                    </Expander.Header>
+                    <StackPanel Spacing="8">
+                        <ComboBox
+                            HorizontalAlignment="Stretch"
+                            loc:Loc.HeaderKey="bitrate.postActionHeader"
+                            SelectedIndex="{x:Bind ViewModel.PostActionIndex, Mode=TwoWay}">
+                            <ComboBoxItem loc:Loc.Key="bitrate.postAction.keep" />
+                            <ComboBoxItem loc:Loc.Key="bitrate.postAction.backup" />
+                            <ComboBoxItem loc:Loc.Key="bitrate.postAction.delete" />
+                        </ComboBox>
+                        <TextBox loc:Loc.HeaderKey="common.suffix" Text="{x:Bind ViewModel.Suffix, Mode=TwoWay}" />
+                        <CheckBox loc:Loc.Key="bitrate.outputMp4" IsChecked="{x:Bind ViewModel.OutputMp4, Mode=TwoWay}" />
+                        <CheckBox
+                            loc:Loc.Key="bitrate.stripAfterSuccess"
+                            loc:Loc.ToolTipKey="bitrate.replaceOriginalHint"
+                            IsChecked="{x:Bind ViewModel.StripAutobitrateSuffix, Mode=TwoWay}" />
+                    </StackPanel>
+                </Expander>
 
-                            <ColumnDefinition Width="*" />
-
-                            <ColumnDefinition x:Name="OptionsRightColumn" Width="*" />
-
-                        </Grid.ColumnDefinitions>
-
-                        <StackPanel Grid.Column="0" Spacing="6">
-
-                            <CheckBox loc:Loc.Key="bitrate.scanSubfolders" IsChecked="{x:Bind ViewModel.Recursive, Mode=TwoWay}" />
-
-                            <CheckBox loc:Loc.Key="bitrate.onlyLower" IsChecked="{x:Bind ViewModel.OnlyLower, Mode=TwoWay}" />
-
-                            <CheckBox loc:Loc.Key="bitrate.outputMp4" IsChecked="{x:Bind ViewModel.OutputMp4, Mode=TwoWay}" />
-
-                            <CheckBox loc:Loc.Key="bitrate.stripAfterSuccess" IsChecked="{x:Bind ViewModel.StripAutobitrateSuffix, Mode=TwoWay}" />
-
-                            <TextBlock
-                                Margin="0,4,0,0"
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                FontWeight="SemiBold"
-                                loc:Loc.Key="bitrate.scanModeHeader" />
-
-                            <RadioButton
-                                GroupName="BitrateScanMode"
-                                IsChecked="{x:Bind ViewModel.ScanModeIsBitrate, Mode=TwoWay}"
-                                loc:Loc.Key="bitrate.scanMode.bitrate" />
-
-                            <RadioButton
-                                GroupName="BitrateScanMode"
-                                IsChecked="{x:Bind ViewModel.ScanModeIsProblemCodecs, Mode=TwoWay}"
-                                loc:Loc.Key="bitrate.scanMode.problemCodecs" />
-
-                            <RadioButton
-                                GroupName="BitrateScanMode"
-                                IsChecked="{x:Bind ViewModel.ScanModeIsBitrateOrCodecs, Mode=TwoWay}"
-                                loc:Loc.Key="bitrate.scanMode.bitrateOrCodecs" />
-
-                            <TextBlock
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                loc:Loc.Key="bitrate.scanModeHint"
-                                TextWrapping="WrapWholeWords" />
-
-                            <TextBlock
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                loc:Loc.Key="bitrate.replaceOriginalHint"
-                                TextWrapping="WrapWholeWords" />
-
-                            <TextBlock
-                                Margin="0,8,0,0"
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                FontWeight="SemiBold"
-                                loc:Loc.Key="bitrate.gamingHeader" />
-
+                <!-- Machine load, rarely changed -->
+                <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" IsExpanded="False">
+                    <Expander.Header>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon FontSize="16" Glyph="&#xE9D9;" />
+                            <TextBlock loc:Loc.Key="bitrate.gamingHeader" />
+                        </StackPanel>
+                    </Expander.Header>
+                    <StackPanel Spacing="8">
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
                             <NumberBox
                                 loc:Loc.HeaderKey="bitrate.parallelJobsHeader"
                                 Minimum="1"
                                 Maximum="8"
-                                SpinButtonPlacementMode="Inline"
+                                SpinButtonPlacementMode="Compact"
                                 Value="{x:Bind ViewModel.ParallelJobs, Mode=TwoWay}" />
-
                             <NumberBox
+                                Grid.Column="1"
                                 loc:Loc.HeaderKey="bitrate.ffmpegThreadsHeader"
                                 Minimum="0"
                                 Maximum="64"
-                                SpinButtonPlacementMode="Inline"
-                                Value="{x:Bind ViewModel.FfmpegThreads, Mode=TwoWay}" />
-
-                            <ComboBox
-                                loc:Loc.HeaderKey="bitrate.x264PresetHeader"
-                                ItemsSource="{x:Bind ViewModel.X264PresetOptions, Mode=OneWay}"
-                                SelectedItem="{x:Bind ViewModel.SelectedX264Preset, Mode=TwoWay}" />
-
-                            <CheckBox
-                                loc:Loc.Key="bitrate.lowPriority"
-                                IsChecked="{x:Bind ViewModel.LowPriority, Mode=TwoWay}" />
-
-                            <TextBlock
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                loc:Loc.Key="bitrate.gamingHint"
-                                TextWrapping="WrapWholeWords" />
-
-                        </StackPanel>
-
-                        <StackPanel x:Name="OptionsRight" Grid.Column="1" Spacing="8">
-
-                            <ComboBox loc:Loc.HeaderKey="audiocleaner.videoCodec" ItemsSource="{x:Bind ViewModel.CodecOptions, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedCodec, Mode=TwoWay}" />
-
-                            <NumberBox
-                                loc:Loc.HeaderKey="common.targetFps"
-                                Minimum="0"
-                                Maximum="240"
-                                SmallChange="1"
-                                LargeChange="5"
                                 SpinButtonPlacementMode="Compact"
-                                Value="{x:Bind ViewModel.TargetFps, Mode=TwoWay}" />
-                            <TextBlock
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                loc:Loc.Key="common.targetFpsHint"
-                                TextWrapping="WrapWholeWords" />
-
-                            <ComboBox loc:Loc.HeaderKey="oxco.audioHeader" ItemsSource="{x:Bind ViewModel.AudioModeOptions, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedAudioMode, Mode=TwoWay}" />
-
-                            <TextBlock
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                FontWeight="SemiBold"
-                                loc:Loc.Key="bitrate.rateControlHeader" />
-
-                            <RadioButton
-                                GroupName="BitrateRateControl"
-                                IsChecked="{x:Bind ViewModel.RateControlIsAuto, Mode=TwoWay}"
-                                loc:Loc.Key="bitrate.rateControl.auto" />
-
-                            <RadioButton
-                                GroupName="BitrateRateControl"
-                                IsChecked="{x:Bind ViewModel.RateControlIsBitrate, Mode=TwoWay}"
-                                loc:Loc.Key="bitrate.rateControl.bitrate" />
-
-                            <RadioButton
-                                GroupName="BitrateRateControl"
-                                IsChecked="{x:Bind ViewModel.RateControlIsCrf, Mode=TwoWay}"
-                                loc:Loc.Key="bitrate.rateControl.crf" />
-
-                            <TextBlock
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                loc:Loc.Key="bitrate.rateControlHint"
-                                TextWrapping="WrapWholeWords" />
-
-                            <StackPanel
-                                Spacing="6"
-                                Visibility="{x:Bind ViewModel.ShowCrfControls, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
-
-                                <TextBlock
-                                    Style="{StaticResource CaptionTextBlockStyle}"
-                                    FontWeight="SemiBold"
-                                    loc:Loc.Key="bitrate.crfPresetHeader" />
-
-                                <RadioButton
-                                    GroupName="BitrateCrfPreset"
-                                    IsChecked="{x:Bind ViewModel.CrfPresetIsQuality, Mode=TwoWay}"
-                                    loc:Loc.Key="bitrate.crfPreset.quality" />
-
-                                <RadioButton
-                                    GroupName="BitrateCrfPreset"
-                                    IsChecked="{x:Bind ViewModel.CrfPresetIsBalanced, Mode=TwoWay}"
-                                    loc:Loc.Key="bitrate.crfPreset.balanced" />
-
-                                <RadioButton
-                                    GroupName="BitrateCrfPreset"
-                                    IsChecked="{x:Bind ViewModel.CrfPresetIsCompact, Mode=TwoWay}"
-                                    loc:Loc.Key="bitrate.crfPreset.compact" />
-
-                                <RadioButton
-                                    GroupName="BitrateCrfPreset"
-                                    IsChecked="{x:Bind ViewModel.CrfPresetIsTiny, Mode=TwoWay}"
-                                    loc:Loc.Key="bitrate.crfPreset.tiny" />
-
-                                <NumberBox
-                                    loc:Loc.HeaderKey="bitrate.crfValueHeader"
-                                    Minimum="0"
-                                    Maximum="51"
-                                    SpinButtonPlacementMode="Inline"
-                                    Value="{x:Bind ViewModel.CrfValue, Mode=TwoWay}" />
-
-                                <TextBlock
-                                    Style="{StaticResource CaptionTextBlockStyle}"
-                                    loc:Loc.Key="bitrate.crfHint"
-                                    TextWrapping="WrapWholeWords" />
-
-                            </StackPanel>
-
-                            <ComboBox Header="Nach Erfolg" ItemsSource="{x:Bind ViewModel.PostActionOptions, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedPostAction, Mode=TwoWay}" />
-
-                            <TextBox loc:Loc.HeaderKey="common.suffix" Text="{x:Bind ViewModel.Suffix, Mode=TwoWay}" />
-
-                        </StackPanel>
-
-                    </Grid>
-
-                </StackPanel>
-
-            </Border>
+                                Value="{x:Bind ViewModel.FfmpegThreads, Mode=TwoWay}" />
+                        </Grid>
+                        <ComboBox
+                            HorizontalAlignment="Stretch"
+                            loc:Loc.HeaderKey="bitrate.x264PresetHeader"
+                            ItemsSource="{x:Bind ViewModel.X264PresetOptions, Mode=OneWay}"
+                            SelectedItem="{x:Bind ViewModel.SelectedX264Preset, Mode=TwoWay}" />
+                        <CheckBox loc:Loc.Key="bitrate.lowPriority" IsChecked="{x:Bind ViewModel.LowPriority, Mode=TwoWay}" />
+                        <TextBlock
+                            Opacity="0.7"
+                            Style="{StaticResource CaptionTextBlockStyle}"
+                            loc:Loc.Key="bitrate.gamingHint"
+                            TextWrapping="WrapWholeWords" />
+                    </StackPanel>
+                </Expander>
+            </StackPanel>
             </StackPanel>
         </controls:ToolSplitLayout.Settings>
     </controls:ToolSplitLayout>

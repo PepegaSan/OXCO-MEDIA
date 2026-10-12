@@ -14,7 +14,7 @@ public partial class MarkerUpdaterViewModel
 
     public IAsyncRelayCommand PrimaryActionCommand => SaveTagsCommand;
 
-    public bool IsPrimaryActionEnabled => !IsBusy;
+    public bool IsPrimaryActionEnabled => !IsBusy && IsSceneDirty;
 
     public string StatusText => Status;
 
@@ -61,6 +61,10 @@ public partial class MarkerUpdaterViewModel
         OnPropertyChanged(nameof(OpenFullGuiLabel));
         OnPropertyChanged(nameof(StatusText));
         RefreshQuickPresetUi();
+        NotifyResults();
+        NotifyMarkerEditor();
+        OnPropertyChanged(nameof(MarkerCountText));
+        OnPropertyChanged(nameof(LoadedSceneCaption));
     }
 
 }

@@ -22,6 +22,7 @@ public sealed partial class TextToVideoPanel : UserControl
         BuildColorPalette();
         RebuildStylePresets();
         InitFontCombo();
+        SyncAlignButtons();
         ViewModel.PropertyChanged += ViewModel_OnPropertyChanged;
         AppServices.Localization.LanguageChanged += OnLanguageChanged;
         Unloaded += (_, _) =>
@@ -46,6 +47,31 @@ public sealed partial class TextToVideoPanel : UserControl
         {
             SyncFontComboSelection();
         }
+
+        if (e.PropertyName is nameof(TextToVideoViewModel.EditorAlignIndex)
+            or nameof(TextToVideoViewModel.EditorSegment))
+        {
+            SyncAlignButtons();
+        }
+    }
+
+    private void AlignButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: string tag } && int.TryParse(tag, out var index))
+        {
+            ViewModel.EditorAlignIndex = index;
+        }
+
+        // Toggle buttons act as a radio group — re-sync even when the value did not change.
+        SyncAlignButtons();
+    }
+
+    private void SyncAlignButtons()
+    {
+        var index = ViewModel.EditorAlignIndex;
+        AlignLeftButton.IsChecked = index == 0;
+        AlignCenterButton.IsChecked = index == 1;
+        AlignRightButton.IsChecked = index == 2;
     }
 
     private void SyncFontComboSelection()
@@ -100,6 +126,7 @@ public sealed partial class TextToVideoPanel : UserControl
 
     private void RebuildStylePresets()
     {
+        TextColorField.Header = Loc.T("texttovideo.color");
         StylePresetPanel.Children.Clear();
         foreach (var preset in TextOverlayStylePresets.All)
         {
@@ -107,7 +134,7 @@ public sealed partial class TextToVideoPanel : UserControl
             {
                 Content = preset.Label,
                 Tag = preset.Id,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Width = 160,
                 HorizontalContentAlignment = HorizontalAlignment.Center,
             };
             btn.Click += StylePresetButton_OnClick;

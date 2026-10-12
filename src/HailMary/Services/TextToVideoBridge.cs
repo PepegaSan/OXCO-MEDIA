@@ -27,6 +27,33 @@ public sealed class TextToVideoPreviewResult
     public double DurationSec { get; init; }
 }
 
+/// <summary>Rendered text overlay (same PNG the FFmpeg export burns in).</summary>
+public sealed class TextOverlaySprite
+{
+    public string Key { get; init; } = string.Empty;
+
+    public byte[] PngBytes { get; init; } = [];
+
+    public int Width { get; init; }
+
+    public int Height { get; init; }
+
+    /// <summary>Top-left of the content box inside the sprite (shadow/outline may extend beyond).</summary>
+    public int OriginX { get; init; }
+
+    public int OriginY { get; init; }
+
+    public int ContentWidth { get; init; }
+
+    public int ContentHeight { get; init; }
+
+    public string Warning { get; init; } = string.Empty;
+
+    public string Error { get; init; } = string.Empty;
+
+    public bool IsValid => PngBytes.Length > 0 && ContentWidth > 0 && ContentHeight > 0;
+}
+
 public static class TextToVideoBridge
 {
     public static async Task<TextToVideoProbeResult?> ProbeAsync(string videoPath, CancellationToken cancellationToken = default)
@@ -109,6 +136,92 @@ public static class TextToVideoBridge
         }
     }
 
+    public static async Task<IReadOnlyList<TextOverlaySprite>?> RenderSpritesAsync(
+        IReadOnlyList<(string Key, TextOverlaySegment Segment)> items,
+        int videoWidth,
+        int videoHeight,
+        CancellationToken cancellationToken = default)
+    {
+        var configPath = WriteTempConfig(new
+        {
+            items = items.Select(i => new { key = i.Key, segment = i.Segment.ToJsonObject() }).ToList(),
+            video_width = videoWidth,
+            video_height = videoHeight,
+        });
+        var outPath = Path.Combine(Path.GetTempPath(), $"hm_ttv_spr_{Guid.NewGuid():N}.json");
+        try
+        {
+            var result = await AppServices.JobRunner.RunBridgeAsync(
+                "text_to_video_sprites_job.py",
+                ["--config-json", configPath, "--output-json", outPath],
+                cancellationToken,
+                quiet: true);
+            if (cancellationToken.IsCancellationRequested || !result.Success || !File.Exists(outPath))
+            {
+                return null;
+            }
+
+            using var doc = JsonDocument.Parse(await File.ReadAllTextAsync(outPath, cancellationToken));
+            var list = new List<TextOverlaySprite>();
+            foreach (var el in doc.RootElement.GetProperty("sprites").EnumerateArray())
+            {
+                string Str(string name) => el.TryGetProperty(name, out var v) ? v.GetString() ?? "" : "";
+                int Int(string name) => el.TryGetProperty(name, out var v) ? v.GetInt32() : 0;
+                var b64 = Str("image_base64");
+                list.Add(new TextOverlaySprite
+                {
+                    Key = Str("key"),
+                    PngBytes = string.IsNullOrEmpty(b64) ? [] : Convert.FromBase64String(b64),
+                    Width = Int("width"),
+                    Height = Int("height"),
+                    OriginX = Int("origin_x"),
+                    OriginY = Int("origin_y"),
+                    ContentWidth = Int("content_width"),
+                    ContentHeight = Int("content_height"),
+                    Warning = Str("warning"),
+                    Error = Str("error"),
+                });
+            }
+
+            return list;
+        }
+        catch (OperationCanceledException)
+        {
+            return null;
+        }
+        finally
+        {
+            TryDelete(configPath);
+            TryDelete(outPath);
+        }
+    }
+
+    /// <summary>
+    /// Segments as they will be exported: the editor draft replaces the segment being edited,
+    /// or is appended when it is a new, not yet committed segment with text.
+    /// SegmentIndex is -1 for the appended draft.
+    /// </summary>
+    public static List<(TextOverlaySegment Segment, int SegmentIndex)> EffectiveSegments(
+        IEnumerable<TextOverlaySegment> segments,
+        TextOverlaySegment? draft,
+        int? selectedIndex)
+    {
+        var list = segments.Select((s, i) => (s, i)).ToList();
+        if (draft is not null && !string.IsNullOrWhiteSpace(draft.Text.Trim()))
+        {
+            if (selectedIndex is >= 0 && selectedIndex < list.Count)
+            {
+                list[selectedIndex.Value] = (draft, selectedIndex.Value);
+            }
+            else
+            {
+                list.Add((draft, -1));
+            }
+        }
+
+        return list;
+    }
+
     public static async Task<JobResult> ExportAsync(object config, CancellationToken cancellationToken = default)
     {
         var configPath = WriteTempConfig(config);
@@ -155,39 +268,14 @@ public static class TextToVideoBridge
         resolve_exe = settings.ResolveExe,
     };
 
-    public static object BuildPreviewConfig(
-        string videoPath,
-        double timeSec,
-        IEnumerable<TextOverlaySegment> segments,
-        TextOverlaySegment? draft,
-        string srtPath,
-        int? selectedIndex)
+    public static object BuildPreviewConfig(string videoPath, double timeSec, string srtPath) => new
     {
-        var segList = segments.Select(s => s.ToJsonObject()).ToList();
-        object? draftObj = null;
-        if (draft is not null && !string.IsNullOrWhiteSpace(draft.Text.Trim()))
-        {
-            if (selectedIndex is >= 0 && selectedIndex < segList.Count)
-            {
-                segList[selectedIndex.Value] = draft.ToJsonObject();
-            }
-            else
-            {
-                draftObj = draft.ToJsonObject();
-            }
-        }
-
-        return new
-        {
-            video_path = videoPath,
-            time_sec = timeSec,
-            overlay_segments = segList,
-            draft_segment = draftObj,
-            srt_path = srtPath,
-            width_max = 1600,
-            height_max = 900,
-        };
-    }
+        video_path = videoPath,
+        time_sec = timeSec,
+        srt_path = srtPath,
+        width_max = 1600,
+        height_max = 900,
+    };
 
     public static object BuildExportConfig(
         string videoPath,
@@ -197,26 +285,15 @@ public static class TextToVideoBridge
         int? selectedIndex,
         TextToVideoSettings settings)
     {
-        var segList = segments.Select(s => s.ToJsonObject()).ToList();
-        object? draftObj = null;
-        if (draft is not null && !string.IsNullOrWhiteSpace(draft.Text.Trim()))
-        {
-            if (selectedIndex is >= 0 && selectedIndex < segList.Count)
-            {
-                segList[selectedIndex.Value] = draft.ToJsonObject();
-            }
-            else
-            {
-                draftObj = draft.ToJsonObject();
-            }
-        }
+        var segList = EffectiveSegments(segments, draft, selectedIndex)
+            .Select(e => e.Segment.ToJsonObject())
+            .ToList();
 
         return new
         {
             video_path = videoPath,
             output_path = outputPath,
             overlay_segments = segList,
-            draft_segment = draftObj,
             srt_path = settings.SrtPath,
             export_container = settings.ExportContainer,
             codec = FfmpegEncoderCatalog.IdFor(FfmpegEncoderCatalog.TextToVideo, settings.Codec),

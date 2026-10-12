@@ -12,6 +12,8 @@ public abstract partial class ToolIoViewModel : ObservableObject
 {
     private readonly string _toolId;
     private bool _loading;
+    // True while InputPath mirrors a list set in code (pickers, drops, folders) — not user typing.
+    private bool _syncingInputList;
 
     protected ToolIoViewModel(string toolId)
     {
@@ -87,7 +89,15 @@ public abstract partial class ToolIoViewModel : ObservableObject
             .ToList();
 
         AppServices.Session.UpdateToolIo(_toolId, state => state.InputPaths = list);
-        InputPath = list.FirstOrDefault() ?? string.Empty;
+        _syncingInputList = true;
+        try
+        {
+            InputPath = list.FirstOrDefault() ?? string.Empty;
+        }
+        finally
+        {
+            _syncingInputList = false;
+        }
     }
 
     protected void AddToolInputPath(string path)
@@ -112,11 +122,13 @@ public abstract partial class ToolIoViewModel : ObservableObject
         AppServices.Session.UpdateToolIo(_toolId, state =>
         {
             state.InputPath = string.IsNullOrWhiteSpace(value) ? null : Path.GetFullPath(value);
-            if (!string.IsNullOrWhiteSpace(state.InputPath)
-                && !state.InputPaths.Contains(state.InputPath, StringComparer.OrdinalIgnoreCase))
+            if (_syncingInputList)
             {
-                state.InputPaths.Insert(0, state.InputPath);
+                return;
             }
+
+            // A typed path replaces the input — older files must not linger in the batch.
+            state.InputPaths = string.IsNullOrWhiteSpace(state.InputPath) ? [] : [state.InputPath];
         });
     }
 

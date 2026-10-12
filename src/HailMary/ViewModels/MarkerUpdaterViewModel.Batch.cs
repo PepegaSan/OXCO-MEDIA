@@ -32,7 +32,11 @@ public partial class MarkerUpdaterViewModel
 
     public bool BatchSearchByPath => !BatchSearchByTag;
 
-    partial void OnBatchSearchByTagChanged(bool value) => OnPropertyChanged(nameof(BatchSearchByPath));
+    partial void OnBatchSearchByTagChanged(bool value)
+    {
+        OnPropertyChanged(nameof(BatchSearchByPath));
+        OnPropertyChanged(nameof(BatchSearchModeIndex));
+    }
 
     [ObservableProperty] private string _batchAddTagName = string.Empty;
 
@@ -67,6 +71,7 @@ public partial class MarkerUpdaterViewModel
         IsBusy = true;
         Status = Loc.T("markerupdater.batchSearchRunning");
         BatchMatches.Clear();
+        BatchClearSelection();
         BatchResultsSummary = Loc.F("markerupdater.batchResults", 0);
         try
         {
@@ -132,6 +137,12 @@ public partial class MarkerUpdaterViewModel
             Status = BatchScopeSelectedOnly
                 ? Loc.T("markerupdater.batchNoRowsSelected")
                 : Loc.T("stash.noResults");
+            return;
+        }
+
+        if (ConfirmAsync is not null
+            && !await ConfirmAsync(Loc.T("markerupdater.batchConfirmTitle"), Loc.F("markerupdater.batchAddConfirm", tagName, targets.Count)))
+        {
             return;
         }
 
@@ -310,39 +321,56 @@ public partial class MarkerUpdaterViewModel
 
     internal List<MarkerBatchSceneRowViewModel> GetBatchTargetScenes()
     {
-        if (BatchScopeSelectedOnly && _batchSelectedMatches.Count > 0)
-        {
-            return _batchSelectedMatches;
-        }
-
-        return BatchMatches.ToList();
+        return BatchScopeSelectedOnly ? _batchSelectedMatches.ToList() : BatchMatches.ToList();
     }
 
     private readonly List<MarkerBatchSceneRowViewModel> _batchSelectedMatches = [];
 
-    internal void SetBatchSelection(IEnumerable<MarkerBatchSceneRowViewModel> selected)
+    private bool _batchCheckBulk;
+
+    /// <summary>A row's checkbox changed — rebuild the selection from the check states.</summary>
+    internal void OnBatchRowChecked()
     {
+        if (_batchCheckBulk)
+        {
+            return;
+        }
+
         _batchSelectedMatches.Clear();
-        _batchSelectedMatches.AddRange(selected);
+        _batchSelectedMatches.AddRange(BatchMatches.Where(m => m.IsChecked));
+        BatchSelectionCount = _batchSelectedMatches.Count;
+        RefreshBatchRemovableTags();
     }
 
-    internal void BatchSelectAllRows()
+    private void SetAllBatchChecks(bool value)
     {
-        _batchSelectedMatches.Clear();
-        _batchSelectedMatches.AddRange(BatchMatches);
+        _batchCheckBulk = true;
+        try
+        {
+            foreach (var row in BatchMatches)
+            {
+                row.IsChecked = value;
+            }
+        }
+        finally
+        {
+            _batchCheckBulk = false;
+        }
+
+        OnBatchRowChecked();
     }
 
-    internal void BatchClearSelection()
-    {
-        _batchSelectedMatches.Clear();
-    }
+    internal void BatchSelectAllRows() => SetAllBatchChecks(true);
 
-    private static MarkerBatchSceneRowViewModel ToBatchRow(StashBatchSceneItem scene) => new()
+    internal void BatchClearSelection() => SetAllBatchChecks(false);
+
+    private MarkerBatchSceneRowViewModel ToBatchRow(StashBatchSceneItem scene) => new()
     {
         SceneId = scene.SceneId,
         Title = scene.Title,
         Path = scene.Path,
         Tags = scene.Tags,
+        Owner = this,
     };
 
     private static string? ResolveBatchTagInput(string? text)

@@ -59,6 +59,9 @@ def build_settings(cfg: dict) -> OverlaySettings:
         overlay_audio=bool(cfg.get("overlay_audio", False)),
         ffmpeg_encoder=str(cfg.get("ffmpeg_encoder") or "cpu"),
         target_fps=number("target_fps", 0.0),
+        opacity=number("opacity", 100.0),
+        fade_seconds=number("fade_seconds", 0.0),
+        loop_overlay=bool(cfg.get("loop_overlay", False)),
     )
 
 

@@ -11,7 +11,7 @@ BRIDGE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(BRIDGE_DIR))
 sys.path.insert(0, str(BRIDGE_DIR / "vendor" / "scene_cutter"))
 
-from bridge_io import emit  # noqa: E402
+from bridge_io import emit, emit_progress  # noqa: E402
 from ffmpeg_export import export_scenes  # noqa: E402
 
 
@@ -67,6 +67,7 @@ def main() -> int:
             safe_output=args.safe_output,
             replace_original=bool(args.replace_original),
             target_fps=args.target_fps,
+            progress=emit_progress,
         )
     except Exception as exc:
         emit(f"ERROR: {exc}")

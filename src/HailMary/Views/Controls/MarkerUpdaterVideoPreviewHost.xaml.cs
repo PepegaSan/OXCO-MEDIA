@@ -1,4 +1,6 @@
+using HailMary.Models;
 using HailMary.Services;
+using HailMary.Views.Helpers;
 using HailMary.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -49,6 +51,7 @@ public sealed partial class MarkerUpdaterVideoPreviewHost : UserControl
 
         IsTabStop = true;
         PointerPressed += (_, _) => Focus(FocusState.Programmatic);
+        MediaTransport.FocusOnPointer(this, VideoSurface);
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
     }
@@ -261,23 +264,68 @@ public sealed partial class MarkerUpdaterVideoPreviewHost : UserControl
         Player.PlaybackSession.PlaybackRate = Math.Clamp(ViewModel.PlaybackSpeed, 0.1, 4);
     }
 
-    private void BtnPlay_Click(object sender, RoutedEventArgs e)
+    private void BtnPlayPause_Click(object sender, RoutedEventArgs e) => TogglePlayback();
+
+    private void TogglePlayback()
     {
+        if (Player is null)
+        {
+            return;
+        }
+
+        if (Player.PlaybackSession.PlaybackState == MediaPlaybackState.Playing)
+        {
+            Player.Pause();
+            SetPlaying(false);
+            return;
+        }
+
         ApplyPlaybackSpeed();
-        Player?.Play();
-        _positionTimer.Start();
+        Player.Play();
+        SetPlaying(true);
     }
 
-    private void BtnPause_Click(object sender, RoutedEventArgs e)
+    private void SetPlaying(bool playing)
     {
-        Player?.Pause();
-        _positionTimer.Stop();
+        MediaTransport.ApplyPlayState(BtnPlayPause, PlayPauseIcon, playing);
+        if (playing)
+        {
+            _positionTimer.Start();
+        }
+        else
+        {
+            _positionTimer.Stop();
+        }
     }
 
-    private void BtnStop_Click(object sender, RoutedEventArgs e)
+    private void Step(double seconds) => SeekTo(GetCurrentSeconds() + seconds);
+
+    private void BtnBackCoarse_Click(object sender, RoutedEventArgs e) => Step(-ViewModel.CoarseStepSeconds);
+
+    private void BtnBackFine_Click(object sender, RoutedEventArgs e) => Step(-ViewModel.FineStepSeconds);
+
+    private void BtnForwardFine_Click(object sender, RoutedEventArgs e) => Step(ViewModel.FineStepSeconds);
+
+    private void BtnForwardCoarse_Click(object sender, RoutedEventArgs e) => Step(ViewModel.CoarseStepSeconds);
+
+    private async void BtnQuickPoint_Click(object sender, RoutedEventArgs e) =>
+        await ViewModel.QuickInstantActiveAsync(GetCurrentSeconds());
+
+    private void PresetChips_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        StopPlayback();
-        SeekTo(0);
+        if (PresetChips.SelectedItem is MarkerQuickPreset preset
+            && PresetChips.SelectedIndex != ViewModel.ActiveQuickPresetIndex)
+        {
+            ViewModel.SelectQuickPresetCommand.Execute(preset);
+        }
+    }
+
+    private void RemovePreset_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: MarkerQuickPreset preset })
+        {
+            ViewModel.RemoveQuickPresetCommand.Execute(preset);
+        }
     }
 
     private void BtnMarkIn_Click(object sender, RoutedEventArgs e) =>
@@ -301,6 +349,13 @@ public sealed partial class MarkerUpdaterVideoPreviewHost : UserControl
 
         var shift = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Shift)
             .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+
+        if (e.Key == VirtualKey.Space)
+        {
+            TogglePlayback();
+            e.Handled = true;
+            return;
+        }
 
         if (e.Key == VirtualKey.Left)
         {
@@ -378,7 +433,7 @@ public sealed partial class MarkerUpdaterVideoPreviewHost : UserControl
 
     private void StopPlayback()
     {
-        _positionTimer.Stop();
+        SetPlaying(false);
         if (Player is null)
         {
             return;
@@ -416,7 +471,7 @@ public sealed partial class MarkerUpdaterVideoPreviewHost : UserControl
 
         if (Player.PlaybackSession.PlaybackState != MediaPlaybackState.Playing)
         {
-            _positionTimer.Stop();
+            SetPlaying(false);
         }
     }
 }

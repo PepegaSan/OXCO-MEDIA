@@ -19,6 +19,11 @@ public sealed partial class MarkerAutocutOrderRowViewModel : ObservableObject
     public string Display =>
         $"{Marker.Source.MarkerTitle} @ {TimecodeHelper.FormatDisplayFromText(Marker.Source.StartSeconds)} | {Marker.ResolvedFilePath}";
 
+    public string Title => Marker.TitleText;
+
+    /// <summary>"0:12 – 0:30 · file.mp4" — the file name helps in compilation mode.</summary>
+    public string Detail => $"{Marker.TimeRangeText} · {Marker.FileName}";
+
     [ObservableProperty] private bool _showGroupHeader;
 
     [ObservableProperty] private string _groupHeader = string.Empty;
@@ -208,6 +213,8 @@ public partial class MarkerAutocutViewModel
         if (!_batchOrderUpdate)
         {
             RefreshExportOrderHeaders();
+            NotifyGroupOf(row);
+            UpdateSummaries();
         }
     }
 
@@ -326,6 +333,16 @@ public partial class MarkerAutocutViewModel
 
         OnPropertyChanged(nameof(IsPrimaryActionEnabled));
         RefreshExportOrderHeaders();
+        NotifyAllGroups();
+        UpdateSummaries();
+    }
+
+    internal void NotifyAllGroups()
+    {
+        foreach (var group in FileGroups)
+        {
+            group.NotifySelection();
+        }
     }
 
     // In per_file mode each source video becomes its own export, so the order pane
@@ -360,10 +377,17 @@ public partial class MarkerAutocutViewModel
                 entry.GroupHeader = string.Empty;
             }
         }
+
+        RefreshStoryboard();
     }
 
     partial void OnExportModeChanged(string value)
     {
+        OnPropertyChanged(nameof(ModeIndex));
+        OnPropertyChanged(nameof(IsPerFileExportMode));
+        OnPropertyChanged(nameof(IsCompilationMode));
+        OnPropertyChanged(nameof(ShowFitOption));
+        UpdateSummaries();
         if (IsPerFileMode())
         {
             NormalizeExportOrderForPerFile();
@@ -377,6 +401,7 @@ public partial class MarkerAutocutViewModel
     partial void OnPathSortModeChanged(MarkerPathSortMode value)
     {
         OnPropertyChanged(nameof(PathSortLabel));
+        OnPropertyChanged(nameof(SortIndex));
         ApplyMarkerSort();
         RebuildDisplayItems();
         RebuildExportOrderFromSelection();
@@ -451,6 +476,8 @@ public partial class MarkerAutocutViewModel
 
         SetSelectedOrderRows([]);
         RefreshExportOrderHeaders();
+        NotifyAllGroups();
+        UpdateSummaries();
     }
 
     private void MoveSelectedOrderBlock(int direction)

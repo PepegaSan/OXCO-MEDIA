@@ -266,6 +266,7 @@ public partial class DavinciBatchRenderViewModel : ObservableObject, IToolShellH
         PickVideosCommand.NotifyCanExecuteChanged();
         PickFolderCommand.NotifyCanExecuteChanged();
         RemoveSelectedCommand.NotifyCanExecuteChanged();
+        RemoveDoneCommand.NotifyCanExecuteChanged();
         ClearQueueCommand.NotifyCanExecuteChanged();
     }
 
@@ -321,6 +322,32 @@ public partial class DavinciBatchRenderViewModel : ObservableObject, IToolShellH
         _queue.RemoveAt(_selectedIndex);
         _selectedIndex = -1;
         RefreshQueueRows();
+    }
+
+    /// <summary>Drop finished videos so a re-run only retries what failed or never ran.</summary>
+    [RelayCommand(CanExecute = nameof(CanEditQueue))]
+    private void RemoveDone()
+    {
+        var done = QueueRows.Where(r => r.StatusCode == "done").Select(r => r.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (done.Count == 0)
+        {
+            return;
+        }
+
+        // Keep the status of the remaining rows (failed stays visible).
+        var keep = QueueRows.Where(r => !done.Contains(r.Path)).ToList();
+        _queue.RemoveAll(done.Contains);
+        _selectedIndex = -1;
+        RefreshQueueRows();
+        foreach (var old in keep)
+        {
+            if (_rowsByPath.TryGetValue(System.IO.Path.GetFullPath(old.Path), out var row))
+            {
+                row.ApplyStatusCode(old.StatusCode);
+            }
+        }
+
+        Status = Loc.F("davincibatch.queueCount", _queue.Count);
     }
 
     [RelayCommand(CanExecute = nameof(CanEditQueue))]

@@ -27,6 +27,7 @@ public static class HybridPanelFactory
         "dl_sort" => With(new DlSortViewModel(tool), tool, groupId, preview: VideoPreviewKind.None, vm => new DlSortPanel(vm)),
         "autotagger" => With(new AutotaggerViewModel(tool), tool, groupId, preview: VideoPreviewKind.None, vm => new AutotaggerPanel(vm)),
         "stash_pathfinder" => With(new StashPathfinderViewModel(tool), tool, groupId, preview: VideoPreviewKind.None, vm => new StashPathfinderPanel(vm)),
+        "filename_cleaner" => With(new FilenameCleanerViewModel(tool), tool, groupId, preview: VideoPreviewKind.None, vm => new FilenameCleanerPanel(vm)),
         "stash_cutter" => With(new StashCutterViewModel(tool), tool, groupId, VideoPreviewKind.None, vm => new StashCutterPanel(vm)),
         "marker_updater" => With(new MarkerUpdaterViewModel(tool), tool, groupId, VideoPreviewKind.None, vm => new MarkerUpdaterPanel(vm)),
         "marker_autocut" => With(new MarkerAutocutViewModel(tool), tool, groupId, VideoPreviewKind.None, vm => new MarkerAutocutPanel(vm)),

@@ -41,6 +41,7 @@ public partial class MarkerAutocutViewModel : ObservableObject, IToolShellHost, 
         InclusiveEnd = _settings.InclusiveEnd;
         DoRender = _settings.DoRender;
         DefaultFps = _settings.DefaultFps;
+        LoadEngineSettings(_settings);
         ApplyCentralStashSettings();
         StashConnectionSync.SubscribeToCentralChanges(ApplyCentralStashSettings);
         StashConnectionSync.SubscribeToGlobalConnect(OnGlobalStashConnected);
@@ -118,6 +119,7 @@ public partial class MarkerAutocutViewModel : ObservableObject, IToolShellHost, 
             DoRender = DoRender,
             DefaultFps = DefaultFps,
         };
+        StoreEngineSettings(_settings);
         MarkerAutocutConfigReader.Save(_settings);
         StashConnectionSync.PushToolToCentral(Endpoint, ApiKey, CurrentPathMap());
         _client.Configure(Endpoint, ApiKey);
@@ -160,6 +162,9 @@ public partial class MarkerAutocutViewModel : ObservableObject, IToolShellHost, 
         IsBusy = true;
         Status = Loc.T("markerautocut.loadingMarkers");
         Markers.Clear();
+        // A failed reload must not leave groups of the previous result on screen.
+        FileGroups.Clear();
+        ExportOrder.Clear();
         try
         {
             await StashConnectionHelper.EnsureReachableAsync(_client, ConnectionInfo, v => ConnectionInfo = v);
@@ -186,6 +191,7 @@ public partial class MarkerAutocutViewModel : ObservableObject, IToolShellHost, 
             Status = Markers.Count == 0
                 ? Loc.T("markerautocut.noMarkers")
                 : Loc.F("markerautocut.markersLoaded", Markers.Count);
+            OnPropertyChanged(nameof(HasMarkers));
         }
         catch (Exception ex)
         {
@@ -199,25 +205,28 @@ public partial class MarkerAutocutViewModel : ObservableObject, IToolShellHost, 
     }
 
     [RelayCommand]
-    private void SelectAllMarkers()
+    private void SelectAllMarkers() => SetAllSelected(true);
+
+    [RelayCommand]
+    private void ClearMarkerSelection() => SetAllSelected(false);
+
+    /// <summary>Bulk change without per-marker list rebuilds (thousands of markers stay fast).</summary>
+    private void SetAllSelected(bool selected)
     {
-        foreach (var row in Markers)
+        _batchOrderUpdate = true;
+        try
         {
-            row.IsSelected = true;
+            foreach (var row in Markers)
+            {
+                row.IsSelected = selected;
+            }
+        }
+        finally
+        {
+            _batchOrderUpdate = false;
         }
 
         RebuildExportOrderFromSelection();
-    }
-
-    [RelayCommand]
-    private void ClearMarkerSelection()
-    {
-        foreach (var row in Markers)
-        {
-            row.IsSelected = false;
-        }
-
-        ExportOrder.Clear();
     }
 
     private static MarkerPathSortMode ParsePathSortMode(string? raw) =>
@@ -263,13 +272,30 @@ public partial class MarkerAutocutViewModel : ObservableObject, IToolShellHost, 
 
         PersistSettings();
         IsBusy = true;
-        Status = Loc.T("markerautocut.exportRunning");
+        Status = Loc.T(IsFfmpegEngine ? "markerautocut.exportRunningFfmpeg" : "markerautocut.exportRunning");
         try
         {
             var map = CurrentPathMap();
             var configPath = Path.Combine(Path.GetTempPath(), $"hailmary_marker_autocut_{Guid.NewGuid():N}.json");
+            var options = new Dictionary<string, object?>
+            {
+                ["min_segment_seconds"] = MinSegmentSeconds,
+                ["inclusive_end"] = InclusiveEnd,
+                ["default_fps"] = DefaultFps,
+                ["do_render"] = DoRender,
+                ["output_dir"] = OutputDir,
+                ["output_name_prefix"] = "StashMarker",
+                ["render_preset"] = string.IsNullOrWhiteSpace(RenderPreset) ? null : RenderPreset,
+                ["path_docker_prefix"] = map.PathPrefixRemote,
+                ["path_windows_root"] = map.PathPrefixLocal,
+                ["backup_path_prefix"] = map.PathPrefixBackup,
+                ["use_backup"] = map.UseBackup,
+                ["media_root"] = string.IsNullOrWhiteSpace(MediaRoot) ? null : MediaRoot,
+            };
+            AddEngineOptions(options);
             var payload = new
             {
+                engine = ExportEngine,
                 mode = ExportMode,
                 rows = ordered.Select(r => new Dictionary<string, string>
                 {
@@ -285,21 +311,7 @@ public partial class MarkerAutocutViewModel : ObservableObject, IToolShellHost, 
                     ["file_path"] = MapFilePath(r.FilePath),
                     ["file_frame_rate"] = r.FileFrameRate,
                 }).ToList(),
-                options = new Dictionary<string, object?>
-                {
-                    ["min_segment_seconds"] = MinSegmentSeconds,
-                    ["inclusive_end"] = InclusiveEnd,
-                    ["default_fps"] = DefaultFps,
-                    ["do_render"] = DoRender,
-                    ["output_dir"] = OutputDir,
-                    ["output_name_prefix"] = "StashMarker",
-                    ["render_preset"] = string.IsNullOrWhiteSpace(RenderPreset) ? null : RenderPreset,
-                    ["path_docker_prefix"] = map.PathPrefixRemote,
-                    ["path_windows_root"] = map.PathPrefixLocal,
-                    ["backup_path_prefix"] = map.PathPrefixBackup,
-                    ["use_backup"] = map.UseBackup,
-                    ["media_root"] = string.IsNullOrWhiteSpace(MediaRoot) ? null : MediaRoot,
-                },
+                options,
             };
 
             await File.WriteAllTextAsync(configPath, JsonSerializer.Serialize(payload));
@@ -316,7 +328,9 @@ public partial class MarkerAutocutViewModel : ObservableObject, IToolShellHost, 
                 // ignore
             }
 
-            Status = result.Success ? result.Message : result.Message;
+            Status = result.Success && missingEnd > 0
+                ? $"{result.Message} · {Loc.F("markerautocut.missingEndWarning", missingEnd, MinSegmentSeconds)}"
+                : result.Message;
         }
         catch (Exception ex)
         {

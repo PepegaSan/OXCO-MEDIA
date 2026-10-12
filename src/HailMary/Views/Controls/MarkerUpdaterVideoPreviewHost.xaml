@@ -6,12 +6,14 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    HorizontalAlignment="Stretch"
-    VerticalAlignment="Top"
     xmlns:conv="using:HailMary.Converters"
     xmlns:controls="using:HailMary.Views.Controls"
+    xmlns:models="using:HailMary.Models"
+    xmlns:loc="using:HailMary.Services"
+    HorizontalAlignment="Stretch"
+    VerticalAlignment="Top"
     mc:Ignorable="d"
-    KeyDown="RootHost_KeyDown" xmlns:loc="using:HailMary.Services">
+    KeyDown="RootHost_KeyDown">
 
     <UserControl.Resources>
         <conv:SecondsDisplayConverter x:Key="SecondsDisplayConverter" />
@@ -21,7 +23,7 @@
         <controls:AspectFitVideoPresenter
             x:Name="VideoSurface"
             HorizontalAlignment="Stretch"
-            MaxPreviewHeight="420"
+            MaxPreviewHeight="460"
             MinPreviewHeight="180" />
 
         <controls:VideoRangeTimeline
@@ -31,7 +33,7 @@
             Peaks="{x:Bind ViewModel.WaveformPeaks, Mode=OneWay}"
             Spans="{x:Bind ViewModel.TimelineRanges, Mode=OneWay}" />
 
-        <StackPanel Spacing="6">
+        <StackPanel Spacing="2">
             <Slider
                 x:Name="TimelineSlider"
                 IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
@@ -43,80 +45,252 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" FontFamily="Consolas" Text="{x:Bind ViewModel.PositionDisplay, Mode=OneWay}" />
+                <TextBlock FontFamily="Consolas" Text="{x:Bind ViewModel.PositionDisplay, Mode=OneWay}" />
                 <TextBlock
                     Grid.Column="1"
                     HorizontalAlignment="Center"
+                    Opacity="0.75"
                     Style="{StaticResource CaptionTextBlockStyle}"
                     Text="{x:Bind ViewModel.MarkerMarks, Mode=OneWay}" />
-                <TextBlock
-                    Grid.Column="2"
-                    HorizontalAlignment="Right"
-                    FontFamily="Consolas"
-                    Text="{x:Bind ViewModel.DurationDisplay, Mode=OneWay}" />
+                <TextBlock Grid.Column="2" HorizontalAlignment="Right" FontFamily="Consolas" Text="{x:Bind ViewModel.DurationDisplay, Mode=OneWay}" />
             </Grid>
         </StackPanel>
 
-        <StackPanel Orientation="Horizontal" Spacing="6">
-            <Button Click="BtnPlay_Click" loc:Loc.Key="common.play" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Click="BtnPause_Click" loc:Loc.Key="common.pause" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Click="BtnStop_Click" loc:Loc.Key="common.stopButton" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Click="BtnMarkIn_Click" Content="In (I)" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Click="BtnMarkOut_Click" Content="Out (O)" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button
-                Click="BtnQuickIn_Click"
-                Content="Quick In (⇧I)"
-                IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
-                loc:Loc.ToolTipKey="markerupdater.quickInTooltip" />
-            <Button
-                Click="BtnQuickOut_Click"
-                Content="Quick Out (⇧O)"
-                IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
-                loc:Loc.ToolTipKey="markerupdater.quickOutTooltip" />
-        </StackPanel>
-
-        <Grid ColumnSpacing="8">
+        <!-- Transport + marker range -->
+        <Grid ColumnSpacing="6">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <ComboBox
-                Grid.Column="0"
-                loc:Loc.HeaderKey="markerupdater.fineHeader"
-                ItemsSource="{x:Bind ViewModel.FineStepChoices, Mode=OneWay}"
-                SelectedItem="{x:Bind ViewModel.FineStepSeconds, Mode=TwoWay}">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding Converter={StaticResource SecondsDisplayConverter}}" />
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
-            <ComboBox
-                Grid.Column="1"
-                loc:Loc.HeaderKey="markerupdater.coarseHeader"
-                ItemsSource="{x:Bind ViewModel.CoarseStepChoices, Mode=OneWay}"
-                SelectedItem="{x:Bind ViewModel.CoarseStepSeconds, Mode=TwoWay}">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding Converter={StaticResource SecondsDisplayConverter}}" />
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
-            <ComboBox
-                Grid.Column="2"
-                loc:Loc.HeaderKey="markerupdater.speedHeader"
-                ItemsSource="{x:Bind ViewModel.SpeedChoices, Mode=OneWay}"
-                SelectedItem="{x:Bind ViewModel.PlaybackSpeed, Mode=TwoWay}" />
+            <StackPanel Orientation="Horizontal" Spacing="4">
+                <Button Width="36" Height="34" Padding="0" Click="BtnBackCoarse_Click" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" loc:Loc.ToolTipKey="markerupdater.backCoarseTooltip">
+                    <FontIcon FontSize="13" Glyph="&#xEB9E;" />
+                </Button>
+                <Button Width="36" Height="34" Padding="0" Click="BtnBackFine_Click" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" loc:Loc.ToolTipKey="markerupdater.backFineTooltip">
+                    <FontIcon FontSize="13" Glyph="&#xED3C;" />
+                </Button>
+                <Button
+                    x:Name="BtnPlayPause"
+                    Width="44"
+                    Height="34"
+                    Padding="0"
+                    Click="BtnPlayPause_Click"
+                    IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
+                    Style="{StaticResource AccentButtonStyle}"
+                    loc:Loc.ToolTipKey="markerupdater.playPauseTooltip">
+                    <FontIcon x:Name="PlayPauseIcon" FontSize="14" Glyph="&#xE768;" />
+                </Button>
+                <Button Width="36" Height="34" Padding="0" Click="BtnForwardFine_Click" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" loc:Loc.ToolTipKey="markerupdater.forwardFineTooltip">
+                    <FontIcon FontSize="13" Glyph="&#xED3D;" />
+                </Button>
+                <Button Width="36" Height="34" Padding="0" Click="BtnForwardCoarse_Click" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" loc:Loc.ToolTipKey="markerupdater.forwardCoarseTooltip">
+                    <FontIcon FontSize="13" Glyph="&#xEB9D;" />
+                </Button>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" HorizontalAlignment="Center" Orientation="Horizontal" Spacing="4">
+                <Button Click="BtnMarkIn_Click" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" loc:Loc.ToolTipKey="markerupdater.markInTooltip">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon FontSize="12" Glyph="&#xE892;" />
+                        <TextBlock loc:Loc.Key="markerupdater.markIn" />
+                    </StackPanel>
+                </Button>
+                <Button Click="BtnMarkOut_Click" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" loc:Loc.ToolTipKey="markerupdater.markOutTooltip">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock loc:Loc.Key="markerupdater.markOut" />
+                        <FontIcon FontSize="12" Glyph="&#xE893;" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+                <ComboBox
+                    MinWidth="78"
+                    VerticalAlignment="Center"
+                    ItemsSource="{x:Bind ViewModel.SpeedChoices, Mode=OneWay}"
+                    SelectedItem="{x:Bind ViewModel.PlaybackSpeed, Mode=TwoWay}"
+                    loc:Loc.ToolTipKey="markerupdater.speedHeader">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock>
+                                <Run Text="{Binding}" /><Run Text="×" />
+                            </TextBlock>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Button Width="36" Height="34" Padding="0" loc:Loc.ToolTipKey="markerupdater.stepSettingsTooltip">
+                    <FontIcon FontSize="13" Glyph="&#xE713;" />
+                    <Button.Flyout>
+                        <Flyout Placement="BottomEdgeAlignedRight">
+                            <StackPanel Width="260" Spacing="10">
+                                <ComboBox
+                                    HorizontalAlignment="Stretch"
+                                    loc:Loc.HeaderKey="markerupdater.fineHeader"
+                                    ItemsSource="{x:Bind ViewModel.FineStepChoices, Mode=OneWay}"
+                                    SelectedItem="{x:Bind ViewModel.FineStepSeconds, Mode=TwoWay}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Converter={StaticResource SecondsDisplayConverter}}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <ComboBox
+                                    HorizontalAlignment="Stretch"
+                                    loc:Loc.HeaderKey="markerupdater.coarseHeader"
+                                    ItemsSource="{x:Bind ViewModel.CoarseStepChoices, Mode=OneWay}"
+                                    SelectedItem="{x:Bind ViewModel.CoarseStepSeconds, Mode=TwoWay}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Converter={StaticResource SecondsDisplayConverter}}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <TextBlock Opacity="0.75" Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="WrapWholeWords" loc:Loc.Key="markerupdater.shortcutsFull" />
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+            </StackPanel>
         </Grid>
 
-        <TextBlock
-            FontWeight="SemiBold"
-            Text="{x:Bind ViewModel.ActiveQuickPresetLabel, Mode=OneWay}" />
-        <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="markerupdater.keyboardHint" TextWrapping="WrapWholeWords" />
-        <TextBlock
-            Style="{StaticResource CaptionTextBlockStyle}"
-            Text="{x:Bind ViewModel.QuickMarkerHint, Mode=OneWay}"
-            TextWrapping="WrapWholeWords" />
+        <!-- Quick markers: one click / shortcut creates a marker with a preset -->
+        <Border
+            Padding="10,8"
+            Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+            CornerRadius="6">
+            <StackPanel Spacing="6">
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon FontSize="13" Glyph="&#xE945;" />
+                        <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" loc:Loc.Key="markerupdater.quickHeader" />
+                        <TextBlock VerticalAlignment="Center" Opacity="0.7" Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="markerupdater.quickPickHint" />
+                    </StackPanel>
+                    <Button Grid.Column="1" Padding="8,3" loc:Loc.Key="markerupdater.quickManage">
+                        <Button.Flyout>
+                            <Flyout Placement="BottomEdgeAlignedRight">
+                                <StackPanel Width="380" Spacing="10">
+                                    <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" loc:Loc.Key="markerupdater.quickManageHeader" />
+                                    <ItemsControl ItemsSource="{x:Bind ViewModel.QuickPresets, Mode=OneWay}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="models:MarkerQuickPreset">
+                                                <Grid Padding="0,2" ColumnSpacing="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="32" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock VerticalAlignment="Center" FontFamily="Consolas" Opacity="0.7" Text="{x:Bind SlotText}" />
+                                                    <StackPanel Grid.Column="1">
+                                                        <TextBlock Text="{x:Bind Label}" />
+                                                        <TextBlock Opacity="0.65" Style="{StaticResource CaptionTextBlockStyle}" TextTrimming="CharacterEllipsis">
+                                                            <Run Text="{x:Bind PrimaryTag}" /><Run Text="  ·  " /><Run Text="{x:Bind Title}" />
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                    <Button Grid.Column="2" Padding="6" Click="RemovePreset_Click" Tag="{x:Bind}" loc:Loc.ToolTipKey="markerupdater.quickPresetRemoveTooltip">
+                                                        <FontIcon FontSize="12" Glyph="&#xE74D;" />
+                                                    </Button>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <MenuFlyoutSeparator />
+                                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="markerupdater.quickPresetNew" />
+                                    <Grid ColumnSpacing="8" RowSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBox loc:Loc.HeaderKey="markerupdater.quickPresetLabel" Text="{x:Bind ViewModel.NewQuickPresetLabel, Mode=TwoWay}" />
+                                        <ComboBox
+                                            Grid.Column="1"
+                                            HorizontalAlignment="Stretch"
+                                            loc:Loc.HeaderKey="markerupdater.quickPresetSlot"
+                                            ItemsSource="{x:Bind ViewModel.QuickPresetSlotChoices, Mode=OneWay}"
+                                            SelectedItem="{x:Bind ViewModel.NewQuickPresetSlot, Mode=TwoWay}" />
+                                        <ComboBox
+                                            Grid.Row="1"
+                                            HorizontalAlignment="Stretch"
+                                            loc:Loc.HeaderKey="markerupdater.quickPresetTag"
+                                            IsEditable="True"
+                                            ItemsSource="{x:Bind ViewModel.AllTagNames, Mode=OneWay}"
+                                            Text="{x:Bind ViewModel.NewQuickPresetTag, Mode=TwoWay}" />
+                                        <TextBox Grid.Row="1" Grid.Column="1" loc:Loc.HeaderKey="markerupdater.quickPresetTitle" Text="{x:Bind ViewModel.NewQuickPresetTitle, Mode=TwoWay}" />
+                                        <Button
+                                            Grid.Row="2"
+                                            Grid.ColumnSpan="2"
+                                            HorizontalAlignment="Stretch"
+                                            Command="{x:Bind ViewModel.AddQuickPresetCommand}"
+                                            Style="{StaticResource AccentButtonStyle}"
+                                            loc:Loc.Key="markerupdater.quickPresetAdd" />
+                                    </Grid>
+                                </StackPanel>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                </Grid>
+
+                <ListView
+                    x:Name="PresetChips"
+                    ItemsSource="{x:Bind ViewModel.QuickPresets, Mode=OneWay}"
+                    ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                    ScrollViewer.HorizontalScrollMode="Enabled"
+                    ScrollViewer.VerticalScrollMode="Disabled"
+                    SelectedIndex="{x:Bind ViewModel.ActiveQuickPresetIndex, Mode=OneWay}"
+                    SelectionChanged="PresetChips_OnSelectionChanged"
+                    SelectionMode="Single">
+                    <ListView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="4" />
+                        </ItemsPanelTemplate>
+                    </ListView.ItemsPanel>
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="MinWidth" Value="0" />
+                            <Setter Property="MinHeight" Value="0" />
+                            <Setter Property="Padding" Value="10,4" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="models:MarkerQuickPreset">
+                            <StackPanel Orientation="Horizontal" Spacing="6" ToolTipService.ToolTip="{x:Bind PrimaryTag}">
+                                <TextBlock Text="{x:Bind Label}" />
+                                <TextBlock VerticalAlignment="Center" FontFamily="Consolas" FontSize="11" Opacity="0.6" Text="{x:Bind SlotText}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Button Click="BtnQuickPoint_Click" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" Style="{StaticResource AccentButtonStyle}" loc:Loc.ToolTipKey="markerupdater.quickPointTooltip">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon FontSize="12" Glyph="&#xE7C1;" />
+                            <TextBlock loc:Loc.Key="markerupdater.quickPoint" />
+                        </StackPanel>
+                    </Button>
+                    <Button Click="BtnQuickIn_Click" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" loc:Loc.ToolTipKey="markerupdater.quickInTooltip">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon FontSize="12" Glyph="&#xE892;" />
+                            <TextBlock loc:Loc.Key="markerupdater.quickRangeStart" />
+                        </StackPanel>
+                    </Button>
+                    <Button Click="BtnQuickOut_Click" IsEnabled="{x:Bind ViewModel.HasQuickRangeStart, Mode=OneWay}" loc:Loc.ToolTipKey="markerupdater.quickOutTooltip">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock loc:Loc.Key="markerupdater.quickRangeEnd" />
+                            <FontIcon FontSize="12" Glyph="&#xE893;" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </StackPanel>
+        </Border>
     </StackPanel>
 </UserControl>

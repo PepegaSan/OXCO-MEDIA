@@ -62,6 +62,8 @@ public partial class MarkerUpdaterViewModel : SessionAwareViewModel, IToolShellH
         RefreshFromSessionStashId();
         _client.Configure(Endpoint, ApiKey);
         InitQuickPresets();
+        InitWorkflow();
+        InitBatchUi();
         Markers.CollectionChanged += (_, _) => RebuildTimeline();
     }
 
@@ -502,8 +504,14 @@ public partial class MarkerUpdaterViewModel : SessionAwareViewModel, IToolShellH
         await LoadSceneByIdAsync(SelectedResult.SceneId, navigateBySearchResults: true);
     }
 
-    private async Task LoadSceneByIdAsync(string sceneId, bool? navigateBySearchResults = null)
+    private async Task<bool> LoadSceneByIdAsync(string sceneId, bool? navigateBySearchResults = null, bool reportErrors = true)
     {
+        if (!await ConfirmDiscardSceneChangesAsync(sceneId))
+        {
+            Status = Loc.T("markerupdater.loadCancelled");
+            return true;
+        }
+
         if (navigateBySearchResults.HasValue)
         {
             _navigateBySearchResults = navigateBySearchResults.Value;
@@ -551,12 +559,26 @@ public partial class MarkerUpdaterViewModel : SessionAwareViewModel, IToolShellH
                 ? Loc.F("markerupdater.sceneLoadedWithVideo", SceneTags.Count, Markers.Count, PathSourceLabel)
                 : Loc.F("markerupdater.sceneLoadedNoVideo", SceneTags.Count, Markers.Count);
             CreateMarkerAtSelectedTagCommand.NotifyCanExecuteChanged();
+            ResultsExpanded = false;
+            NotifySceneDirty();
+            NotifyMarkerEditor();
+            return true;
+        }
+        catch (InvalidOperationException ex) when (!reportErrors)
+        {
+            Status = ex.Message;
+            return false;
         }
         catch (Exception ex)
         {
-            ConnectionInfo = Loc.T("stash.connectionFailed");
-            NotifyStashConnectionChanged();
+            if (ex is not InvalidOperationException)
+            {
+                ConnectionInfo = Loc.T("stash.connectionFailed");
+                NotifyStashConnectionChanged();
+            }
+
             Status = ex.Message;
+            return false;
         }
         finally
         {
@@ -864,7 +886,9 @@ public partial class MarkerUpdaterViewModel : SessionAwareViewModel, IToolShellH
                 seconds,
                 endSeconds,
                 tagId);
+            var keepId = SelectedMarker.MarkerId;
             await RefreshMarkersAsync();
+            SelectedMarker = Markers.FirstOrDefault(m => m.MarkerId == keepId);
             Status = Loc.T("markerupdater.markerUpdated");
         }
         catch (Exception ex)

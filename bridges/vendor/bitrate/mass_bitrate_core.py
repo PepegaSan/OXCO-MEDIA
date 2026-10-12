@@ -7,6 +7,7 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 import time
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, as_completed, wait
 from dataclasses import asdict, dataclass
@@ -57,43 +58,78 @@ def is_problem_codec(codec: Optional[str]) -> bool:
     return codec.strip().lower() not in FRIENDLY_VIDEO_CODECS
 
 
-def run_ffprobe(path: Path) -> Tuple[Optional[int], Optional[int], Optional[int], Optional[str]]:
+def _probe_json(path: Path) -> Optional[Dict[str, Any]]:
     cmd = [
         "ffprobe", "-v", "error", "-print_format", "json",
-        "-show_entries", "stream=width,height,bit_rate,codec_name", "-select_streams", "v:0",
-        "-show_entries", "format=bit_rate", str(path),
+        "-show_entries", "stream=codec_type,width,height,bit_rate,codec_name:format=bit_rate,duration",
+        str(path),
     ]
     completed = subprocess.run(
         cmd, capture_output=True, text=True, encoding="utf-8", errors="replace",
         check=False, creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
     )
     if completed.returncode != 0:
-        return None, None, None, None
+        return None
     try:
-        payload = json.loads(completed.stdout or "{}")
+        return json.loads(completed.stdout or "{}")
     except json.JSONDecodeError:
+        return None
+
+
+def _int_or_none(raw: Any) -> Optional[int]:
+    try:
+        v = int(raw)
+        return v if v > 0 else None
+    except (TypeError, ValueError):
+        return None
+
+
+def run_ffprobe(path: Path) -> Tuple[Optional[int], Optional[int], Optional[int], Optional[str]]:
+    payload = _probe_json(path)
+    if payload is None:
         return None, None, None, None
     streams = payload.get("streams") or []
-    video_stream = streams[0] if streams else None
+    video_stream = next((st for st in streams if st.get("codec_type") == "video"), None)
     if not video_stream:
         return None, None, None, None
-    width = int(video_stream["width"]) if video_stream.get("width") is not None else None
-    height = int(video_stream["height"]) if video_stream.get("height") is not None else None
+    width = _int_or_none(video_stream.get("width"))
+    height = _int_or_none(video_stream.get("height"))
     codec_raw = video_stream.get("codec_name")
     codec = str(codec_raw).strip().lower() if codec_raw else None
-    stream_bitrate_raw = video_stream.get("bit_rate")
-    format_bitrate_raw = (payload.get("format") or {}).get("bit_rate")
-    bitrate_bps = None
-    for raw in (stream_bitrate_raw, format_bitrate_raw):
-        if raw is None:
-            continue
-        try:
-            bitrate_bps = int(raw)
-            break
-        except (TypeError, ValueError):
-            continue
+    bitrate_bps = _int_or_none(video_stream.get("bit_rate"))
+    if bitrate_bps is None:
+        # Containers like MKV/WebM often lack a per-stream rate: use the total minus audio,
+        # otherwise the audio would be counted as video and the target set too high.
+        total = _int_or_none((payload.get("format") or {}).get("bit_rate"))
+        if total:
+            audio = sum(
+                _int_or_none(st.get("bit_rate")) or 0
+                for st in streams
+                if st.get("codec_type") == "audio"
+            )
+            bitrate_bps = total - audio if total - audio > total * 0.3 else total
     kbps = int(bitrate_bps / 1000) if bitrate_bps and bitrate_bps > 0 else None
     return width, height, kbps, codec
+
+
+def probe_duration(path: Path) -> Optional[float]:
+    payload = _probe_json(path)
+    try:
+        return float((payload or {}).get("format", {}).get("duration"))
+    except (TypeError, ValueError):
+        return None
+
+
+def probe_audio_codec(path: Path) -> Optional[str]:
+    payload = _probe_json(path)
+    for st in (payload or {}).get("streams") or []:
+        if st.get("codec_type") == "audio":
+            return str(st.get("codec_name") or "").lower() or None
+    return None
+
+
+# Audio codecs that can be stream-copied into MP4/MOV.
+_MP4_AUDIO_OK = {"aac", "mp3", "ac3", "eac3", "alac", "flac", "opus"}
 
 
 def estimate_sizes(source_size_bytes: int, source_kbps: int, target_kbps: int) -> Tuple[int, int, float]:
@@ -329,6 +365,9 @@ def build_ffmpeg_cmd(
             cmd.extend(["-preset", preset])
     if audio_mode == "aac_128k":
         cmd.extend(["-c:a", "aac", "-b:a", "128k"])
+    elif dst.suffix.lower() in {".mp4", ".m4v", ".mov"} and (probe_audio_codec(src) or "aac") not in _MP4_AUDIO_OK:
+        # e.g. PCM or Vorbis cannot be copied into MP4 — transcode instead of failing.
+        cmd.extend(["-c:a", "aac", "-b:a", "192k"])
     else:
         cmd.extend(["-c:a", "copy"])
     try:
@@ -380,11 +419,19 @@ def effective_suffix(input_root: Path, output_root: Path, source: Path, planned_
     return ""
 
 
-def is_valid_output(path: Path) -> bool:
+def is_valid_output(path: Path, source: Optional[Path] = None) -> bool:
     if not path.exists() or path.stat().st_size <= 0:
         return False
     w, h, _, _ = run_ffprobe(path)
-    return bool(w and h)
+    if not (w and h):
+        return False
+    if source is not None:
+        # A truncated encode still has a resolution — make sure the whole video is there before
+        # the original may be deleted or moved away.
+        src_dur, out_dur = probe_duration(source), probe_duration(path)
+        if src_dur and src_dur > 1.0 and (not out_dur or out_dur < src_dur * 0.97 - 0.5):
+            return False
+    return True
 
 
 def _try_delete_source(src: Path, final_out: Path, emit_fn) -> None:
@@ -592,14 +639,15 @@ def convert_rows(
             )
 
         proc: Optional[subprocess.Popen] = None
+        # stderr goes to a file: a PIPE that is only read after exit fills up on chatty inputs
+        # (thousands of timestamp warnings) and blocks FFmpeg forever.
+        err_file = tempfile.TemporaryFile(mode="w+b")
         try:
             proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.DEVNULL,
-                stderr=subprocess.PIPE,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
+                stderr=err_file,
+                stdin=subprocess.DEVNULL,
                 creationflags=creationflags,
             )
             with proc_lock:
@@ -617,22 +665,23 @@ def convert_rows(
 
             stderr_text = ""
             try:
-                if proc.stderr is not None:
-                    stderr_text = proc.stderr.read() or ""
+                err_file.seek(0)
+                stderr_text = err_file.read().decode("utf-8", errors="replace")
             except Exception:
                 pass
 
-            if proc.returncode != 0 or not is_valid_output(work_out):
+            if proc.returncode != 0 or not is_valid_output(work_out, src):
                 if stop.is_set():
                     cancelled = True
                     _safe_unlink(work_out)
                     return False
-                safe_emit(f"FEHLER: {src.name}")
+                safe_emit(f"FEHLER: {src.name}" + ("" if proc.returncode != 0 else " (Ausgabe unvollständig — Original bleibt)"))
                 if stderr_text.strip():
                     safe_emit(stderr_text.strip()[-400:])
                 _safe_unlink(work_out)
                 return False
         finally:
+            err_file.close()
             if proc is not None:
                 with proc_lock:
                     active_procs.discard(proc)
@@ -705,6 +754,8 @@ def convert_rows(
     if cancelled:
         safe_emit("ABGEBROCHEN: Encoding gestoppt, unfertige Ausgaben entfernt.")
         return -1
+    if done < total_jobs:
+        safe_emit(f"WARN: {total_jobs - done} von {total_jobs} Dateien fehlgeschlagen — siehe Log")
     return done
 
 

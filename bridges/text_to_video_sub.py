@@ -35,10 +35,18 @@ def ensure_sub_imports() -> None:
 
 
 def parse_optional_seconds(text: str) -> Optional[float]:
+    """Sekunden aus ``12.5``, ``30s``, ``1:30`` oder ``1:02:03.5`` (wie TimeFieldHelper in der App)."""
     s = (text or "").strip().replace(",", ".")
     if not s:
         return None
+    if s.lower().endswith("s") and ":" not in s:
+        s = s[:-1].strip()
     try:
+        if ":" in s:
+            total = 0.0
+            for part in s.split(":"):
+                total = total * 60 + float(part)
+            return total if total >= 0 else None
         return float(s)
     except ValueError:
         return None
@@ -66,6 +74,17 @@ def normalize_segment(raw: dict[str, Any]) -> dict[str, Any]:
     box_en = True
     if "box_enabled" in raw:
         box_en = _segment_bool(raw.get("box_enabled"))
+
+    def _hex(key: str, default: str) -> str:
+        v = str(raw.get(key) or default).strip().lstrip("#").upper()
+        return v if len(v) == 6 else default
+
+    align = str(raw.get("align") or "left").strip().lower()
+    animation = str(raw.get("animation") or "none").strip().lower()
+    try:
+        anim_duration = max(0.05, min(float(raw.get("anim_duration", 0.4)), 5.0))
+    except (TypeError, ValueError):
+        anim_duration = 0.4
     return {
         "text": str(raw.get("text") or ""),
         "from": str(raw.get("from") or "").strip(),
@@ -84,6 +103,15 @@ def normalize_segment(raw: dict[str, Any]) -> dict[str, Any]:
         "bold": _segment_bool(raw.get("bold")),
         "italic": _segment_bool(raw.get("italic")),
         "strike": _segment_bool(raw.get("strike")),
+        "align": align if align in ("left", "center", "right") else "left",
+        "outline_width": _i("outline_width", 0, 0, 40),
+        "outline_color": _hex("outline_color", "000000"),
+        "shadow": _segment_bool(raw.get("shadow")),
+        "box_color": _hex("box_color", "000000"),
+        "box_opacity": _i("box_opacity", 35, 0, 100),
+        "box_radius": _i("box_radius", 10, 0, 200),
+        "animation": animation if animation in ("none", "fade", "slide", "pop") else "none",
+        "anim_duration": anim_duration,
     }
 
 
@@ -92,8 +120,8 @@ def segment_to_overlay(raw: dict[str, Any]):
     from overlay_core import TimedTextOverlay  # noqa: E402
 
     dn = normalize_segment(raw)
-    fp = dn["font_path"]
-    font_path = fp if fp and Path(fp).is_file() else None
+    # Fehlende Schriften nicht stillschweigend verwerfen — der Renderer meldet sie als Warnung.
+    font_path = dn["font_path"] or None
     ifp = dn["italic_font_path"]
     italic_font_path = ifp if ifp and Path(ifp).is_file() else None
     return TimedTextOverlay(
@@ -114,6 +142,15 @@ def segment_to_overlay(raw: dict[str, Any]):
         bold=bool(dn["bold"]),
         italic=bool(dn["italic"]),
         strike=bool(dn["strike"]),
+        align=dn["align"],
+        outline_width=dn["outline_width"],
+        outline_hex=dn["outline_color"],
+        shadow=bool(dn["shadow"]),
+        box_hex=dn["box_color"],
+        box_opacity=dn["box_opacity"],
+        box_radius=dn["box_radius"],
+        animation=dn["animation"],
+        anim_duration=dn["anim_duration"],
     )
 
 

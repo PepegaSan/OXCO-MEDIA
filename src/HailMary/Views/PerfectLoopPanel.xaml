@@ -29,11 +29,7 @@
                     HorizontalContentAlignment="Stretch" />
             </Border>
             <StackPanel Grid.Row="1" Margin="16,0,12,12" Spacing="6">
-                <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.Status, Mode=OneWay}" />
-                <TextBlock
-                    Style="{StaticResource CaptionTextBlockStyle}"
-                    Text="{x:Bind ViewModel.QualityHint, Mode=OneWay}"
-                    TextWrapping="WrapWholeWords" />
+                <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.8" Text="{x:Bind ViewModel.Status, Mode=OneWay}" />
             </StackPanel>
         </Grid>
 
@@ -86,7 +82,7 @@
 
                     <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" IsExpanded="True">
                         <Expander.Header>
-                            <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="perfectloop.settingsHeader" />
+                            <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="perfectloop.rangeHeader" />
                         </Expander.Header>
                         <StackPanel Padding="0,8,0,0" Spacing="8">
                             <Grid ColumnSpacing="8">
@@ -113,6 +109,32 @@
                                     SpinButtonPlacementMode="Compact"
                                     Value="{x:Bind ViewModel.LoopEndSeconds, Mode=TwoWay}" />
                             </Grid>
+                            <TextBlock Text="{x:Bind ViewModel.MinLoopLabel, Mode=OneWay}" />
+                            <Slider
+                                Minimum="0.5"
+                                Maximum="10"
+                                StepFrequency="0.5"
+                                SnapsTo="StepValues"
+                                Value="{x:Bind ViewModel.MinLoopSeconds, Mode=TwoWay}" />
+                            <Button HorizontalAlignment="Stretch" Command="{x:Bind ViewModel.FindBestLoopInRangeCommand}" Style="{StaticResource AccentButtonStyle}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE721;" />
+                                    <TextBlock Text="{x:Bind ViewModel.FindBestButtonLabel, Mode=OneWay}" />
+                                </StackPanel>
+                            </Button>
+                            <TextBlock
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Opacity="0.8"
+                                loc:Loc.Key="perfectloop.findBestHint"
+                                TextWrapping="WrapWholeWords" />
+                        </StackPanel>
+                    </Expander>
+
+                    <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" IsExpanded="True">
+                        <Expander.Header>
+                            <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="perfectloop.seamHeader" />
+                        </Expander.Header>
+                        <StackPanel Padding="0,8,0,0" Spacing="8">
                             <ComboBox
                                 HorizontalAlignment="Stretch"
                                 loc:Loc.HeaderKey="perfectloop.methodLabel"
@@ -121,6 +143,7 @@
                                 SelectedItem="{x:Bind ViewModel.SelectedSeamMethodItem, Mode=TwoWay}" />
                             <TextBlock
                                 Style="{StaticResource CaptionTextBlockStyle}"
+                                Opacity="0.8"
                                 loc:Loc.Key="perfectloop.methodHint"
                                 TextWrapping="WrapWholeWords" />
                             <TextBlock Text="{x:Bind ViewModel.SeamSecondsLabel, Mode=OneWay}" />
@@ -132,6 +155,20 @@
                                 SnapsTo="StepValues"
                                 IsEnabled="{x:Bind ViewModel.SeamSliderEnabled, Mode=OneWay}"
                                 Value="{x:Bind ViewModel.SeamSeconds, Mode=TwoWay}" />
+                            <Button HorizontalAlignment="Stretch" Command="{x:Bind ViewModel.AnalyzeCommand}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE9D9;" />
+                                    <TextBlock Text="{x:Bind ViewModel.AnalyzeButtonLabel, Mode=OneWay}" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Expander>
+
+                    <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" IsExpanded="False">
+                        <Expander.Header>
+                            <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="common.export" />
+                        </Expander.Header>
+                        <StackPanel Padding="0,8,0,0" Spacing="8">
                             <NumberBox
                                 loc:Loc.HeaderKey="perfectloop.loopCountLabel"
                                 Minimum="1"
@@ -142,45 +179,46 @@
                                 Value="{x:Bind ViewModel.LoopCount, Mode=TwoWay}" />
                             <TextBlock
                                 Style="{StaticResource CaptionTextBlockStyle}"
+                                Opacity="0.8"
                                 loc:Loc.Key="perfectloop.loopCountHint"
                                 TextWrapping="WrapWholeWords" />
-                            <Button
-                                Command="{x:Bind ViewModel.FindBestLoopInRangeCommand}"
-                                Content="{x:Bind ViewModel.FindBestButtonLabel, Mode=OneWay}" />
-                            <TextBlock
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                loc:Loc.Key="perfectloop.findBestHint"
-                                TextWrapping="WrapWholeWords" />
-                            <Button
-                                Command="{x:Bind ViewModel.AnalyzeCommand}"
-                                Content="{x:Bind ViewModel.AnalyzeButtonLabel, Mode=OneWay}" />
                             <ComboBox
                                 HorizontalAlignment="Stretch"
                                 loc:Loc.HeaderKey="perfectloop.encoderLabel"
                                 ItemsSource="{x:Bind ViewModel.EncoderOptions, Mode=OneWay}"
                                 SelectedItem="{x:Bind ViewModel.SelectedEncoder, Mode=TwoWay}" />
-                            <NumberBox
-                                loc:Loc.HeaderKey="common.crf"
-                                Minimum="0"
-                                Maximum="51"
-                                SmallChange="1"
-                                LargeChange="1"
-                                SpinButtonPlacementMode="Compact"
-                                Value="{x:Bind ViewModel.CrfValue, Mode=TwoWay}" />
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <NumberBox
+                                    Grid.Column="0"
+                                    loc:Loc.HeaderKey="common.crf"
+                                    Minimum="0"
+                                    Maximum="51"
+                                    SmallChange="1"
+                                    LargeChange="1"
+                                    SpinButtonPlacementMode="Compact"
+                                    Value="{x:Bind ViewModel.CrfValue, Mode=TwoWay}" />
+                                <NumberBox
+                                    Grid.Column="1"
+                                    loc:Loc.HeaderKey="common.targetFps"
+                                    Minimum="0"
+                                    Maximum="240"
+                                    SmallChange="1"
+                                    LargeChange="5"
+                                    SpinButtonPlacementMode="Compact"
+                                    Value="{x:Bind ViewModel.TargetFps, Mode=TwoWay}" />
+                            </Grid>
                             <TextBlock
                                 Style="{StaticResource CaptionTextBlockStyle}"
+                                Opacity="0.8"
                                 loc:Loc.Key="common.crfHint"
                                 TextWrapping="WrapWholeWords" />
-                            <NumberBox
-                                loc:Loc.HeaderKey="common.targetFps"
-                                Minimum="0"
-                                Maximum="240"
-                                SmallChange="1"
-                                LargeChange="5"
-                                SpinButtonPlacementMode="Compact"
-                                Value="{x:Bind ViewModel.TargetFps, Mode=TwoWay}" />
                             <TextBlock
                                 Style="{StaticResource CaptionTextBlockStyle}"
+                                Opacity="0.8"
                                 loc:Loc.Key="common.targetFpsHint"
                                 TextWrapping="WrapWholeWords" />
                         </StackPanel>

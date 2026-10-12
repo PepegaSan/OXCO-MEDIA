@@ -73,6 +73,7 @@ def run_ffmpeg_mode(args: argparse.Namespace) -> int:
             output_dir=args.output_dir,
             target_fps=getattr(args, "target_fps", 0.0),
             log=log,
+            progress=lambda pct, label: _emit(f"HM_PROGRESS:{pct:.1f}:{label}"),
         )
     except Exception as exc:
         _emit(f"ERROR: {exc}")

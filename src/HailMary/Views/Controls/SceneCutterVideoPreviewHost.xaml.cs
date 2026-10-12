@@ -1,5 +1,6 @@
 using HailMary.Services;
 using HailMary.ViewModels;
+using HailMary.Views.Helpers;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -15,13 +16,15 @@ public sealed partial class SceneCutterVideoPreviewHost : UserControl
     private bool _sliderDragging;
     private bool _suppressSliderSeek;
     private int _loadGeneration;
+    // Set while a single scene is previewed; playback pauses there.
+    private double? _sceneEnd;
 
     public SceneCutterVideoPreviewHost(SceneCutterViewModel viewModel)
     {
         ViewModel = viewModel;
         InitializeComponent();
 
-        _positionTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+        _positionTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
         _positionTimer.Tick += (_, _) => SyncPositionFromPlayer();
 
         ViewModel.PropertyChanged += ViewModel_OnPropertyChanged;
@@ -45,8 +48,19 @@ public sealed partial class SceneCutterVideoPreviewHost : UserControl
         };
 
         IsTabStop = true;
-        Loaded += (_, _) => _ = LoadVideoAsync();
-        Unloaded += (_, _) => _positionTimer.Stop();
+        MediaTransport.FocusOnPointer(this, VideoSurface);
+        Loaded += (_, _) =>
+        {
+            // Re-attach on every load: switching tools unloads and reloads this control.
+            ViewModel.PlaySceneRequested -= PlayScene;
+            ViewModel.PlaySceneRequested += PlayScene;
+            _ = LoadVideoAsync();
+        };
+        Unloaded += (_, _) =>
+        {
+            _positionTimer.Stop();
+            ViewModel.PlaySceneRequested -= PlayScene;
+        };
     }
 
     public SceneCutterViewModel ViewModel { get; }
@@ -176,16 +190,52 @@ public sealed partial class SceneCutterVideoPreviewHost : UserControl
         }
     }
 
-    private void BtnPlay_Click(object sender, RoutedEventArgs e)
+    private void BtnPlayPause_Click(object sender, RoutedEventArgs e) => TogglePlayback();
+
+    private void TogglePlayback()
     {
-        Player?.Play();
-        _positionTimer.Start();
+        if (Player is null)
+        {
+            return;
+        }
+
+        if (Player.PlaybackSession.PlaybackState == MediaPlaybackState.Playing)
+        {
+            Player.Pause();
+            _sceneEnd = null;
+            SetPlaying(false);
+            return;
+        }
+
+        Player.Play();
+        SetPlaying(true);
     }
 
-    private void BtnPause_Click(object sender, RoutedEventArgs e)
+    private void SetPlaying(bool playing)
     {
-        Player?.Pause();
-        _positionTimer.Stop();
+        MediaTransport.ApplyPlayState(BtnPlayPause, PlayPauseIcon, playing);
+        if (playing)
+        {
+            _positionTimer.Start();
+        }
+        else
+        {
+            _positionTimer.Stop();
+        }
+    }
+
+    /// <summary>Play one scene from its start and pause at its end.</summary>
+    public void PlayScene(double start, double end)
+    {
+        if (Player is null)
+        {
+            return;
+        }
+
+        SeekTo(start);
+        _sceneEnd = end;
+        Player.Play();
+        SetPlaying(true);
     }
 
     private void BtnStop_Click(object sender, RoutedEventArgs e)
@@ -204,6 +254,12 @@ public sealed partial class SceneCutterVideoPreviewHost : UserControl
     {
         if (!ViewModel.HasVideo)
         {
+            return;
+        }
+
+        if (MediaTransport.HandleKey(e.Key, Player, ViewModel.SliderMaximum, TogglePlayback, SeekTo))
+        {
+            e.Handled = true;
             return;
         }
 
@@ -226,7 +282,8 @@ public sealed partial class SceneCutterVideoPreviewHost : UserControl
 
     private void StopPlayback()
     {
-        _positionTimer.Stop();
+        _sceneEnd = null;
+        SetPlaying(false);
         if (Player is null)
         {
             return;
@@ -247,7 +304,9 @@ public sealed partial class SceneCutterVideoPreviewHost : UserControl
             Player.PlaybackSession.Position = TimeSpan.FromSeconds(clamped);
         }
 
+        _suppressSliderSeek = true;
         ViewModel.SetPosition(clamped);
+        _suppressSliderSeek = false;
     }
 
     private void SyncPositionFromPlayer()
@@ -258,13 +317,21 @@ public sealed partial class SceneCutterVideoPreviewHost : UserControl
         }
 
         var sec = Player.PlaybackSession.Position.TotalSeconds;
+        if (_sceneEnd is { } end && sec >= end)
+        {
+            Player.Pause();
+            Player.PlaybackSession.Position = TimeSpan.FromSeconds(end);
+            sec = end;
+            _sceneEnd = null;
+        }
+
         _suppressSliderSeek = true;
         ViewModel.SetPosition(sec);
         _suppressSliderSeek = false;
 
         if (Player.PlaybackSession.PlaybackState != MediaPlaybackState.Playing)
         {
-            _positionTimer.Stop();
+            SetPlaying(false);
         }
     }
 }

@@ -16,6 +16,10 @@ public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ISp
     private double? _pendingOut;
     private double _videoDuration;
     private bool _suppressAutosave;
+    private List<SceneEntry>? _clearedScenes;
+
+    /// <summary>Raised to preview one scene (start, end) in the player.</summary>
+    public event Action<double, double>? PlaySceneRequested;
 
     public SceneCutterViewModel(ToolDefinition tool, CutterWorkspacePaths? workspace = null)
         : base(tool.Id)
@@ -62,6 +66,8 @@ public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ISp
     [ObservableProperty] private string _davinciOutputDir = string.Empty;
     [ObservableProperty] private string _ffmpegOutputDir = string.Empty;
     [ObservableProperty] private float[]? _waveformPeaks;
+    [ObservableProperty] private string _scenesSummary = string.Empty;
+    [ObservableProperty] private bool _canUndoClear;
 
     public IReadOnlyList<TimelineSpan> TimelineRanges { get; private set; } = [];
 
@@ -93,6 +99,8 @@ public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ISp
 
     protected override void OnInputPathUpdated(string value)
     {
+        _clearedScenes = null;
+        CanUndoClear = false;
         HasVideo = !string.IsNullOrWhiteSpace(value) && File.Exists(value);
         if (!HasVideo)
         {
@@ -141,6 +149,17 @@ public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ISp
         }
 
         SetPosition(entry.StartSeconds);
+    }
+
+    /// <summary>Preview a scene: play from its start and stop at its end.</summary>
+    public void PlayScene(SceneEntry? entry)
+    {
+        if (entry is null || !entry.TryApplyTimes(out _))
+        {
+            return;
+        }
+
+        PlaySceneRequested?.Invoke(entry.StartSeconds, entry.EndSeconds);
     }
 
     [RelayCommand]
@@ -212,9 +231,37 @@ public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ISp
     [RelayCommand]
     private void ClearScenes()
     {
+        if (Scenes.Count == 0)
+        {
+            return;
+        }
+
+        // Keep a copy so an accidental click can be undone.
+        _clearedScenes = Scenes.ToList();
         Scenes.Clear();
         CutterSceneAutosave.Clear(AppServices.Settings.ProjectsRoot, _workspace);
+        CanUndoClear = true;
         Status = Loc.T("scenecutter.scenesCleared");
+    }
+
+    [RelayCommand]
+    private void UndoClearScenes()
+    {
+        if (_clearedScenes is null)
+        {
+            return;
+        }
+
+        foreach (var scene in _clearedScenes)
+        {
+            Scenes.Add(scene);
+        }
+
+        _clearedScenes = null;
+        CanUndoClear = false;
+        RenumberScenes();
+        ScheduleAutosave();
+        Status = Loc.F($"{CutterLocPrefix}.sceneCount", Scenes.Count);
     }
 
     public void ApplyScenePosition(SceneEntry entry)
@@ -545,8 +592,15 @@ public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ISp
         }
 
         var input = InputPath;
-        if (string.IsNullOrWhiteSpace(input) || !File.Exists(input) || Scenes.Count == 0)
+        if (string.IsNullOrWhiteSpace(input) || !File.Exists(input))
         {
+            return;
+        }
+
+        if (Scenes.Count == 0)
+        {
+            // Otherwise the last saved scenes would be restored the next time the video loads.
+            CutterSceneAutosave.Clear(AppServices.Settings.ProjectsRoot, _workspace);
             return;
         }
 
@@ -637,6 +691,19 @@ public partial class SceneCutterViewModel : ToolIoViewModel, IToolShellHost, ISp
 
         TimelineRanges = spans;
         OnPropertyChanged(nameof(TimelineRanges));
+        UpdateScenesSummary();
+    }
+
+    private void UpdateScenesSummary()
+    {
+        if (Scenes.Count == 0)
+        {
+            ScenesSummary = string.Empty;
+            return;
+        }
+
+        var total = Scenes.Where(s => s.EndSeconds > s.StartSeconds).Sum(s => s.EndSeconds - s.StartSeconds);
+        ScenesSummary = Loc.F("cutter.scenesSummary", Scenes.Count, FormatTime(total));
     }
 
     private static string FormatTime(double sec) => TimecodeHelper.FormatDisplay(sec);

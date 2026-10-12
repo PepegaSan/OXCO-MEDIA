@@ -22,12 +22,12 @@ public sealed partial class ClipJoinerPanel : UserControl
         element.AllowDrop = true;
         element.DragOver += (_, e) =>
         {
+            // Only claim file drops — the list's own drag-to-reorder must pass through.
             if (e.DataView.Contains(StandardDataFormats.StorageItems))
             {
                 e.AcceptedOperation = DataPackageOperation.Copy;
+                e.Handled = true;
             }
-
-            e.Handled = true;
         };
         element.Drop += OnDropAsync;
     }
@@ -36,34 +36,28 @@ public sealed partial class ClipJoinerPanel : UserControl
     {
         if (!e.DataView.Contains(StandardDataFormats.StorageItems))
         {
+            // Internal reorder drop — handled by the ListView itself.
             return;
         }
 
+        e.Handled = true;
         var items = await e.DataView.GetStorageItemsAsync();
         var paths = items.Select(i => i.Path).Where(p => !string.IsNullOrWhiteSpace(p)).ToList();
-        if (paths.Count == 0)
+        if (paths.Count > 0)
         {
-            return;
-        }
-
-        ViewModel.AddDroppedPaths(paths);
-        e.Handled = true;
-    }
-
-    private void ClipList_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (ClipList.SelectedItem is ClipJoinerClipRow row)
-        {
-            ViewModel.SetSelectedClipIndex(row.Index - 1);
-        }
-        else
-        {
-            ViewModel.SetSelectedClipIndex(-1);
+            ViewModel.AddDroppedPaths(paths);
         }
     }
 
-    private void BatchList_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
+    private void MoveUp_Click(object sender, RoutedEventArgs e) =>
+        ViewModel.MoveClipUpCommand.Execute((sender as FrameworkElement)?.Tag as ClipJoinerClipRow);
+
+    private void MoveDown_Click(object sender, RoutedEventArgs e) =>
+        ViewModel.MoveClipDownCommand.Execute((sender as FrameworkElement)?.Tag as ClipJoinerClipRow);
+
+    private void Remove_Click(object sender, RoutedEventArgs e) =>
+        ViewModel.RemoveClipCommand.Execute((sender as FrameworkElement)?.Tag as ClipJoinerClipRow);
+
+    private void BatchList_OnSelectionChanged(object sender, SelectionChangedEventArgs e) =>
         ViewModel.SetSelectedBatchIndex(BatchList.SelectedIndex);
-    }
 }

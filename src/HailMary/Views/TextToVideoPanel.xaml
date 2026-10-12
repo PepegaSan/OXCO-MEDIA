@@ -128,20 +128,12 @@
                             </Grid>
                             <StackPanel Spacing="4">
                                 <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="texttovideo.stylePresets" />
-                                <StackPanel x:Name="StylePresetPanel" Orientation="Vertical" Spacing="6" />
+                                <VariableSizedWrapGrid
+                                    x:Name="StylePresetPanel"
+                                    ItemHeight="36"
+                                    ItemWidth="166"
+                                    Orientation="Horizontal" />
                             </StackPanel>
-                            <NumberBox loc:Loc.HeaderKey="texttovideo.fontSize" Maximum="200" Minimum="12" Value="{x:Bind ViewModel.EditorSegment.Fontsize, Mode=TwoWay}" />
-                            <TextBox loc:Loc.HeaderKey="texttovideo.color" Text="{x:Bind ViewModel.EditorSegment.Color, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="texttovideo.position" />
-                            <Grid ColumnSpacing="8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <NumberBox Grid.Column="0" Maximum="20000" Minimum="0" Value="{x:Bind ViewModel.EditorSegment.PosX, Mode=TwoWay}" />
-                                <NumberBox Grid.Column="1" Maximum="20000" Minimum="0" Value="{x:Bind ViewModel.EditorSegment.PosY, Mode=TwoWay}" />
-                            </Grid>
-                            <NumberBox loc:Loc.HeaderKey="texttovideo.lineSpacing" Maximum="120" Minimum="-120" Value="{x:Bind ViewModel.EditorSegment.LineSpacing, Mode=TwoWay}" />
                             <ComboBox x:Name="FontCombo" HorizontalAlignment="Stretch" loc:Loc.HeaderKey="texttovideo.fontFamily" IsEditable="False" IsTextSearchEnabled="True" SelectionChanged="FontCombo_OnSelectionChanged">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate x:DataType="svc:WindowsFontChoice" xmlns:svc="using:HailMary.Services">
@@ -149,6 +141,61 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <NumberBox Grid.Column="0" loc:Loc.HeaderKey="texttovideo.fontSize" Maximum="200" Minimum="12" SpinButtonPlacementMode="Compact" Value="{x:Bind ViewModel.EditorSegment.Fontsize, Mode=TwoWay}" />
+                                <NumberBox Grid.Column="1" loc:Loc.HeaderKey="texttovideo.lineSpacing" Maximum="120" Minimum="-120" SpinButtonPlacementMode="Compact" Value="{x:Bind ViewModel.EditorSegment.LineSpacing, Mode=TwoWay}" />
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <ToggleButton Width="36" Height="32" Padding="0" IsChecked="{x:Bind ViewModel.EditorSegment.Bold, Mode=TwoWay}" loc:Loc.ToolTipKey="common.bold">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE8DD;" />
+                                </ToggleButton>
+                                <ToggleButton Width="36" Height="32" Padding="0" IsChecked="{x:Bind ViewModel.EditorSegment.Italic, Mode=TwoWay}" loc:Loc.ToolTipKey="common.italic">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE8DB;" />
+                                </ToggleButton>
+                                <ToggleButton Width="36" Height="32" Padding="0" IsChecked="{x:Bind ViewModel.EditorSegment.Strike, Mode=TwoWay}" loc:Loc.ToolTipKey="common.strike">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xEDE0;" />
+                                </ToggleButton>
+                                <Border Width="1" Margin="6,4" Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
+                                <ToggleButton x:Name="AlignLeftButton" Width="36" Height="32" Padding="0" Click="AlignButton_Click" Tag="0" loc:Loc.ToolTipKey="texttovideo.alignLeft">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE8E4;" />
+                                </ToggleButton>
+                                <ToggleButton x:Name="AlignCenterButton" Width="36" Height="32" Padding="0" Click="AlignButton_Click" Tag="1" loc:Loc.ToolTipKey="texttovideo.alignCenter">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE8E3;" />
+                                </ToggleButton>
+                                <ToggleButton x:Name="AlignRightButton" Width="36" Height="32" Padding="0" Click="AlignButton_Click" Tag="2" loc:Loc.ToolTipKey="texttovideo.alignRight">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE8E2;" />
+                                </ToggleButton>
+                            </StackPanel>
+                            <controls:HexColorField x:Name="TextColorField" Hex="{x:Bind ViewModel.EditorSegment.Color, Mode=TwoWay}" />
+                            <VariableSizedWrapGrid
+                                x:Name="ColorPalettePanel"
+                                HorizontalAlignment="Left"
+                                ItemHeight="32"
+                                ItemWidth="32"
+                                MaximumRowsOrColumns="10"
+                                Orientation="Horizontal" />
+                            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="texttovideo.position" />
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <NumberBox Grid.Column="0" Maximum="20000" Minimum="0" Value="{x:Bind ViewModel.EditorSegment.PosX, Mode=TwoWay}" />
+                                <NumberBox Grid.Column="1" Maximum="20000" Minimum="0" Value="{x:Bind ViewModel.EditorSegment.PosY, Mode=TwoWay}" />
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+                                    <Button Width="36" Height="32" Padding="0" Command="{x:Bind ViewModel.CenterEditorHorizontallyCommand}" loc:Loc.ToolTipKey="texttovideo.centerHorizontal">
+                                        <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE8E3;" />
+                                    </Button>
+                                    <Button Width="36" Height="32" Padding="0" Command="{x:Bind ViewModel.CenterEditorVerticallyCommand}" loc:Loc.ToolTipKey="texttovideo.centerVertical">
+                                        <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE7FD;" />
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
                             <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="texttovideo.timeFromTo" TextWrapping="WrapWholeWords" />
                             <Grid ColumnSpacing="8">
                                 <Grid.ColumnDefinitions>
@@ -169,27 +216,51 @@
                             </Grid>
                             <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.EditorToTimeHint, Mode=OneWay}" TextWrapping="WrapWholeWords" />
                             <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="texttovideo.timeFormatHint" TextWrapping="WrapWholeWords" />
-                            <Grid ColumnSpacing="8" RowSpacing="4">
+                            <Grid ColumnSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="110" />
                                 </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <CheckBox Grid.Row="0" Grid.Column="0" loc:Loc.Key="common.bold" IsChecked="{x:Bind ViewModel.EditorSegment.Bold, Mode=TwoWay}" />
-                                <CheckBox Grid.Row="0" Grid.Column="1" loc:Loc.Key="common.italic" IsChecked="{x:Bind ViewModel.EditorSegment.Italic, Mode=TwoWay}" />
-                                <CheckBox Grid.Row="1" Grid.Column="0" loc:Loc.Key="common.strike" IsChecked="{x:Bind ViewModel.EditorSegment.Strike, Mode=TwoWay}" />
-                                <CheckBox Grid.Row="1" Grid.Column="1" loc:Loc.Key="texttovideo.textBackground" IsChecked="{x:Bind ViewModel.EditorSegment.BoxEnabled, Mode=TwoWay}" />
+                                <ComboBox Grid.Column="0" HorizontalAlignment="Stretch" loc:Loc.HeaderKey="texttovideo.animation" SelectedIndex="{x:Bind ViewModel.EditorAnimationIndex, Mode=TwoWay}">
+                                    <ComboBoxItem loc:Loc.Key="texttovideo.anim.none" />
+                                    <ComboBoxItem loc:Loc.Key="texttovideo.anim.fade" />
+                                    <ComboBoxItem loc:Loc.Key="texttovideo.anim.slide" />
+                                    <ComboBoxItem loc:Loc.Key="texttovideo.anim.pop" />
+                                </ComboBox>
+                                <NumberBox Grid.Column="1" loc:Loc.HeaderKey="texttovideo.animDuration" Minimum="0.05" Maximum="5" SmallChange="0.1" LargeChange="0.5" SpinButtonPlacementMode="Compact" Value="{x:Bind ViewModel.EditorSegment.AnimDuration, Mode=TwoWay}" />
                             </Grid>
-                            <VariableSizedWrapGrid
-                                x:Name="ColorPalettePanel"
-                                HorizontalAlignment="Left"
-                                ItemHeight="32"
-                                ItemWidth="32"
-                                MaximumRowsOrColumns="8"
-                                Orientation="Horizontal" />
+                            <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" loc:Loc.HeaderKey="texttovideo.effectsHeader">
+                                <StackPanel Spacing="8">
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="110" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <NumberBox Grid.Column="0" loc:Loc.HeaderKey="texttovideo.outlineWidth" Maximum="40" Minimum="0" SpinButtonPlacementMode="Compact" Value="{x:Bind ViewModel.EditorSegment.OutlineWidth, Mode=TwoWay}" />
+                                        <StackPanel Grid.Column="1" Spacing="4">
+                                            <TextBlock loc:Loc.Key="texttovideo.outlineColor" />
+                                            <controls:HexColorField Hex="{x:Bind ViewModel.EditorSegment.OutlineColor, Mode=TwoWay}" />
+                                        </StackPanel>
+                                    </Grid>
+                                    <CheckBox loc:Loc.Key="texttovideo.shadow" IsChecked="{x:Bind ViewModel.EditorSegment.Shadow, Mode=TwoWay}" />
+                                    <CheckBox loc:Loc.Key="texttovideo.textBackground" IsChecked="{x:Bind ViewModel.EditorSegment.BoxEnabled, Mode=TwoWay}" />
+                                    <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.EditorSegment.BoxEnabled, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock loc:Loc.Key="texttovideo.boxColor" />
+                                            <controls:HexColorField Hex="{x:Bind ViewModel.EditorSegment.BoxColor, Mode=TwoWay}" />
+                                        </StackPanel>
+                                        <Slider loc:Loc.HeaderKey="texttovideo.boxOpacity" Maximum="100" Minimum="0" StepFrequency="5" Value="{x:Bind ViewModel.EditorSegment.BoxOpacity, Mode=TwoWay}" />
+                                        <Grid ColumnSpacing="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <NumberBox Grid.Column="0" loc:Loc.HeaderKey="texttovideo.boxRadius" Maximum="200" Minimum="0" SpinButtonPlacementMode="Compact" Value="{x:Bind ViewModel.EditorSegment.BoxRadius, Mode=TwoWay}" />
+                                            <NumberBox Grid.Column="1" loc:Loc.HeaderKey="texttovideo.padding" Maximum="40" Minimum="0" SpinButtonPlacementMode="Compact" Value="{x:Bind ViewModel.EditorSegment.BoxBorder, Mode=TwoWay}" />
+                                        </Grid>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Expander>
                             <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" loc:Loc.HeaderKey="texttovideo.advancedOptions">
                                 <StackPanel Spacing="8">
                                     <Grid ColumnSpacing="8">
@@ -208,7 +279,6 @@
                                         <TextBox Grid.Column="0" loc:Loc.HeaderKey="texttovideo.italicFont" Text="{x:Bind ViewModel.EditorSegment.ItalicFontPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                         <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.PickItalicFontCommand}" loc:Loc.Key="common.addDots" />
                                     </Grid>
-                                    <NumberBox loc:Loc.HeaderKey="texttovideo.padding" Maximum="40" Minimum="0" Value="{x:Bind ViewModel.EditorSegment.BoxBorder, Mode=TwoWay}" />
                                 </StackPanel>
                             </Expander>
                         </StackPanel>

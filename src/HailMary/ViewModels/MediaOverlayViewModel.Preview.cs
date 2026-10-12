@@ -58,6 +58,16 @@ public partial class MediaOverlayViewModel
         OnPropertyChanged(nameof(LayoutSummary));
     }
 
+    partial void OnOpacityChanged(double value)
+    {
+        OnPropertyChanged(nameof(OpacityLabel));
+        SchedulePreviewRefresh();
+    }
+
+    public string OpacityLabel => Loc.F(
+        "mediaoverlay.opacityValue",
+        Math.Round(Opacity).ToString("0", System.Globalization.CultureInfo.CurrentCulture));
+
     partial void OnWidthPercentChanged(double value)
     {
         if (!_layoutDragging && !_suppressLayoutPreview)
@@ -385,6 +395,7 @@ public partial class MediaOverlayViewModel
             end_seconds = end,
             time_sec = SliderValue,
             force_show = true,
+            opacity = Opacity,
             width_max = 1280,
             height_max = 720,
         };

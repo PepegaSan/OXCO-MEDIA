@@ -38,6 +38,9 @@ public partial class MediaOverlayViewModel : ToolIoViewModel, IToolShellHost, IS
         FfmpegEncoderCatalog.SoftHardware,
         FfmpegEncoderCatalog.DefaultSoftHardwareId);
     [ObservableProperty] private double _targetFps;
+    [ObservableProperty] private double _opacity = 100;
+    [ObservableProperty] private double _fadeSeconds;
+    [ObservableProperty] private bool _loopOverlay;
     [ObservableProperty] private string _status = Loc.T("common.ready");
     [ObservableProperty] private bool _isBusy;
 
@@ -79,11 +82,18 @@ public partial class MediaOverlayViewModel : ToolIoViewModel, IToolShellHost, IS
         OutputPath = BuildOutputPath(InputPath, OptionalOutputDir());
     }
 
+    // H.264/AAC cannot be stored in these containers — the export writes .mp4 instead.
+    private static readonly HashSet<string> RemuxToMp4 = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".webm", ".wmv", ".flv", ".ogv", ".3gp", ".mpg", ".mpeg", ".ts", ".m2ts", ".mts", ".vob", ".avi",
+    };
+
     private static string BuildOutputPath(string input, string? outputDir)
     {
         var ip = new FileInfo(input);
         var dir = string.IsNullOrWhiteSpace(outputDir) ? ip.DirectoryName ?? "" : outputDir;
-        return Path.Combine(dir, $"{ip.Name[..^ip.Extension.Length]}_overlay{ip.Extension}");
+        var ext = RemuxToMp4.Contains(ip.Extension) || string.IsNullOrEmpty(ip.Extension) ? ".mp4" : ip.Extension;
+        return Path.Combine(dir, $"{ip.Name[..^ip.Extension.Length]}_overlay{ext}");
     }
 
     private static bool IsOverlayVideoPath(string? path)
@@ -182,6 +192,9 @@ public partial class MediaOverlayViewModel : ToolIoViewModel, IToolShellHost, IS
             overlay_audio = OverlayAudio && OverlayAudioEnabled,
             ffmpeg_encoder = FfmpegEncoderCatalog.IdFor(FfmpegEncoderCatalog.SoftHardware, SelectedEncoder),
             target_fps = TargetFps,
+            opacity = Opacity,
+            fade_seconds = FadeSeconds,
+            loop_overlay = LoopOverlay,
         };
 
         try

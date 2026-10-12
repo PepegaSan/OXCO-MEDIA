@@ -224,6 +224,7 @@ public partial class MarkerUpdaterViewModel
     {
         var clamped = Math.Clamp(seconds, 0, Math.Max(SliderMaximum, seconds));
         _quickRangeInSeconds = clamped;
+        OnPropertyChanged(nameof(HasQuickRangeStart));
         MarkInAt(clamped);
         var label = ActiveQuickPreset?.Label ?? "?";
         Status = Loc.F("markerupdater.quickInSet", TimecodeHelper.FormatDisplay(clamped), label);
@@ -252,6 +253,7 @@ public partial class MarkerUpdaterViewModel
         double? endArg = to > from + 0.05 ? to : null;
         await CreateQuickMarkerAsync(preset, from, endArg);
         _quickRangeInSeconds = null;
+        OnPropertyChanged(nameof(HasQuickRangeStart));
     }
 
     public Task QuickInstantCreateAsync(double seconds, int slot) =>

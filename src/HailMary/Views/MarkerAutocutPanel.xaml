@@ -1,280 +1,555 @@
 <?xml version="1.0" encoding="utf-8" ?>
-
 <UserControl
-
     x:Class="HailMary.Views.MarkerAutocutPanel"
-
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-
     xmlns:viewModels="using:HailMary.ViewModels"
-
+    xmlns:loc="using:HailMary.Services"
     HorizontalAlignment="Stretch"
-
     VerticalAlignment="Stretch"
-
-    mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
-
-
+    mc:Ignorable="d">
 
     <Grid
         Padding="{StaticResource HmContentPadding}"
-        HorizontalAlignment="Stretch"
-        VerticalAlignment="Stretch"
-        ColumnSpacing="10"
-        RowSpacing="10">
+        ColumnSpacing="12">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*" />
-            <ColumnDefinition x:Name="AutocutSecondColumn" Width="1.2*" />
-            <ColumnDefinition x:Name="AutocutThirdColumn" Width="1.4*" />
+            <ColumnDefinition Width="3*" MinWidth="420" />
+            <ColumnDefinition Width="2*" MinWidth="320" />
         </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition x:Name="AutocutFirstRow" Height="*" />
-            <RowDefinition x:Name="AutocutSecondRow" Height="0" />
-            <RowDefinition x:Name="AutocutThirdRow" Height="0" />
-        </Grid.RowDefinitions>
 
+        <!-- 1 + 2: find markers and pick them -->
+        <Grid RowSpacing="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-
-        <!-- Marker-Liste -->
-
-        <Border Grid.Column="0" Style="{StaticResource ToolShellCard}" VerticalAlignment="Stretch">
-
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-
-                <StackPanel Spacing="8">
-
-                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="markerautocut.markersHeader" />
-
-                    <TextBox loc:Loc.HeaderKey="markerautocut.nameFilter" Text="{x:Bind ViewModel.NameFilter, Mode=TwoWay}" />
-
-                    <TextBox loc:Loc.HeaderKey="markerautocut.nameExclude" Text="{x:Bind ViewModel.NameExclude, Mode=TwoWay}" />
-
-                    <TextBox loc:Loc.HeaderKey="markerautocut.pathFilter" Text="{x:Bind ViewModel.PathFilter, Mode=TwoWay}" />
-
-                    <TextBox loc:Loc.HeaderKey="markerautocut.pathExclude" Text="{x:Bind ViewModel.PathExclude, Mode=TwoWay}" />
-
-                    <TextBox loc:Loc.HeaderKey="markerautocut.mediaRoot" Text="{x:Bind ViewModel.MediaRoot, Mode=TwoWay}" />
-
-                    <CheckBox loc:Loc.Key="stash.useBackup" IsChecked="{x:Bind ViewModel.UseBackup, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.BackupToggleEnabled, Mode=OneWay}" />
-
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-
-                        <Button Command="{x:Bind ViewModel.FetchMarkersCommand}" loc:Loc.Key="markerautocut.fetchMarkers" />
-
-                        <Button Command="{x:Bind ViewModel.SelectAllMarkersCommand}" loc:Loc.Key="common.all" />
-
-                        <Button Command="{x:Bind ViewModel.ClearMarkerSelectionCommand}" loc:Loc.Key="common.none" />
-
-                        <Button Command="{x:Bind ViewModel.CyclePathSortCommand}" Content="{x:Bind ViewModel.PathSortLabel, Mode=OneWay}" />
-
+            <Border Style="{StaticResource ToolShellCard}">
+                <StackPanel Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="22" Height="22" CornerRadius="11" Background="{ThemeResource AccentFillColorDefaultBrush}">
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" Style="{StaticResource CaptionTextBlockStyle}" Text="1" />
+                        </Border>
+                        <TextBlock VerticalAlignment="Center" Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="markerautocut.step.find" />
                     </StackPanel>
-
-                    <ListView ItemsSource="{x:Bind ViewModel.DisplayItems, Mode=OneWay}" SelectionMode="None">
-
-                        <ListView.ItemTemplate>
-
-                            <DataTemplate x:DataType="viewModels:MarkerAutocutDisplayItem">
-
-                                <StackPanel Spacing="2">
-
-                                    <TextBlock
-
-                                        FontWeight="SemiBold"
-
-                                        FontFamily="Segoe UI"
-
-                                        Text="{x:Bind HeaderText}"
-
-                                        TextWrapping="Wrap"
-
-                                        Visibility="{x:Bind IsFileHeader, Converter={StaticResource BoolToVisibility}}" />
-
-                                    <CheckBox
-
-                                        Margin="12,0,0,0"
-
-                                        Content="{x:Bind Marker.GroupedDisplay}"
-
-                                        IsChecked="{x:Bind Marker.IsSelected, Mode=TwoWay}"
-
-                                        Visibility="{x:Bind IsFileHeader, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}" />
-
-                                </StackPanel>
-
-                            </DataTemplate>
-
-                        </ListView.ItemTemplate>
-
-                    </ListView>
-
-                </StackPanel>
-
-            </ScrollViewer>
-
-        </Border>
-
-
-
-        <!-- Export-Reihenfolge -->
-
-        <Border x:Name="OrderCard" Grid.Row="0" Grid.Column="1" Style="{StaticResource ToolShellCard}" VerticalAlignment="Stretch">
-
-            <Grid RowSpacing="8">
-
-                <Grid.RowDefinitions>
-
-                    <RowDefinition Height="Auto" />
-
-                    <RowDefinition Height="Auto" />
-
-                    <RowDefinition Height="Auto" />
-
-                    <RowDefinition Height="*" MinHeight="120" />
-
-                </Grid.RowDefinitions>
-
-                <TextBlock Grid.Row="0" Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="markerautocut.exportOrderHeader" />
-
-                <TextBlock
-
-                    Grid.Row="1"
-
-                    Style="{StaticResource CaptionTextBlockStyle}"
-
-                    loc:Loc.Key="markerautocut.exportOrderHint"
-
-                    TextWrapping="WrapWholeWords" />
-
-                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="6">
-
-                    <Button Command="{x:Bind ViewModel.MoveOrderTopCommand}" Content="▲▲" loc:Loc.ToolTipKey="markerautocut.moveTopTooltip" />
-
-                    <Button Command="{x:Bind ViewModel.MoveOrderUpCommand}" Content="▲" loc:Loc.ToolTipKey="dlsort.moveUpTooltip" />
-
-                    <Button Command="{x:Bind ViewModel.MoveOrderDownCommand}" Content="▼" loc:Loc.ToolTipKey="dlsort.moveDownTooltip" />
-
-                    <Button Command="{x:Bind ViewModel.MoveOrderBottomCommand}" Content="▼▼" loc:Loc.ToolTipKey="markerautocut.moveBottomTooltip" />
-
-                    <Button Command="{x:Bind ViewModel.RemoveFromExportOrderCommand}" loc:Loc.Key="common.remove" />
-
-                    <Button Command="{x:Bind ViewModel.SyncExportOrderCommand}" loc:Loc.Key="common.sync" loc:Loc.ToolTipKey="markerautocut.syncTooltip" />
-
-                </StackPanel>
-
-                <ListView
-
-                    x:Name="OrderList"
-
-                    Grid.Row="3"
-
-                    AllowDrop="True"
-
-                    CanReorderItems="True"
-
-                    DragItemsCompleted="OrderList_DragItemsCompleted"
-
-                    DragItemsStarting="OrderList_DragItemsStarting"
-
-                    ItemsSource="{x:Bind ViewModel.ExportOrder, Mode=OneWay}"
-
-                    SelectionChanged="OrderList_OnSelectionChanged"
-
-                    SelectionMode="Extended">
-
-                    <ListView.ItemTemplate>
-
-                        <DataTemplate x:DataType="viewModels:MarkerAutocutOrderRowViewModel">
-
-                            <StackPanel Spacing="2">
-
-                                <TextBlock
-
-                                    Padding="0,2,0,2"
-
-                                    FontWeight="SemiBold"
-
-                                    IsTapEnabled="True"
-
-                                    Text="{x:Bind GroupHeader, Mode=OneWay}"
-
-                                    TextTrimming="CharacterEllipsis"
-
-                                    loc:Loc.ToolTipKey="markerautocut.fileHeaderTooltip"
-
-                                    Tapped="GroupHeader_Tapped"
-
-                                    Visibility="{x:Bind ShowGroupHeader, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
-
-                                <TextBlock FontFamily="Consolas" FontSize="12" Text="{x:Bind Display}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
-
-                            </StackPanel>
-
-                        </DataTemplate>
-
-                    </ListView.ItemTemplate>
-
-                </ListView>
-
-            </Grid>
-
-        </Border>
-
-
-
-        <!-- Resolve-Export -->
-
-        <Border x:Name="ResolveCard" Grid.Row="0" Grid.Column="2" Style="{StaticResource ToolShellCard}" VerticalAlignment="Stretch">
-
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-
-                <StackPanel Spacing="8">
-
-                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="markerautocut.resolveExportHeader" />
-
-                    <ComboBox loc:Loc.HeaderKey="clipjoiner.modeLabel" ItemsSource="{x:Bind ViewModel.ModeChoices, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.ExportMode, Mode=TwoWay}" />
-
                     <Grid ColumnSpacing="8">
-
                         <Grid.ColumnDefinitions>
-
                             <ColumnDefinition Width="*" />
-
-                            <ColumnDefinition Width="Auto" />
-
+                            <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
+                        <TextBox loc:Loc.HeaderKey="markerautocut.nameFilter" loc:Loc.PlaceholderKey="markerautocut.nameFilterPlaceholder" Text="{x:Bind ViewModel.NameFilter, Mode=TwoWay}" />
+                        <TextBox Grid.Column="1" loc:Loc.HeaderKey="markerautocut.pathFilter" loc:Loc.PlaceholderKey="markerautocut.pathFilterPlaceholder" Text="{x:Bind ViewModel.PathFilter, Mode=TwoWay}" />
+                    </Grid>
+                    <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" loc:Loc.HeaderKey="markerautocut.excludeHeader">
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox loc:Loc.HeaderKey="markerautocut.nameExclude" Text="{x:Bind ViewModel.NameExclude, Mode=TwoWay}" />
+                            <TextBox Grid.Column="1" loc:Loc.HeaderKey="markerautocut.pathExclude" Text="{x:Bind ViewModel.PathExclude, Mode=TwoWay}" />
+                        </Grid>
+                    </Expander>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Button Command="{x:Bind ViewModel.FetchMarkersCommand}" Style="{StaticResource AccentButtonStyle}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon FontSize="14" Glyph="&#xE721;" />
+                                <TextBlock loc:Loc.Key="markerautocut.fetchMarkers" />
+                            </StackPanel>
+                        </Button>
+                        <CheckBox
+                            Grid.Column="1"
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Center"
+                            loc:Loc.Key="stash.useBackup"
+                            IsChecked="{x:Bind ViewModel.UseBackup, Mode=TwoWay}"
+                            IsEnabled="{x:Bind ViewModel.BackupToggleEnabled, Mode=OneWay}" />
+                        <ProgressRing Grid.Column="2" Width="20" Height="20" IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
 
-                        <TextBox Grid.Column="0" loc:Loc.HeaderKey="markerautocut.outputDir" Text="{x:Bind ViewModel.OutputDir, Mode=TwoWay}" />
-
-                        <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.PickOutputDirCommand}" loc:Loc.Key="common.addDots" />
-
+            <Border Grid.Row="1" Style="{StaticResource ToolShellCard}">
+                <Grid RowSpacing="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Border Width="22" Height="22" CornerRadius="11" Background="{ThemeResource AccentFillColorDefaultBrush}">
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" Style="{StaticResource CaptionTextBlockStyle}" Text="2" />
+                            </Border>
+                            <TextBlock VerticalAlignment="Center" Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="markerautocut.step.pick" />
+                        </StackPanel>
+                        <TextBlock
+                            Grid.Column="1"
+                            VerticalAlignment="Center"
+                            Opacity="0.8"
+                            Style="{StaticResource CaptionTextBlockStyle}"
+                            Text="{x:Bind ViewModel.SelectionSummary, Mode=OneWay}"
+                            TextTrimming="CharacterEllipsis" />
+                    </Grid>
+                    <Grid Grid.Row="1" ColumnSpacing="6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <AutoSuggestBox
+                            loc:Loc.PlaceholderKey="markerautocut.searchPlaceholder"
+                            QueryIcon="Find"
+                            Text="{x:Bind ViewModel.SearchText, Mode=TwoWay}" />
+                        <ComboBox Grid.Column="1" MinWidth="150" SelectedIndex="{x:Bind ViewModel.SortIndex, Mode=TwoWay}" loc:Loc.ToolTipKey="markerautocut.sortTooltip">
+                            <ComboBoxItem loc:Loc.Key="markerautocut.pathSortStash" />
+                            <ComboBoxItem loc:Loc.Key="markerautocut.pathSortAsc" />
+                            <ComboBoxItem loc:Loc.Key="markerautocut.pathSortDesc" />
+                        </ComboBox>
+                        <Button Grid.Column="2" Command="{x:Bind ViewModel.SelectAllMarkersCommand}" loc:Loc.Key="common.all" />
+                        <Button Grid.Column="3" Command="{x:Bind ViewModel.ClearMarkerSelectionCommand}" loc:Loc.Key="common.none" />
                     </Grid>
 
-                    <TextBox loc:Loc.HeaderKey="markerautocut.renderPreset" Text="{x:Bind ViewModel.RenderPreset, Mode=TwoWay}" />
+                    <ListView
+                        Grid.Row="2"
+                        ItemsSource="{x:Bind ViewModel.FileGroups, Mode=OneWay}"
+                        SelectionMode="None">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="0,3" />
+                                <Setter Property="MinHeight" Value="0" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:MarkerAutocutFileGroup">
+                                <Border
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8">
+                                    <StackPanel>
+                                        <!-- File header: tri-state "whole file" + expand -->
+                                        <Grid Padding="6,4" ColumnSpacing="6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button
+                                                Width="30"
+                                                Height="30"
+                                                Padding="0"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Command="{x:Bind ToggleExpandedCommand}"
+                                                loc:Loc.ToolTipKey="markerautocut.expandTooltip">
+                                                <FontIcon FontSize="12" Glyph="{x:Bind ChevronGlyph, Mode=OneWay}" />
+                                            </Button>
+                                            <CheckBox
+                                                Grid.Column="1"
+                                                MinWidth="0"
+                                                Click="GroupCheck_Click"
+                                                IsChecked="{x:Bind AllSelected, Mode=OneWay}"
+                                                IsThreeState="True"
+                                                Tag="{x:Bind}"
+                                                loc:Loc.ToolTipKey="markerautocut.fileHeaderTooltip" />
+                                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="0">
+                                                <TextBlock
+                                                    FontWeight="SemiBold"
+                                                    Text="{x:Bind FileName}"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    ToolTipService.ToolTip="{x:Bind FilePath}" />
+                                                <TextBlock Opacity="0.7" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind Summary, Mode=OneWay}" />
+                                            </StackPanel>
+                                        </Grid>
+                                        <ItemsControl
+                                            Padding="40,0,10,6"
+                                            ItemsSource="{x:Bind VisibleMarkers}"
+                                            Visibility="{x:Bind IsExpanded, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="viewModels:MarkerAutocutRowViewModel">
+                                                    <Grid Padding="0,2" ColumnSpacing="8">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <CheckBox MinWidth="0" IsChecked="{x:Bind IsSelected, Mode=TwoWay}" />
+                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                            <TextBlock Text="{x:Bind TitleText}" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock Opacity="0.65" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind TagText}" TextTrimming="CharacterEllipsis" />
+                                                        </StackPanel>
+                                                        <StackPanel Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal" Spacing="6">
+                                                            <FontIcon
+                                                                FontSize="12"
+                                                                Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                                                Glyph="&#xE7BA;"
+                                                                Visibility="{x:Bind HasEnd, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}"
+                                                                loc:Loc.ToolTipKey="markerautocut.noEndTooltip" />
+                                                            <Border Padding="8,2" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="10">
+                                                                <TextBlock FontFamily="Consolas" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind TimeRangeText}" />
+                                                            </Border>
+                                                            <TextBlock MinWidth="44" VerticalAlignment="Center" Opacity="0.7" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind DurationText}" TextAlignment="Right" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
 
-                    <NumberBox loc:Loc.HeaderKey="markerautocut.minSegment" Value="{x:Bind ViewModel.MinSegmentSeconds, Mode=TwoWay}" />
+                    <StackPanel
+                        Grid.Row="2"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="8"
+                        Visibility="{x:Bind ViewModel.HasMarkers, Mode=OneWay, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}">
+                        <FontIcon FontSize="32" Glyph="&#xE8FD;" Opacity="0.4" />
+                        <TextBlock HorizontalAlignment="Center" Opacity="0.7" loc:Loc.Key="markerautocut.emptyHint" TextAlignment="Center" TextWrapping="WrapWholeWords" MaxWidth="360" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
 
-                    <NumberBox loc:Loc.HeaderKey="markerautocut.defaultFps" Value="{x:Bind ViewModel.DefaultFps, Mode=TwoWay}" />
+        <!-- 3: export settings + order -->
+        <Grid Grid.Column="1" RowSpacing="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-                    <CheckBox loc:Loc.Key="markerautocut.inclusiveEnd" IsChecked="{x:Bind ViewModel.InclusiveEnd, Mode=TwoWay}" />
+            <Border Style="{StaticResource ToolShellCard}">
+                <StackPanel Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="22" Height="22" CornerRadius="11" Background="{ThemeResource AccentFillColorDefaultBrush}">
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" Style="{StaticResource CaptionTextBlockStyle}" Text="3" />
+                        </Border>
+                        <TextBlock VerticalAlignment="Center" Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="markerautocut.resolveExportHeader" />
+                    </StackPanel>
+                    <ComboBox HorizontalAlignment="Stretch" loc:Loc.HeaderKey="markerautocut.engine" SelectedIndex="{x:Bind ViewModel.EngineIndex, Mode=TwoWay}">
+                        <ComboBoxItem loc:Loc.Key="markerautocut.engine.ffmpeg" />
+                        <ComboBoxItem loc:Loc.Key="markerautocut.engine.davinci" />
+                    </ComboBox>
+                    <ComboBox HorizontalAlignment="Stretch" loc:Loc.HeaderKey="clipjoiner.modeLabel" SelectedIndex="{x:Bind ViewModel.ModeIndex, Mode=TwoWay}">
+                        <ComboBoxItem loc:Loc.Key="markerautocut.mode.perFile" />
+                        <ComboBoxItem loc:Loc.Key="markerautocut.mode.compilation" />
+                    </ComboBox>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox loc:Loc.HeaderKey="markerautocut.outputDir" Text="{x:Bind ViewModel.OutputDir, Mode=TwoWay}" />
+                        <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.PickOutputDirCommand}" loc:Loc.Key="common.addDots" />
+                    </Grid>
 
-                    <CheckBox loc:Loc.Key="markerautocut.doRender" IsChecked="{x:Bind ViewModel.DoRender, Mode=TwoWay}" />
+                    <!-- FFmpeg: target format for mixed sources -->
+                    <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.IsFfmpegEngine, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                        <Grid ColumnSpacing="8" RowSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <ComboBox HorizontalAlignment="Stretch" loc:Loc.HeaderKey="markerautocut.ffResolution" SelectedIndex="{x:Bind ViewModel.ResolutionIndex, Mode=TwoWay}">
+                                <ComboBoxItem loc:Loc.Key="markerautocut.ffRes.auto" />
+                                <ComboBoxItem loc:Loc.Key="markerautocut.ffRes.2160p" />
+                                <ComboBoxItem loc:Loc.Key="markerautocut.ffRes.1440p" />
+                                <ComboBoxItem loc:Loc.Key="markerautocut.ffRes.1080p" />
+                                <ComboBoxItem loc:Loc.Key="markerautocut.ffRes.720p" />
+                                <ComboBoxItem loc:Loc.Key="markerautocut.ffRes.1080x1920" />
+                                <ComboBoxItem loc:Loc.Key="markerautocut.ffRes.720x1280" />
+                            </ComboBox>
+                            <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" loc:Loc.HeaderKey="markerautocut.ffFps" SelectedIndex="{x:Bind ViewModel.FpsIndex, Mode=TwoWay}">
+                                <ComboBoxItem loc:Loc.Key="markerautocut.ffFps.auto" />
+                                <ComboBoxItem Content="23.976" />
+                                <ComboBoxItem Content="24" />
+                                <ComboBoxItem Content="25" />
+                                <ComboBoxItem Content="29.97" />
+                                <ComboBoxItem Content="30" />
+                                <ComboBoxItem Content="50" />
+                                <ComboBoxItem Content="59.94" />
+                                <ComboBoxItem Content="60" />
+                            </ComboBox>
+                            <ComboBox
+                                Grid.Row="1"
+                                HorizontalAlignment="Stretch"
+                                loc:Loc.HeaderKey="markerautocut.ffFit"
+                                SelectedIndex="{x:Bind ViewModel.FitIndex, Mode=TwoWay}"
+                                IsEnabled="{x:Bind ViewModel.ShowFitOption, Mode=OneWay}">
+                                <ComboBoxItem loc:Loc.Key="markerautocut.ffFit.blur" />
+                                <ComboBoxItem loc:Loc.Key="markerautocut.ffFit.letterbox" />
+                                <ComboBoxItem loc:Loc.Key="markerautocut.ffFit.crop" />
+                            </ComboBox>
+                            <ComboBox
+                                Grid.Row="1"
+                                Grid.Column="1"
+                                HorizontalAlignment="Stretch"
+                                loc:Loc.HeaderKey="markerautocut.ffEncoder"
+                                ItemsSource="{x:Bind ViewModel.FfmpegEncoderOptions}"
+                                SelectedItem="{x:Bind ViewModel.FfmpegEncoder, Mode=TwoWay}" />
+                        </Grid>
+                        <TextBlock Opacity="0.7" Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="WrapWholeWords" loc:Loc.Key="markerautocut.ffAutoHint" />
+                    </StackPanel>
 
-                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.Status, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                    <!-- DaVinci: render options -->
+                    <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.IsDavinciEngine, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                        <TextBox loc:Loc.HeaderKey="markerautocut.renderPreset" loc:Loc.PlaceholderKey="markerautocut.renderPresetPlaceholder" Text="{x:Bind ViewModel.RenderPreset, Mode=TwoWay}" />
+                        <ToggleSwitch loc:Loc.HeaderKey="markerautocut.doRender" IsOn="{x:Bind ViewModel.DoRender, Mode=TwoWay}" />
+                    </StackPanel>
 
+                    <!-- What the export will produce -->
+                    <Border Padding="12,10" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6">
+                        <StackPanel Spacing="4">
+                            <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="{x:Bind ViewModel.ExportSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                            <TextBlock
+                                Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Text="{x:Bind ViewModel.MissingEndSummary, Mode=OneWay}"
+                                TextWrapping="WrapWholeWords"
+                                Visibility="{x:Bind ViewModel.HasMissingEnd, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+                            <TextBlock Opacity="0.75" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.Status, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                        </StackPanel>
+                    </Border>
+
+                    <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" loc:Loc.HeaderKey="common.advanced">
+                        <StackPanel Spacing="8">
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <NumberBox
+                                    loc:Loc.HeaderKey="markerautocut.minSegment"
+                                    loc:Loc.ToolTipKey="markerautocut.minSegmentTooltip"
+                                    Minimum="0.1"
+                                    Maximum="600"
+                                    SmallChange="0.5"
+                                    SpinButtonPlacementMode="Compact"
+                                    Value="{x:Bind ViewModel.MinSegmentSeconds, Mode=TwoWay}" />
+                                <NumberBox
+                                    Grid.Column="1"
+                                    loc:Loc.HeaderKey="markerautocut.defaultFps"
+                                    loc:Loc.ToolTipKey="markerautocut.defaultFpsTooltip"
+                                    Minimum="1"
+                                    Maximum="240"
+                                    SpinButtonPlacementMode="Compact"
+                                    Value="{x:Bind ViewModel.DefaultFps, Mode=TwoWay}" />
+                            </Grid>
+                            <CheckBox loc:Loc.Key="markerautocut.inclusiveEnd" loc:Loc.ToolTipKey="markerautocut.inclusiveEndTooltip" IsChecked="{x:Bind ViewModel.InclusiveEnd, Mode=TwoWay}" />
+                            <TextBox loc:Loc.HeaderKey="markerautocut.mediaRoot" loc:Loc.ToolTipKey="markerautocut.mediaRootTooltip" Text="{x:Bind ViewModel.MediaRoot, Mode=TwoWay}" />
+                        </StackPanel>
+                    </Expander>
                 </StackPanel>
+            </Border>
 
-            </ScrollViewer>
+            <Border Grid.Row="1" Style="{StaticResource ToolShellCard}">
+                <Grid RowSpacing="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" MinHeight="140" />
+                    </Grid.RowDefinitions>
 
-        </Border>
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="2">
+                            <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="markerautocut.exportOrderHeader" />
+                            <TextBlock
+                                Opacity="0.7"
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Visibility="{x:Bind ViewModel.IsPerFileExportMode, Mode=OneWay, Converter={StaticResource BoolToVisibility}}"
+                                loc:Loc.Key="markerautocut.orderHintPerFile"
+                                TextWrapping="WrapWholeWords" />
+                            <TextBlock
+                                Opacity="0.7"
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Visibility="{x:Bind ViewModel.IsCompilationMode, Mode=OneWay, Converter={StaticResource BoolToVisibility}}"
+                                loc:Loc.Key="markerautocut.orderHintCompilation"
+                                TextWrapping="WrapWholeWords" />
+                        </StackPanel>
+                        <DropDownButton
+                            Grid.Column="1"
+                            VerticalAlignment="Top"
+                            Visibility="{x:Bind ViewModel.IsCompilationMode, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon FontSize="12" Glyph="&#xE8CB;" />
+                                <TextBlock loc:Loc.Key="markerautocut.sortMenu" />
+                            </StackPanel>
+                            <DropDownButton.Flyout>
+                                <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                    <MenuFlyoutItem Command="{x:Bind ViewModel.SortClipsCommand}" CommandParameter="list" loc:Loc.Key="markerautocut.sort.list" />
+                                    <MenuFlyoutItem Command="{x:Bind ViewModel.SortClipsCommand}" CommandParameter="tag" loc:Loc.Key="markerautocut.sort.tag" />
+                                    <MenuFlyoutItem Command="{x:Bind ViewModel.SortClipsCommand}" CommandParameter="short" loc:Loc.Key="markerautocut.sort.short" />
+                                    <MenuFlyoutItem Command="{x:Bind ViewModel.SortClipsCommand}" CommandParameter="long" loc:Loc.Key="markerautocut.sort.long" />
+                                    <MenuFlyoutSeparator />
+                                    <MenuFlyoutItem Command="{x:Bind ViewModel.SortClipsCommand}" CommandParameter="shuffle" loc:Loc.Key="markerautocut.sort.shuffle" />
+                                </MenuFlyout>
+                            </DropDownButton.Flyout>
+                        </DropDownButton>
+                    </Grid>
 
+                    <!-- Proportional preview of the result -->
+                    <Grid
+                        x:Name="ResultStrip"
+                        Grid.Row="1"
+                        Height="22"
+                        ColumnSpacing="2"
+                        Visibility="{x:Bind ViewModel.HasExportOrder, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+
+                    <!-- One timeline per video: whole videos are the unit -->
+                    <ListView
+                        x:Name="FileCardList"
+                        Grid.Row="2"
+                        AllowDrop="True"
+                        CanDragItems="True"
+                        CanReorderItems="True"
+                        DragItemsCompleted="FileCardList_DragItemsCompleted"
+                        ItemsSource="{x:Bind ViewModel.OrderFiles, Mode=OneWay}"
+                        SelectionMode="None"
+                        Visibility="{x:Bind ViewModel.IsPerFileExportMode, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="0,3" />
+                                <Setter Property="MinHeight" Value="0" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:MarkerAutocutOrderFileCard">
+                                <Border
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8">
+                                    <Grid ColumnSpacing="10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="5" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Background="{x:Bind ColorHex, Converter={StaticResource HexToBrush}}" CornerRadius="8,0,0,8" />
+                                        <StackPanel Grid.Column="1" Padding="0,10" VerticalAlignment="Center" Spacing="4">
+                                            <TextBlock HorizontalAlignment="Center" FontWeight="SemiBold" Text="{x:Bind Index}" />
+                                            <FontIcon FontSize="12" Glyph="&#xE76F;" Opacity="0.45" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Padding="0,8" VerticalAlignment="Center" Spacing="2">
+                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind FileName}" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind FilePath}" />
+                                            <TextBlock Opacity="0.8" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind Summary}" />
+                                            <TextBlock Opacity="0.6" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind Preview}" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="3" Padding="0,0,8,0" VerticalAlignment="Center" Orientation="Horizontal" Spacing="2">
+                                            <Button Width="32" Height="30" Padding="0" Click="FileCardUp_Click" Tag="{x:Bind}" loc:Loc.ToolTipKey="markerautocut.moveUpTooltip">
+                                                <FontIcon FontSize="12" Glyph="&#xE70E;" />
+                                            </Button>
+                                            <Button Width="32" Height="30" Padding="0" Click="FileCardDown_Click" Tag="{x:Bind}" loc:Loc.ToolTipKey="markerautocut.moveDownTooltip">
+                                                <FontIcon FontSize="12" Glyph="&#xE70D;" />
+                                            </Button>
+                                            <Button Width="32" Height="30" Padding="0" Click="FileCardRemove_Click" Tag="{x:Bind}" loc:Loc.ToolTipKey="markerautocut.removeVideoTooltip">
+                                                <FontIcon FontSize="12" Glyph="&#xE711;" />
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+
+                    <!-- Compilation: every clip is the unit -->
+                    <ListView
+                        x:Name="ClipCardList"
+                        Grid.Row="2"
+                        AllowDrop="True"
+                        CanDragItems="True"
+                        CanReorderItems="True"
+                        DragItemsCompleted="ClipCardList_DragItemsCompleted"
+                        ItemsSource="{x:Bind ViewModel.ExportOrder, Mode=OneWay}"
+                        SelectionMode="None"
+                        Visibility="{x:Bind ViewModel.IsCompilationMode, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="0,2" />
+                                <Setter Property="MinHeight" Value="0" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="viewModels:MarkerAutocutOrderRowViewModel">
+                                <Border
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="6">
+                                    <Grid ColumnSpacing="10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="4" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Background="{x:Bind ColorHex, Mode=OneWay, Converter={StaticResource HexToBrush}}" CornerRadius="6,0,0,6" />
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            MinWidth="22"
+                                            VerticalAlignment="Center"
+                                            FontWeight="SemiBold"
+                                            Opacity="0.8"
+                                            Text="{x:Bind Index, Mode=OneWay}"
+                                            TextAlignment="Right" />
+                                        <StackPanel Grid.Column="2" Padding="0,6" VerticalAlignment="Center" Spacing="1">
+                                            <TextBlock Text="{x:Bind Title}" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Opacity="0.65" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind Detail}" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="3" Padding="0,0,6,0" VerticalAlignment="Center" Orientation="Horizontal" Spacing="2">
+                                            <TextBlock MinWidth="40" Margin="0,0,4,0" VerticalAlignment="Center" Opacity="0.7" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind DurationText}" TextAlignment="Right" />
+                                            <Button Width="30" Height="28" Padding="0" Click="ClipUp_Click" Tag="{x:Bind}" loc:Loc.ToolTipKey="markerautocut.moveUpTooltip">
+                                                <FontIcon FontSize="11" Glyph="&#xE70E;" />
+                                            </Button>
+                                            <Button Width="30" Height="28" Padding="0" Click="ClipDown_Click" Tag="{x:Bind}" loc:Loc.ToolTipKey="markerautocut.moveDownTooltip">
+                                                <FontIcon FontSize="11" Glyph="&#xE70D;" />
+                                            </Button>
+                                            <Button Width="30" Height="28" Padding="0" Click="ClipRemove_Click" Tag="{x:Bind}" loc:Loc.ToolTipKey="markerautocut.removeTooltip">
+                                                <FontIcon FontSize="11" Glyph="&#xE711;" />
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+
+                    <TextBlock
+                        Grid.Row="2"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Opacity="0.6"
+                        loc:Loc.Key="markerautocut.orderEmpty"
+                        Visibility="{x:Bind ViewModel.HasExportOrder, Mode=OneWay, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}" />
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
-
 </UserControl>
-
-

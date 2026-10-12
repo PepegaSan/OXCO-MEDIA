@@ -13,6 +13,11 @@ LogFn = Callable[[str], None]
 ProgressFn = Callable[[float, str], None]
 
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif", ".tif", ".tiff"}
+# Animated formats: read as a stream and repeat (the still-image ``-loop 1`` option does not
+# exist for the GIF demuxer and made FFmpeg refuse the input).
+ANIMATED_EXTS = {".gif"}
+# H.264/AAC are not allowed in these containers — write .mp4 instead.
+_REMUX_TO_MP4 = {".webm", ".wmv", ".flv", ".ogv", ".3gp", ".mpg", ".mpeg", ".ts", ".m2ts", ".mts", ".vob", ".avi"}
 
 
 @dataclass
@@ -29,6 +34,9 @@ class OverlaySettings:
     overlay_audio: bool = False
     ffmpeg_encoder: str = "cpu"
     target_fps: float = 0.0
+    opacity: float = 100.0  # percent
+    fade_seconds: float = 0.0  # fade in at start, out at end
+    loop_overlay: bool = False  # repeat a short overlay video until the end time
 
 
 def _log(log: Optional[LogFn], msg: str) -> None:
@@ -56,7 +64,34 @@ def is_image_path(path: str) -> bool:
 def default_output_path(main_path: str, output_dir: Optional[str] = None) -> str:
     ip = Path(main_path)
     directory = Path(output_dir) if output_dir else ip.parent
-    return str(directory / f"{ip.stem}_overlay{ip.suffix or '.mp4'}")
+    suffix = ip.suffix or ".mp4"
+    if suffix.lower() in _REMUX_TO_MP4:
+        suffix = ".mp4"
+    return str(directory / f"{ip.stem}_overlay{suffix}")
+
+
+def _overlay_input_args(overlay: str, duration: float, *, loop_video: bool) -> list[str]:
+    """Input options so the overlay covers *duration* seconds of the main timeline."""
+    suffix = Path(overlay).suffix.lower()
+    if suffix in ANIMATED_EXTS or (loop_video and not is_image_path(overlay)):
+        return ["-stream_loop", "-1", "-t", f"{duration:.3f}", "-i", overlay]
+    if is_image_path(overlay):
+        return ["-loop", "1", "-t", f"{duration:.3f}", "-i", overlay]
+    return ["-i", overlay]
+
+
+def _overlay_look(settings: "OverlaySettings", start: float, end: float, *, with_fade: bool) -> str:
+    """Opacity and fade filters for the (already rgba) overlay stream."""
+    parts: list[str] = []
+    opacity = min(100.0, max(0.0, float(settings.opacity if settings.opacity is not None else 100.0)))
+    if opacity < 99.5:
+        parts.append(f"colorchannelmixer=aa={opacity / 100.0:.3f}")
+    fade = max(0.0, float(settings.fade_seconds or 0.0))
+    if with_fade and fade > 0:
+        fade = min(fade, (end - start) / 2)
+        parts.append(f"fade=t=in:st={start:.3f}:d={fade:.3f}:alpha=1")
+        parts.append(f"fade=t=out:st={max(start, end - fade):.3f}:d={fade:.3f}:alpha=1")
+    return ("," + ",".join(parts)) if parts else ""
 
 
 def encoder_args(encoder: str) -> list[str]:
@@ -219,22 +254,22 @@ def build_ffmpeg_command(settings: OverlaySettings, *, log: Optional[LogFn] = No
         from ffmpeg_fps import fps_output_args
 
     cmd: list[str] = [ffmpeg, "-y", "-hide_banner", "-i", str(main)]
-    if overlay_is_image:
-        # Loop still image for main duration so overlay timing works
-        cmd.extend(["-loop", "1", "-t", f"{main_dur:.3f}", "-i", str(overlay)])
-    else:
-        cmd.extend(["-i", str(overlay)])
+    animated = overlay.suffix.lower() in ANIMATED_EXTS
+    looped = animated or (settings.loop_overlay and not overlay_is_image)
+    # Looped/still inputs run on the main timeline from 0; a plain video starts at *start*.
+    cmd.extend(_overlay_input_args(str(overlay), main_dur if overlay_is_image or looped else 0, loop_video=looped))
 
     # Shift the overlay timeline to the requested start. Without this, a short
     # overlay video may already be at EOF before enable= starts showing it.
     overlay_pts = (
         "setpts=PTS-STARTPTS"
-        if overlay_is_image
+        if overlay_is_image and not animated
         else f"setpts=PTS-STARTPTS+{start:.6f}/TB"
     )
     # Scale by displayed width %, keep display aspect, and normalize SAR.
     vf = (
-        f"[1:v]{overlay_pts},scale={scale_w}:{scale_h},setsar=1,format=rgba[ov];"
+        f"[1:v]{overlay_pts},scale={scale_w}:{scale_h},setsar=1,format=rgba"
+        f"{_overlay_look(settings, start, end, with_fade=True)}[ov];"
         f"[0:v]setsar=1[main];"
         f"[main][ov]overlay={pos_x}:{pos_y}:{enable}:eof_action=pass[vout]"
     )
@@ -288,7 +323,9 @@ def build_ffmpeg_command(settings: OverlaySettings, *, log: Optional[LogFn] = No
     cmd.extend(["-pix_fmt", "yuv420p"])
     cmd.extend(fps_output_args(settings.target_fps))
     cmd.extend(audio_args)
-    cmd.extend(["-movflags", "+faststart", str(out)])
+    if out.suffix.lower() in (".mp4", ".m4v", ".mov"):
+        cmd.extend(["-movflags", "+faststart"])
+    cmd.append(str(out))
 
     _log(
         log,
@@ -360,7 +397,8 @@ def extract_preview_frame(
 
     scale_f = _preview_scale_filter(width_max, height_max)
     fc = (
-        f"[1:v]setpts=PTS-STARTPTS,scale={scale_w}:{scale_h},setsar=1,format=rgba[ov];"
+        f"[1:v]setpts=PTS-STARTPTS,scale={scale_w}:{scale_h},setsar=1,format=rgba"
+        f"{_overlay_look(settings, start, end, with_fade=False)}[ov];"
         f"[0:v]setsar=1[main];"
         f"{overlay_filter.replace('[0:v]', '[main]')};"
         f"[comp]format=yuv420p,{scale_f},format=rgb24[vout]"
@@ -376,7 +414,9 @@ def extract_preview_frame(
         "-i",
         str(main),
     ]
-    if overlay_is_image:
+    if overlay.suffix.lower() in ANIMATED_EXTS:
+        cmd.extend(["-stream_loop", "-1", "-i", str(overlay)])
+    elif overlay_is_image:
         cmd.extend(["-loop", "1", "-i", str(overlay)])
     else:
         # Align overlay timeline with main. For force-show editing previews,
@@ -424,51 +464,39 @@ def run_overlay(
     log: Optional[LogFn] = None,
     progress: Optional[ProgressFn] = None,
 ) -> str:
-    _progress(progress, 5, "Building command")
+    try:
+        from ffmpeg_progress import run_ffmpeg
+    except ImportError:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+        from ffmpeg_progress import run_ffmpeg
+
+    _progress(progress, 2, "Building command")
     cmd = build_ffmpeg_command(settings, log=log)
-    _progress(progress, 15, "Encoding")
-    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-    proc = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        creationflags=flags,
-    )
-    if proc.returncode != 0:
-        err = (proc.stderr or proc.stdout or "").strip()
+    _, _, main_dur, _, _ = probe_media(settings.main_path)
+    try:
+        run_ffmpeg(cmd, total_seconds=main_dur or 1.0, progress=progress, label="Encoding")
+    except RuntimeError as exc:
         enc = settings.ffmpeg_encoder
-        if enc.startswith("nvidia") or "nvenc" in " ".join(encoder_args(enc)).lower():
-            _log(log, "NVENC failed — retrying with libx264")
-            settings_cpu = OverlaySettings(
-                main_path=settings.main_path,
-                overlay_path=settings.overlay_path,
-                output_path=settings.output_path,
-                pos_x=settings.pos_x,
-                pos_y=settings.pos_y,
-                width_percent=settings.width_percent,
-                start_seconds=settings.start_seconds,
-                end_seconds=settings.end_seconds,
-                main_audio=settings.main_audio,
-                overlay_audio=settings.overlay_audio,
-                ffmpeg_encoder="cpu",
-                target_fps=settings.target_fps,
-            )
-            cmd_cpu = build_ffmpeg_command(settings_cpu, log=log)
-            proc = subprocess.run(
-                cmd_cpu,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                creationflags=flags,
-            )
-            if proc.returncode != 0:
-                err2 = (proc.stderr or proc.stdout or "").strip()
-                raise RuntimeError(err2 or err or "ffmpeg failed")
-        else:
-            raise RuntimeError(err or "ffmpeg failed")
+        if not (enc.startswith("nvidia") or "nvenc" in " ".join(encoder_args(enc)).lower()):
+            _remove_partial(settings.output_path)
+            raise
+        _log(log, f"NVENC failed — retrying with libx264 ({str(exc).splitlines()[0]})")
+        from dataclasses import replace
+
+        cmd_cpu = build_ffmpeg_command(replace(settings, ffmpeg_encoder="cpu"), log=log)
+        try:
+            run_ffmpeg(cmd_cpu, total_seconds=main_dur or 1.0, progress=progress, label="Encoding")
+        except RuntimeError:
+            _remove_partial(settings.output_path)
+            raise
 
     _progress(progress, 100, "Done")
     return settings.output_path
+
+
+def _remove_partial(path: str) -> None:
+    """A failed encode leaves a broken file behind — don't let it look like a result."""
+    try:
+        Path(path).unlink(missing_ok=True)
+    except OSError:
+        pass

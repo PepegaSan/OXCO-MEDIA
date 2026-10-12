@@ -629,7 +629,11 @@ def build_export_command(
     else:
         cmd += ["-map", "[aout]", "-vn"]
 
-    cmd += ["-c:a", "aac", "-b:a", "192k", out]
+    # WebM only allows Opus/Vorbis audio.
+    if out.lower().endswith(".webm"):
+        cmd += ["-c:a", "libopus", "-b:a", "160k", out]
+    else:
+        cmd += ["-c:a", "aac", "-b:a", "192k", out]
     return cmd
 
 

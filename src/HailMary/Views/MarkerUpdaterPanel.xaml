@@ -5,9 +5,25 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:viewModels="using:HailMary.ViewModels"
+    xmlns:loc="using:HailMary.Services"
     HorizontalAlignment="Stretch"
     VerticalAlignment="Stretch"
-    mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <Style x:Key="MuRowItem" TargetType="ListViewItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="MinHeight" Value="0" />
+        </Style>
+        <Style x:Key="MuStepBadge" TargetType="Border">
+            <Setter Property="Width" Value="22" />
+            <Setter Property="Height" Value="22" />
+            <Setter Property="CornerRadius" Value="11" />
+            <Setter Property="Background" Value="{ThemeResource AccentFillColorDefaultBrush}" />
+        </Style>
+    </UserControl.Resources>
 
     <TabView
         x:Name="RootTabs"
@@ -15,569 +31,748 @@
         VerticalAlignment="Stretch"
         IsAddTabButtonVisible="False"
         TabWidthMode="Equal">
+
+        <!-- ============================== Editor ============================== -->
         <TabViewItem loc:Loc.HeaderKey="common.editor" IsClosable="False">
-            <Grid x:Name="EditorGrid" Padding="{StaticResource HmContentPadding}" ColumnSpacing="10" RowSpacing="10">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition x:Name="EditorRightColumn" Width="380" />
-                </Grid.ColumnDefinitions>
+            <Grid Padding="{StaticResource HmContentPadding}" RowSpacing="10">
                 <Grid.RowDefinitions>
-                    <RowDefinition x:Name="EditorTopRow" Height="*" />
-                    <RowDefinition x:Name="EditorBottomRow" Height="0" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <!-- Linkes Fenster: Szene & Vorschau -->
-                <Border Grid.Column="0" Style="{StaticResource ToolShellCard}" VerticalAlignment="Stretch">
-                    <Grid RowSpacing="10">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
+                <!-- Scene bar: find / load / navigate -->
+                <Border Style="{StaticResource ToolShellCard}">
+                    <StackPanel Spacing="8">
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" MaxWidth="560" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox
+                                x:Name="FindBox"
+                                KeyDown="FindBox_OnKeyDown"
+                                loc:Loc.PlaceholderKey="markerupdater.findPlaceholder"
+                                Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button Grid.Column="1" Command="{x:Bind ViewModel.FindOrLoadCommand}" Style="{StaticResource AccentButtonStyle}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon FontSize="14" Glyph="&#xE721;" />
+                                    <TextBlock loc:Loc.Key="markerupdater.findButton" />
+                                </StackPanel>
+                            </Button>
+                            <DropDownButton Grid.Column="2" loc:Loc.ToolTipKey="markerupdater.moreLoadTooltip">
+                                <FontIcon FontSize="14" Glyph="&#xE712;" />
+                                <DropDownButton.Flyout>
+                                    <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                                        <MenuFlyoutItem Command="{x:Bind ViewModel.LoadFromSessionCommand}" loc:Loc.Key="common.lastScene">
+                                            <MenuFlyoutItem.Icon>
+                                                <FontIcon Glyph="&#xE81C;" />
+                                            </MenuFlyoutItem.Icon>
+                                        </MenuFlyoutItem>
+                                        <MenuFlyoutItem Command="{x:Bind ViewModel.LoadFromClipboardCommand}" loc:Loc.Key="common.clipboard">
+                                            <MenuFlyoutItem.Icon>
+                                                <FontIcon Glyph="&#xE77F;" />
+                                            </MenuFlyoutItem.Icon>
+                                        </MenuFlyoutItem>
+                                    </MenuFlyout>
+                                </DropDownButton.Flyout>
+                            </DropDownButton>
+                            <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="2">
+                                <Button Command="{x:Bind ViewModel.PreviousSceneCommand}" loc:Loc.ToolTipKey="markerupdater.prevSceneTooltip">
+                                    <FontIcon FontSize="14" Glyph="&#xE76B;" />
+                                </Button>
+                                <Button Command="{x:Bind ViewModel.NextSceneCommand}" loc:Loc.ToolTipKey="markerupdater.nextSceneTooltip">
+                                    <FontIcon FontSize="14" Glyph="&#xE76C;" />
+                                </Button>
+                            </StackPanel>
 
-                        <StackPanel Grid.Row="0" Spacing="2">
-                            <TextBlock Margin="0,0,0,4" Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="markerupdater.scenePreviewHeader" />
-                            <TextBlock
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                Text="{x:Bind ViewModel.ConnectionInfo, Mode=OneWay}" />
-                        </StackPanel>
-
-                        <ContentControl
-                            x:Name="PreviewHost"
-                            Grid.Row="1"
-                            Margin="0,0,0,8"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Stretch" />
-
-                        <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                            <Grid RowSpacing="10">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-
-                            <Grid Grid.Row="0" ColumnSpacing="8">
+                            <!-- Loaded scene -->
+                            <Grid Grid.Column="4" Margin="8,0,0,0" ColumnSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBox Grid.Column="0" loc:Loc.HeaderKey="common.searchScene" KeyDown="SearchBox_OnKeyDown" Text="{x:Bind ViewModel.SearchText, Mode=TwoWay}" />
-                                <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.SearchCommand}" loc:Loc.Key="common.search" />
-                            </Grid>
-
-                            <StackPanel Grid.Row="1" Spacing="8">
-                            <TextBox loc:Loc.HeaderKey="common.sceneId" KeyDown="SceneIdBox_OnKeyDown" Text="{x:Bind ViewModel.SceneId, Mode=TwoWay}" />
-                            <Button
-                                MinWidth="0"
-                                HorizontalAlignment="Stretch"
-                                Command="{x:Bind ViewModel.LoadSceneCommand}"
-                                loc:Loc.Key="common.load" />
-                            <Button
-                                MinWidth="0"
-                                HorizontalAlignment="Stretch"
-                                Command="{x:Bind ViewModel.LoadFromSessionCommand}"
-                                loc:Loc.Key="common.lastScene"
-                                loc:Loc.ToolTipKey="stash.lastSceneTooltip" />
-                            <Button
-                                MinWidth="0"
-                                HorizontalAlignment="Stretch"
-                                Command="{x:Bind ViewModel.LoadFromClipboardCommand}"
-                                loc:Loc.Key="common.clipboard" />
-                            </StackPanel>
-
-                            <Grid Grid.Row="2" ColumnSpacing="8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Button
-                                    Grid.Column="0"
-                                    MinWidth="0"
-                                    HorizontalAlignment="Stretch"
-                                    Command="{x:Bind ViewModel.PreviousSceneCommand}"
-                                    loc:Loc.Key="common.previousScene"
-                                    loc:Loc.ToolTipKey="markerupdater.prevSceneTooltip" />
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        Text="{x:Bind ViewModel.LoadedSceneTitle, Mode=OneWay}"
+                                        TextTrimming="CharacterEllipsis"
+                                        Visibility="{x:Bind ViewModel.HasLoadedScene, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+                                    <TextBlock
+                                        Opacity="0.7"
+                                        Style="{StaticResource CaptionTextBlockStyle}"
+                                        Text="{x:Bind ViewModel.LoadedSceneCaption, Mode=OneWay}"
+                                        TextTrimming="CharacterEllipsis"
+                                        ToolTipService.ToolTip="{x:Bind ViewModel.ResolvedLocalPath, Mode=OneWay}" />
+                                </StackPanel>
                                 <Button
                                     Grid.Column="1"
-                                    MinWidth="0"
-                                    HorizontalAlignment="Stretch"
-                                    Command="{x:Bind ViewModel.NextSceneCommand}"
-                                    loc:Loc.Key="common.nextScene"
-                                    loc:Loc.ToolTipKey="markerupdater.nextSceneTooltip" />
+                                    Command="{x:Bind ViewModel.OpenInStashCommand}"
+                                    loc:Loc.ToolTipKey="markerupdater.openInStashTooltip"
+                                    Visibility="{x:Bind ViewModel.HasLoadedScene, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                                    <FontIcon FontSize="14" Glyph="&#xE8A7;" />
+                                </Button>
                             </Grid>
+                        </Grid>
 
-                            <StackPanel Grid.Row="3" Spacing="4">
-                                <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="stash.resultsHint" />
-                                <ListView
-                                    x:Name="ResultsList"
-                                    MaxHeight="120"
-                                    DoubleTapped="ResultsList_OnDoubleTapped"
-                                    ItemsSource="{x:Bind ViewModel.Results, Mode=OneWay}"
-                                    SelectionChanged="ResultsList_OnSelectionChanged">
-                                    <ListView.ItemTemplate>
-                                        <DataTemplate x:DataType="viewModels:StashSceneRowViewModel" xmlns:viewModels="using:HailMary.ViewModels">
-                                            <TextBlock FontFamily="Consolas" Text="{x:Bind Display}" TextTrimming="CharacterEllipsis" />
-                                        </DataTemplate>
-                                    </ListView.ItemTemplate>
-                                </ListView>
-                            </StackPanel>
+                        <!-- Missing local file -->
+                        <InfoBar
+                            IsClosable="False"
+                            IsOpen="{x:Bind ViewModel.ShowLocalFileMissing, Mode=OneWay}"
+                            Message="{x:Bind ViewModel.LocalFileMissingHint, Mode=OneWay}"
+                            Severity="Warning">
+                            <InfoBar.ActionButton>
+                                <CheckBox
+                                    loc:Loc.Key="stash.useBackup"
+                                    IsChecked="{x:Bind ViewModel.UseBackup, Mode=TwoWay}"
+                                    IsEnabled="{x:Bind ViewModel.BackupToggleEnabled, Mode=OneWay}" />
+                            </InfoBar.ActionButton>
+                        </InfoBar>
 
-                            <StackPanel Grid.Row="4" Spacing="4">
-                                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="{x:Bind ViewModel.LoadedSummary, Mode=OneWay}" />
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <Button Command="{x:Bind ViewModel.OpenInStashCommand}" loc:Loc.Key="common.inStash" />
-                                    <CheckBox
-                                        loc:Loc.Key="stash.useBackup"
-                                        IsChecked="{x:Bind ViewModel.UseBackup, Mode=TwoWay}"
-                                        IsEnabled="{x:Bind ViewModel.BackupToggleEnabled, Mode=OneWay}" />
+                        <!-- Search results (collapse after a scene is loaded) -->
+                        <StackPanel Spacing="4" Visibility="{x:Bind ViewModel.HasResults, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                            <Button Padding="4,2" Background="Transparent" BorderThickness="0" Command="{x:Bind ViewModel.ToggleResultsCommand}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon FontSize="10" Glyph="&#xE70D;" />
+                                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.ResultsHeader, Mode=OneWay}" />
                                 </StackPanel>
-                                <TextBlock
-                                    IsTextSelectionEnabled="True"
-                                    FontFamily="Consolas"
-                                    FontSize="12"
-                                    Text="{x:Bind ViewModel.ResolvedLocalPath, Mode=OneWay}"
-                                    TextTrimming="CharacterEllipsis"
-                                    ToolTipService.ToolTip="{x:Bind ViewModel.ResolvedLocalPath, Mode=OneWay}" />
-                                <TextBlock
-                                    Foreground="{ThemeResource SystemFillColorCautionBrush}"
-                                    Style="{StaticResource CaptionTextBlockStyle}"
-                                    Text="{x:Bind ViewModel.LocalFileMissingHint, Mode=OneWay}" />
-                            </StackPanel>
-                            </Grid>
-                        </ScrollViewer>
-                    </Grid>
+                            </Button>
+                            <ListView
+                                x:Name="ResultsList"
+                                MaxHeight="210"
+                                IsItemClickEnabled="True"
+                                ItemClick="ResultsList_OnItemClick"
+                                ItemContainerStyle="{StaticResource MuRowItem}"
+                                ItemsSource="{x:Bind ViewModel.Results, Mode=OneWay}"
+                                SelectionChanged="ResultsList_OnSelectionChanged"
+                                Visibility="{x:Bind ViewModel.ShowResults, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="viewModels:StashSceneRowViewModel">
+                                        <Grid ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock VerticalAlignment="Center" FontFamily="Consolas" Opacity="0.6" Text="{x:Bind SceneId}" />
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="{x:Bind Title}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Opacity="0.6" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind MappedPath}" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Opacity="0.6" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind Date}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+                    </StackPanel>
                 </Border>
 
-                <!-- Rechtes Fenster: Marker & Tags -->
-                <Border x:Name="MarkerEditorCard" Grid.Row="0" Grid.Column="1" Style="{StaticResource ToolShellCard}" VerticalAlignment="Stretch">
-                    <Grid RowSpacing="10">
+                <!-- Main: video left, markers + scene right -->
+                <Grid Grid.Row="1" ColumnSpacing="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" MinWidth="420" />
+                        <ColumnDefinition Width="420" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Style="{StaticResource ToolShellCard}" VerticalAlignment="Stretch">
+                        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                            <ContentControl
+                                x:Name="PreviewHost"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Stretch" />
+                        </ScrollViewer>
+                    </Border>
+
+                    <Grid Grid.Column="1" RowSpacing="10">
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="*" MinHeight="260" />
                             <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Margin="0,0,0,4" Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="markerupdater.markersTagsHeader" />
-
-                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                            <Grid RowSpacing="10">
+                        <!-- Markers: list + editor (new / edit) -->
+                        <Border Style="{StaticResource ToolShellCard}">
+                            <Grid RowSpacing="8">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="180" />
-                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
-                                <TextBox Grid.Row="0" loc:Loc.HeaderKey="common.sceneTitle" Text="{x:Bind ViewModel.SceneTitle, Mode=TwoWay}" />
-                                <TextBox
-                                    Grid.Row="1"
-                                    AcceptsReturn="True"
-                                    loc:Loc.HeaderKey="markerupdater.sceneDetails"
-                                    MaxHeight="100"
-                                    Text="{x:Bind ViewModel.SceneDetails, Mode=TwoWay}"
-                                    TextWrapping="Wrap" />
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="common.markers" />
+                                        <TextBlock VerticalAlignment="Center" Opacity="0.7" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.MarkerCountText, Mode=OneWay}" />
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Command="{x:Bind ViewModel.NewMarkerCommand}" loc:Loc.ToolTipKey="markerupdater.newMarkerTooltip">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <FontIcon FontSize="12" Glyph="&#xE710;" />
+                                            <TextBlock loc:Loc.Key="markerupdater.newMarker" />
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
 
-                                <StackPanel Grid.Row="2" Spacing="2">
-                                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="markerupdater.sceneTagsHeader" />
+                                <Grid Grid.Row="1">
+                                    <ListView
+                                        x:Name="MarkersList"
+                                        ItemContainerStyle="{StaticResource MuRowItem}"
+                                        ItemsSource="{x:Bind ViewModel.Markers, Mode=OneWay}"
+                                        SelectionChanged="MarkersList_OnSelectionChanged">
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate x:DataType="viewModels:StashMarkerRowViewModel">
+                                                <Grid ColumnSpacing="10">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="104" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border
+                                                        Padding="6,2"
+                                                        HorizontalAlignment="Left"
+                                                        VerticalAlignment="Center"
+                                                        Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                                        CornerRadius="4">
+                                                        <TextBlock FontFamily="Consolas" FontSize="12" Text="{x:Bind RangeText, Mode=OneWay}" />
+                                                    </Border>
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <TextBlock Text="{x:Bind TitleText, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Opacity="0.65" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind TagText, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
                                     <TextBlock
-                                        Style="{StaticResource CaptionTextBlockStyle}"
-                                        loc:Loc.Key="markerupdater.sceneTagsHint"
-                                        TextWrapping="WrapWholeWords" />
-                                </StackPanel>
-                                <ListView
-                                    x:Name="SceneTagsList"
-                                    Grid.Row="3"
-                                    MaxHeight="100"
-                                    ItemsSource="{x:Bind ViewModel.SceneTags, Mode=OneWay}"
-                                    SelectionChanged="SceneTagsList_OnSelectionChanged"
-                                    SelectionMode="Single">
-                                    <ListView.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock FontFamily="Consolas" Text="{Binding}" TextTrimming="CharacterEllipsis" />
-                                        </DataTemplate>
-                                    </ListView.ItemTemplate>
-                                </ListView>
-                                <Grid Grid.Row="4" ColumnSpacing="8">
+                                        Margin="12"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Opacity="0.6"
+                                        TextAlignment="Center"
+                                        TextWrapping="WrapWholeWords"
+                                        loc:Loc.Key="markerupdater.noMarkersHint"
+                                        Visibility="{x:Bind ViewModel.HasMarkers, Mode=OneWay, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}" />
+                                </Grid>
+
+                                <!-- Editor -->
+                                <Border
+                                    Grid.Row="2"
+                                    Padding="12,10"
+                                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                    CornerRadius="6">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="{x:Bind ViewModel.MarkerEditorHeader, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                                        <TextBox loc:Loc.HeaderKey="common.title" loc:Loc.PlaceholderKey="markerupdater.markerTitlePlaceholder" Text="{x:Bind ViewModel.NewMarkerTitle, Mode=TwoWay}" />
+                                        <Grid ColumnSpacing="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox loc:Loc.HeaderKey="actionBar.start" loc:Loc.PlaceholderKey="markerupdater.timePlaceholder" Text="{x:Bind ViewModel.NewMarkerSeconds, Mode=TwoWay}" />
+                                            <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.SetStartToPlayheadCommand}" loc:Loc.ToolTipKey="markerupdater.startFromPlayheadTooltip">
+                                                <FontIcon FontSize="14" Glyph="&#xE81D;" />
+                                            </Button>
+                                            <TextBox Grid.Column="2" loc:Loc.HeaderKey="common.end" loc:Loc.PlaceholderKey="markerupdater.endPlaceholder" Text="{x:Bind ViewModel.NewMarkerEndSeconds, Mode=TwoWay}" />
+                                            <Button Grid.Column="3" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.SetEndToPlayheadCommand}" loc:Loc.ToolTipKey="markerupdater.endFromPlayheadTooltip">
+                                                <FontIcon FontSize="14" Glyph="&#xE81D;" />
+                                            </Button>
+                                        </Grid>
+                                        <ComboBox
+                                            x:Name="PrimaryTagCombo"
+                                            HorizontalAlignment="Stretch"
+                                            loc:Loc.HeaderKey="markerupdater.primaryTagHeader"
+                                            IsEditable="True"
+                                            IsTextSearchEnabled="True"
+                                            ItemsSource="{x:Bind ViewModel.AllTagNames, Mode=OneWay}"
+                                            loc:Loc.PlaceholderKey="markerupdater.tagPlaceholder"
+                                            Text="{x:Bind ViewModel.NewMarkerTagName, Mode=TwoWay}" />
+
+                                        <!-- New marker -->
+                                        <Button
+                                            HorizontalAlignment="Stretch"
+                                            Command="{x:Bind ViewModel.AddMarkerCommand}"
+                                            Style="{StaticResource AccentButtonStyle}"
+                                            Visibility="{x:Bind ViewModel.IsCreatingMarker, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <FontIcon FontSize="12" Glyph="&#xE710;" />
+                                                <TextBlock loc:Loc.Key="common.createMarker" />
+                                            </StackPanel>
+                                        </Button>
+
+                                        <!-- Edit marker -->
+                                        <Grid ColumnSpacing="8" Visibility="{x:Bind ViewModel.IsEditingMarker, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button HorizontalAlignment="Stretch" Command="{x:Bind ViewModel.UpdateSelectedMarkerCommand}" Style="{StaticResource AccentButtonStyle}">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <FontIcon FontSize="12" Glyph="&#xE74E;" />
+                                                    <TextBlock loc:Loc.Key="markerupdater.saveMarker" />
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Grid.Column="1" Click="DeleteMarker_Click" loc:Loc.ToolTipKey="markerupdater.deleteMarker">
+                                                <FontIcon FontSize="14" Foreground="{ThemeResource SystemFillColorCriticalBrush}" Glyph="&#xE74D;" />
+                                            </Button>
+                                            <Button Grid.Column="2" Command="{x:Bind ViewModel.NewMarkerCommand}" loc:Loc.Key="markerupdater.cancelEdit" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!-- Scene: tags, title, details (saved together) -->
+                        <Border Grid.Row="1" Style="{StaticResource ToolShellCard}">
+                            <StackPanel Spacing="8">
+                                <Grid ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="markerupdater.sceneHeader" />
+                                        <Border
+                                            Padding="8,1"
+                                            VerticalAlignment="Center"
+                                            Background="{ThemeResource SystemFillColorCautionBackgroundBrush}"
+                                            CornerRadius="10"
+                                            Visibility="{x:Bind ViewModel.IsSceneDirty, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                                            <TextBlock Foreground="{ThemeResource SystemFillColorCautionBrush}" Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="markerupdater.unsaved" />
+                                        </Border>
+                                    </StackPanel>
+                                    <Button
+                                        Grid.Column="1"
+                                        Command="{x:Bind ViewModel.RevertSceneChangesCommand}"
+                                        IsEnabled="{x:Bind ViewModel.IsSceneDirty, Mode=OneWay}"
+                                        loc:Loc.Key="markerupdater.revert" />
+                                    <Button
+                                        Grid.Column="2"
+                                        Command="{x:Bind ViewModel.SaveTagsCommand}"
+                                        IsEnabled="{x:Bind ViewModel.IsSceneDirty, Mode=OneWay}"
+                                        Style="{StaticResource AccentButtonStyle}"
+                                        loc:Loc.Key="markerupdater.primaryAction" />
+                                </Grid>
+
+                                <TextBlock Opacity="0.7" Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="WrapWholeWords" loc:Loc.Key="markerupdater.sceneTagsHint" />
+                                <GridView
+                                    x:Name="SceneTagChips"
+                                    MaxHeight="120"
+                                    IsItemClickEnabled="False"
+                                    ItemsSource="{x:Bind ViewModel.SceneTags, Mode=OneWay}"
+                                    SelectionMode="None">
+                                    <GridView.ItemContainerStyle>
+                                        <Style TargetType="GridViewItem">
+                                            <Setter Property="Margin" Value="0,0,6,6" />
+                                            <Setter Property="MinHeight" Value="0" />
+                                            <Setter Property="MinWidth" Value="0" />
+                                            <Setter Property="Padding" Value="0" />
+                                        </Style>
+                                    </GridView.ItemContainerStyle>
+                                    <GridView.ItemTemplate>
+                                        <DataTemplate x:DataType="x:String">
+                                            <Button Padding="10,3" CornerRadius="12" Tag="{x:Bind}">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <TextBlock Text="{x:Bind}" />
+                                                    <FontIcon FontSize="9" Opacity="0.6" Glyph="&#xE70D;" />
+                                                </StackPanel>
+                                                <Button.Flyout>
+                                                    <MenuFlyout>
+                                                        <MenuFlyoutItem Click="TagMarkerHere_Click" Tag="{x:Bind}" loc:Loc.Key="markerupdater.tagMarkerHere">
+                                                            <MenuFlyoutItem.Icon>
+                                                                <FontIcon Glyph="&#xE7C1;" />
+                                                            </MenuFlyoutItem.Icon>
+                                                        </MenuFlyoutItem>
+                                                        <MenuFlyoutItem Click="TagRemove_Click" Tag="{x:Bind}" loc:Loc.Key="markerupdater.tagRemoveFromScene">
+                                                            <MenuFlyoutItem.Icon>
+                                                                <FontIcon Glyph="&#xE711;" />
+                                                            </MenuFlyoutItem.Icon>
+                                                        </MenuFlyoutItem>
+                                                    </MenuFlyout>
+                                                </Button.Flyout>
+                                            </Button>
+                                        </DataTemplate>
+                                    </GridView.ItemTemplate>
+                                </GridView>
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <ComboBox
-                                        Grid.Column="0"
-                                        loc:Loc.HeaderKey="markerupdater.addTagHeader"
+                                        HorizontalAlignment="Stretch"
+                                        IsEditable="True"
+                                        IsTextSearchEnabled="True"
+                                        ItemsSource="{x:Bind ViewModel.AllTagNames, Mode=OneWay}"
+                                        loc:Loc.PlaceholderKey="markerupdater.addTagPlaceholder"
+                                        Text="{x:Bind ViewModel.NewTagName, Mode=TwoWay}" />
+                                    <Button Grid.Column="1" Command="{x:Bind ViewModel.AddTagToSceneCommand}" loc:Loc.ToolTipKey="markerupdater.addTagTooltip">
+                                        <FontIcon FontSize="12" Glyph="&#xE710;" />
+                                    </Button>
+                                </Grid>
+
+                                <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" loc:Loc.HeaderKey="markerupdater.titleDetailsHeader">
+                                    <StackPanel Spacing="8">
+                                        <TextBox loc:Loc.HeaderKey="common.sceneTitle" Text="{x:Bind ViewModel.SceneTitle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBox
+                                            MaxHeight="140"
+                                            AcceptsReturn="True"
+                                            loc:Loc.HeaderKey="markerupdater.sceneDetails"
+                                            Text="{x:Bind ViewModel.SceneDetails, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Expander>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </TabViewItem>
+
+        <!-- ============================== Batch ============================== -->
+        <TabViewItem loc:Loc.HeaderKey="common.batch" IsClosable="False">
+            <Grid Padding="{StaticResource HmContentPadding}" ColumnSpacing="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MinWidth="420" />
+                    <ColumnDefinition Width="380" />
+                </Grid.ColumnDefinitions>
+
+                <!-- 1 + 2: find scenes, pick rows -->
+                <Border Style="{StaticResource ToolShellCard}">
+                    <Grid RowSpacing="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Border Style="{StaticResource MuStepBadge}">
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" Style="{StaticResource CaptionTextBlockStyle}" Text="1" />
+                            </Border>
+                            <TextBlock VerticalAlignment="Center" Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="markerupdater.batchStepFind" />
+                        </StackPanel>
+                        <Grid Grid.Row="1" ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ComboBox VerticalAlignment="Bottom" loc:Loc.HeaderKey="markerupdater.batchSearchModeHeader" SelectedIndex="{x:Bind ViewModel.BatchSearchModeIndex, Mode=TwoWay}">
+                                <ComboBoxItem loc:Loc.Key="markerupdater.batchModePath" />
+                                <ComboBoxItem loc:Loc.Key="markerupdater.batchModeTag" />
+                            </ComboBox>
+                            <TextBox
+                                x:Name="BatchSearchBox"
+                                Grid.Column="1"
+                                loc:Loc.HeaderKey="markerupdater.batchSearchTerms"
+                                KeyDown="BatchSearchBox_OnKeyDown"
+                                loc:Loc.PlaceholderKey="markerupdater.batchSearchPlaceholder"
+                                Text="{x:Bind ViewModel.BatchSearchText, Mode=TwoWay}"
+                                Visibility="{x:Bind ViewModel.BatchSearchByPath, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+                            <ComboBox
+                                Grid.Column="1"
+                                HorizontalAlignment="Stretch"
+                                loc:Loc.HeaderKey="markerupdater.pickTag"
+                                IsEditable="True"
+                                IsTextSearchEnabled="True"
+                                ItemsSource="{x:Bind ViewModel.AllTagNames, Mode=OneWay}"
+                                loc:Loc.PlaceholderKey="markerupdater.batchTagPlaceholder"
+                                Text="{x:Bind ViewModel.BatchSearchTagName, Mode=TwoWay}"
+                                Visibility="{x:Bind ViewModel.BatchSearchByTag, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+                            <Button Grid.Column="2" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.BatchSearchCommand}" Style="{StaticResource AccentButtonStyle}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon FontSize="14" Glyph="&#xE721;" />
+                                    <TextBlock loc:Loc.Key="markerupdater.batchSearchButton" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <Grid Grid.Row="2" ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
+                                <Border Style="{StaticResource MuStepBadge}">
+                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" Style="{StaticResource CaptionTextBlockStyle}" Text="2" />
+                                </Border>
+                                <TextBlock VerticalAlignment="Center" Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="markerupdater.batchStepPick" />
+                                <TextBlock VerticalAlignment="Center" Opacity="0.7" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.BatchResultsSummary, Mode=OneWay}" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Click="BatchSelectAll_OnClick" loc:Loc.Key="common.selectAll" />
+                            <Button Grid.Column="2" Click="BatchClearSelection_OnClick" loc:Loc.Key="common.clearSelection" />
+                        </Grid>
+
+                        <Grid Grid.Row="3">
+                            <ListView
+                                x:Name="BatchList"
+                                DoubleTapped="BatchList_OnDoubleTapped"
+                                IsItemClickEnabled="True"
+                                ItemClick="BatchList_OnItemClick"
+                                ItemContainerStyle="{StaticResource MuRowItem}"
+                                ItemsSource="{x:Bind ViewModel.BatchMatches, Mode=OneWay}"
+                                SelectionMode="None">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="viewModels:MarkerBatchSceneRowViewModel">
+                                        <Grid Padding="0,2" ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="4" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <!-- accent bar marks checked rows at a glance -->
+                                            <Border
+                                                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                CornerRadius="2"
+                                                Visibility="{x:Bind IsChecked, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+                                            <CheckBox
+                                                Grid.Column="1"
+                                                MinWidth="0"
+                                                VerticalAlignment="Center"
+                                                IsChecked="{x:Bind IsChecked, Mode=TwoWay}" />
+                                            <StackPanel Grid.Column="2">
+                                                <TextBlock Text="{x:Bind TitleText}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Opacity="0.6" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind Path}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Opacity="0.75" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind TagsText}" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                            <TextBlock
+                                Margin="12"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Opacity="0.6"
+                                TextAlignment="Center"
+                                TextWrapping="WrapWholeWords"
+                                loc:Loc.Key="markerupdater.batchEmptyHint"
+                                Visibility="{x:Bind ViewModel.HasBatchMatches, Mode=OneWay, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}" />
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- 3: what to do with them -->
+                <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="10">
+                        <Border Style="{StaticResource ToolShellCard}">
+                            <StackPanel Spacing="10">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Border Style="{StaticResource MuStepBadge}">
+                                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" Style="{StaticResource CaptionTextBlockStyle}" Text="3" />
+                                    </Border>
+                                    <TextBlock VerticalAlignment="Center" Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="markerupdater.batchTagAction" />
+                                </StackPanel>
+                                <RadioButtons loc:Loc.HeaderKey="markerupdater.batchScopeHeader" SelectedIndex="{x:Bind ViewModel.BatchScopeIndex, Mode=TwoWay}">
+                                    <RadioButton Content="{x:Bind ViewModel.BatchScopeSelectedText, Mode=OneWay}" />
+                                    <RadioButton Content="{x:Bind ViewModel.BatchScopeAllText, Mode=OneWay}" />
+                                </RadioButtons>
+
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox
+                                        HorizontalAlignment="Stretch"
+                                        loc:Loc.HeaderKey="markerupdater.batchApplyTag"
                                         IsEditable="True"
                                         IsTextSearchEnabled="True"
                                         ItemsSource="{x:Bind ViewModel.AllTagNames, Mode=OneWay}"
                                         loc:Loc.PlaceholderKey="markerupdater.tagPlaceholder"
-                                        Text="{x:Bind ViewModel.NewTagName, Mode=TwoWay}" />
-                                    <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.AddTagToSceneCommand}" loc:Loc.Key="common.add" />
-                                    <Button
-                                        Grid.Column="2"
-                                        VerticalAlignment="Bottom"
-                                        Command="{x:Bind ViewModel.RemoveSelectedTagCommand}"
-                                        loc:Loc.Key="common.remove"
-                                        loc:Loc.ToolTipKey="markerupdater.removeTagTooltip" />
-                                    <Button
-                                        Grid.Column="3"
-                                        VerticalAlignment="Bottom"
-                                        Command="{x:Bind ViewModel.CreateMarkerAtSelectedTagCommand}"
-                                        loc:Loc.Key="markerupdater.markerAtTag"
-                                        loc:Loc.ToolTipKey="markerupdater.markerAtTagTooltip" />
+                                        Text="{x:Bind ViewModel.BatchAddTagName, Mode=TwoWay}" />
+                                    <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.BatchAddTagCommand}" loc:Loc.Key="common.add" />
                                 </Grid>
 
-                                <StackPanel Grid.Row="5" Spacing="4">
-                                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="common.markers" />
-                                    <ListView
-                                        x:Name="MarkersList"
-                                        ItemsSource="{x:Bind ViewModel.Markers, Mode=OneWay}"
-                                        SelectionChanged="MarkersList_OnSelectionChanged">
-                                        <ListView.ItemTemplate>
-                                            <DataTemplate x:DataType="viewModels:StashMarkerRowViewModel" xmlns:viewModels="using:HailMary.ViewModels">
-                                                <TextBlock FontFamily="Consolas" Text="{x:Bind Display}" TextTrimming="CharacterEllipsis" />
-                                            </DataTemplate>
-                                        </ListView.ItemTemplate>
-                                    </ListView>
-                                </StackPanel>
-
-                                <Grid Grid.Row="6" ColumnSpacing="8">
+                                <Grid ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="140" MinWidth="120" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <TextBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" loc:Loc.HeaderKey="common.title" Text="{x:Bind ViewModel.NewMarkerTitle, Mode=TwoWay}" />
-                                    <TextBox Grid.Row="1" Grid.Column="0" loc:Loc.HeaderKey="actionBar.start" loc:Loc.PlaceholderKey="markerupdater.timePlaceholder" Text="{x:Bind ViewModel.NewMarkerSeconds, Mode=TwoWay}" />
-                                    <TextBox Grid.Row="1" Grid.Column="1" loc:Loc.HeaderKey="common.end" loc:Loc.PlaceholderKey="markerupdater.timePlaceholder" Text="{x:Bind ViewModel.NewMarkerEndSeconds, Mode=TwoWay}" />
                                     <ComboBox
-                                        x:Name="PrimaryTagCombo"
-                                        Grid.Row="1"
-                                        Grid.Column="2"
-                                        loc:Loc.HeaderKey="markerupdater.primaryTagHeader"
+                                        HorizontalAlignment="Stretch"
+                                        loc:Loc.HeaderKey="markerupdater.batchRemoveTag"
+                                        IsEditable="True"
+                                        IsTextSearchEnabled="True"
+                                        ItemsSource="{x:Bind ViewModel.BatchRemovableTags, Mode=OneWay}"
+                                        loc:Loc.PlaceholderKey="markerupdater.batchTagPlaceholder"
+                                        Text="{x:Bind ViewModel.BatchRemoveTagName, Mode=TwoWay}" />
+                                    <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.BatchRemoveTagCommand}" loc:Loc.Key="common.remove" />
+                                </Grid>
+                                <TextBlock
+                                    Margin="0,-4,0,0"
+                                    Opacity="0.7"
+                                    Style="{StaticResource CaptionTextBlockStyle}"
+                                    Text="{x:Bind ViewModel.BatchRemovableHint, Mode=OneWay}"
+                                    TextWrapping="WrapWholeWords" />
+                                <CheckBox loc:Loc.Key="markerupdater.batchRemoveAlsoDelete" IsChecked="{x:Bind ViewModel.BatchRemoveAlsoDeleteFromStash, Mode=TwoWay}" />
+                                <TextBlock Opacity="0.7" Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="WrapWholeWords" loc:Loc.Key="markerupdater.batchDoubleClickHint" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Danger zone: affects all of Stash, not the matches -->
+                        <Border Style="{StaticResource ToolShellCard}" BorderBrush="{ThemeResource SystemFillColorCriticalBrush}">
+                            <StackPanel Spacing="8">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon FontSize="14" Foreground="{ThemeResource SystemFillColorCriticalBrush}" Glyph="&#xE7BA;" />
+                                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="markerupdater.dangerZone" />
+                                </StackPanel>
+                                <TextBlock Opacity="0.75" Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="WrapWholeWords" loc:Loc.Key="markerupdater.tagDeleteHintFull" />
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox
+                                        HorizontalAlignment="Stretch"
                                         IsEditable="True"
                                         IsTextSearchEnabled="True"
                                         ItemsSource="{x:Bind ViewModel.AllTagNames, Mode=OneWay}"
-                                        Text="{x:Bind ViewModel.NewMarkerTagName, Mode=TwoWay}" />
+                                        loc:Loc.PlaceholderKey="markerupdater.batchDeleteGlobalPlaceholder"
+                                        Text="{x:Bind ViewModel.BatchDeleteGlobalTagName, Mode=TwoWay}" />
+                                    <Button Grid.Column="1" Command="{x:Bind ViewModel.BatchDeleteGlobalTagCommand}" loc:Loc.Key="markerupdater.batchDeleteTag" />
                                 </Grid>
-
-                                <StackPanel Grid.Row="7" Orientation="Horizontal" Spacing="8">
-                                    <Button Command="{x:Bind ViewModel.AddMarkerCommand}" loc:Loc.Key="common.createMarker" />
-                                    <Button Command="{x:Bind ViewModel.UpdateSelectedMarkerCommand}" loc:Loc.Key="common.update" />
-                                    <Button Command="{x:Bind ViewModel.DeleteSelectedMarkerCommand}" loc:Loc.Key="common.delete" />
-                                </StackPanel>
-                            </Grid>
-                        </ScrollViewer>
-                    </Grid>
-                </Border>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
             </Grid>
         </TabViewItem>
 
-        <TabViewItem loc:Loc.HeaderKey="markerupdater.tabQuick" IsClosable="False">
-            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                <StackPanel Padding="16,12" Spacing="10">
-                    <Border Style="{StaticResource ToolShellCard}">
-                        <StackPanel Spacing="8">
-                            <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="markerupdater.quickTabHeader" />
-                            <TextBlock
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                loc:Loc.Key="markerupdater.quickTabHint"
-                                TextWrapping="WrapWholeWords" />
-                            <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.ActiveQuickPresetLabel, Mode=OneWay}" />
-                            <ItemsControl ItemsSource="{x:Bind ViewModel.QuickPresets, Mode=OneWay}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <StackPanel Orientation="Horizontal" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate xmlns:models="using:HailMary.Models" x:DataType="models:MarkerQuickPreset">
-                                        <Button
-                                            Margin="0,0,8,8"
-                                            Click="QuickPresetButton_Click"
-                                            Content="{x:Bind Display}"
-                                            Tag="{x:Bind}" />
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                            <TextBlock
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                Text="{x:Bind ViewModel.QuickMarkerHint, Mode=OneWay}"
-                                TextWrapping="WrapWholeWords" />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Style="{StaticResource ToolShellCard}">
-                        <StackPanel Spacing="8">
-                            <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="markerupdater.quickManageHeader" />
-                            <Grid ColumnSpacing="8" RowSpacing="8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="100" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <TextBox
-                                    Grid.Row="0"
-                                    Grid.Column="0"
-                                    loc:Loc.HeaderKey="markerupdater.quickPresetLabel"
-                                    Text="{x:Bind ViewModel.NewQuickPresetLabel, Mode=TwoWay}" />
-                                <TextBox
-                                    Grid.Row="0"
-                                    Grid.Column="1"
-                                    loc:Loc.HeaderKey="markerupdater.quickPresetTag"
-                                    Text="{x:Bind ViewModel.NewQuickPresetTag, Mode=TwoWay}" />
-                                <TextBox
-                                    Grid.Row="0"
-                                    Grid.Column="2"
-                                    loc:Loc.HeaderKey="markerupdater.quickPresetTitle"
-                                    Text="{x:Bind ViewModel.NewQuickPresetTitle, Mode=TwoWay}" />
-                                <ComboBox
-                                    Grid.Row="0"
-                                    Grid.Column="3"
-                                    loc:Loc.HeaderKey="markerupdater.quickPresetSlot"
-                                    ItemsSource="{x:Bind ViewModel.QuickPresetSlotChoices, Mode=OneWay}"
-                                    SelectedItem="{x:Bind ViewModel.NewQuickPresetSlot, Mode=TwoWay}" />
-                                <StackPanel
-                                    Grid.Row="1"
-                                    Grid.Column="0"
-                                    Grid.ColumnSpan="4"
-                                    Orientation="Horizontal"
-                                    Spacing="8">
-                                    <Button Command="{x:Bind ViewModel.AddQuickPresetCommand}" loc:Loc.Key="markerupdater.quickPresetAdd" />
-                                    <Button
-                                        Command="{x:Bind ViewModel.RemoveActiveQuickPresetCommand}"
-                                        loc:Loc.Key="markerupdater.quickPresetRemove"
-                                        loc:Loc.ToolTipKey="markerupdater.quickPresetRemoveTooltip" />
-                                </StackPanel>
-                            </Grid>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-            </ScrollViewer>
-        </TabViewItem>
-
+        <!-- ============================== Cleanup ============================== -->
         <TabViewItem loc:Loc.HeaderKey="common.cleanup" IsClosable="False">
-            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                <StackPanel Padding="16,12" Spacing="10">
-                    <Border Style="{StaticResource ToolShellCard}">
-                        <StackPanel Spacing="8">
-                            <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="common.cleanup" />
-                            <TextBlock
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                loc:Loc.Key="markerupdater.cleanupHintFull"
-                                TextWrapping="WrapWholeWords" />
-                            <Grid ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Button Grid.Column="0" Command="{x:Bind ViewModel.CleanupScanCommand}" loc:Loc.Key="common.scan" />
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                                    <TextBlock VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="markerupdater.cleanupTolerance" />
-                                    <TextBox Width="60" Text="{x:Bind ViewModel.CleanupToleranceText, Mode=TwoWay}" />
-                                </StackPanel>
-                                <TextBlock
-                                    Grid.Column="2"
-                                    VerticalAlignment="Center"
-                                    Style="{StaticResource CaptionTextBlockStyle}"
-                                    Text="{x:Bind ViewModel.CleanupStatus, Mode=OneWay}"
-                                    TextWrapping="WrapWholeWords" />
-                            </Grid>
-                            <TextBlock
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                loc:Loc.Key="markerupdater.cleanupToleranceHint"
-                                TextWrapping="WrapWholeWords" />
+            <Grid Padding="{StaticResource HmContentPadding}" RowSpacing="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Border Style="{StaticResource ToolShellCard}">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="4">
+                            <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="markerupdater.cleanupTitle" />
+                            <TextBlock Opacity="0.75" Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="WrapWholeWords" loc:Loc.Key="markerupdater.cleanupHintFull" />
+                            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.CleanupStatus, Mode=OneWay}" TextWrapping="WrapWholeWords" />
                         </StackPanel>
-                    </Border>
+                        <TextBox
+                            Grid.Column="1"
+                            Width="110"
+                            VerticalAlignment="Bottom"
+                            loc:Loc.HeaderKey="markerupdater.cleanupTolerance"
+                            loc:Loc.ToolTipKey="markerupdater.cleanupToleranceHint"
+                            Text="{x:Bind ViewModel.CleanupToleranceText, Mode=TwoWay}" />
+                        <Button Grid.Column="2" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.CleanupScanCommand}" Style="{StaticResource AccentButtonStyle}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon FontSize="14" Glyph="&#xE773;" />
+                                <TextBlock loc:Loc.Key="common.scan" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <Grid Grid.Row="1" ColumnSpacing="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
 
                     <Border Style="{StaticResource ToolShellCard}">
-                        <StackPanel Spacing="8">
-                            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="markerupdater.clampHeader" />
+                        <Grid RowSpacing="8">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Spacing="2">
+                                <TextBlock Style="{StaticResource ToolShellSectionHeader}" Text="{x:Bind ViewModel.CleanupClampHeader, Mode=OneWay}" />
+                                <TextBlock Opacity="0.7" Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="WrapWholeWords" loc:Loc.Key="markerupdater.cleanupClampHint" />
+                            </StackPanel>
                             <ListView
                                 x:Name="CleanupClampList"
-                                MaxHeight="220"
+                                Grid.Row="1"
+                                ItemContainerStyle="{StaticResource MuRowItem}"
                                 ItemsSource="{x:Bind ViewModel.CleanupClampItems, Mode=OneWay}"
                                 SelectionChanged="CleanupClampList_OnSelectionChanged"
-                                SelectionMode="Extended">
+                                SelectionMode="Multiple">
                                 <ListView.ItemTemplate>
-                                    <DataTemplate x:DataType="viewModels:MarkerCleanupRowViewModel" xmlns:viewModels="using:HailMary.ViewModels">
-                                        <TextBlock FontFamily="Consolas" Text="{x:Bind Display}" TextTrimming="CharacterEllipsis" />
+                                    <DataTemplate x:DataType="viewModels:MarkerCleanupRowViewModel">
+                                        <Grid ColumnSpacing="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <TextBlock Text="{x:Bind SceneLine}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Opacity="0.65" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind MarkerLine}" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" VerticalAlignment="Center" FontFamily="Consolas" Foreground="{ThemeResource SystemFillColorCautionBrush}" Text="{x:Bind OverrunText}" />
+                                        </Grid>
                                     </DataTemplate>
                                 </ListView.ItemTemplate>
                             </ListView>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
                                 <Button Click="CleanupClampSelected_OnClick" loc:Loc.Key="markerupdater.clampSelected" />
                                 <Button Command="{x:Bind ViewModel.CleanupClampAllCommand}" loc:Loc.Key="markerupdater.clampAll" />
                             </StackPanel>
-                        </StackPanel>
+                        </Grid>
                     </Border>
 
-                    <Border Style="{StaticResource ToolShellCard}">
-                        <StackPanel Spacing="8">
-                            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="markerupdater.deleteHeader" />
+                    <Border Grid.Column="1" Style="{StaticResource ToolShellCard}">
+                        <Grid RowSpacing="8">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Spacing="2">
+                                <TextBlock Style="{StaticResource ToolShellSectionHeader}" Text="{x:Bind ViewModel.CleanupDeleteHeader, Mode=OneWay}" />
+                                <TextBlock Opacity="0.7" Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="WrapWholeWords" loc:Loc.Key="markerupdater.cleanupDeleteHint" />
+                            </StackPanel>
                             <ListView
                                 x:Name="CleanupDeleteList"
-                                MaxHeight="220"
+                                Grid.Row="1"
+                                ItemContainerStyle="{StaticResource MuRowItem}"
                                 ItemsSource="{x:Bind ViewModel.CleanupDeleteItems, Mode=OneWay}"
                                 SelectionChanged="CleanupDeleteList_OnSelectionChanged"
-                                SelectionMode="Extended">
+                                SelectionMode="Multiple">
                                 <ListView.ItemTemplate>
-                                    <DataTemplate x:DataType="viewModels:MarkerCleanupRowViewModel" xmlns:viewModels="using:HailMary.ViewModels">
-                                        <TextBlock FontFamily="Consolas" Text="{x:Bind Display}" TextTrimming="CharacterEllipsis" />
+                                    <DataTemplate x:DataType="viewModels:MarkerCleanupRowViewModel">
+                                        <Grid ColumnSpacing="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <TextBlock Text="{x:Bind SceneLine}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Opacity="0.65" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind MarkerLine}" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" VerticalAlignment="Center" FontFamily="Consolas" Foreground="{ThemeResource SystemFillColorCriticalBrush}" Text="{x:Bind OverrunText}" />
+                                        </Grid>
                                     </DataTemplate>
                                 </ListView.ItemTemplate>
                             </ListView>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
                                 <Button Click="CleanupDeleteSelected_OnClick" loc:Loc.Key="markerupdater.deleteSelected" />
                                 <Button Command="{x:Bind ViewModel.CleanupDeleteAllCommand}" loc:Loc.Key="common.deleteAll" />
                             </StackPanel>
-                        </StackPanel>
+                        </Grid>
                     </Border>
-                </StackPanel>
-            </ScrollViewer>
-        </TabViewItem>
-
-        <TabViewItem loc:Loc.HeaderKey="common.batch" IsClosable="False">
-            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                <StackPanel Padding="16,12" Spacing="10">
-                    <Border Style="{StaticResource ToolShellCard}">
-                        <StackPanel Spacing="8">
-                            <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="markerupdater.batchSearchByFile" />
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <Button Command="{x:Bind ViewModel.SetBatchSearchModePathCommand}" loc:Loc.Key="markerupdater.batchSearchByPath" />
-                                <Button Command="{x:Bind ViewModel.SetBatchSearchModeTagCommand}" loc:Loc.Key="markerupdater.batchSearchByTag" />
-                                <CheckBox Margin="16,0,0,0" loc:Loc.Key="markerupdater.batchScopeSelected" IsChecked="{x:Bind ViewModel.BatchScopeSelectedOnly, Mode=TwoWay}" />
-                            </StackPanel>
-                            <Grid ColumnSpacing="8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBox
-                                    x:Name="BatchSearchBox"
-                                    Grid.Column="0"
-                                    loc:Loc.HeaderKey="markerupdater.batchSearchTerms"
-                                    KeyDown="BatchSearchBox_OnKeyDown"
-                                    loc:Loc.PlaceholderKey="markerupdater.batchSearchPlaceholder"
-                                    Text="{x:Bind ViewModel.BatchSearchText, Mode=TwoWay}"
-                                    Visibility="{x:Bind ViewModel.BatchSearchByPath, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
-                                <ComboBox
-                                    Grid.Column="0"
-                                    loc:Loc.HeaderKey="markerupdater.pickTag"
-                                    IsEditable="True"
-                                    IsTextSearchEnabled="True"
-                                    ItemsSource="{x:Bind ViewModel.AllTagNames, Mode=OneWay}"
-                                    loc:Loc.PlaceholderKey="markerupdater.batchTagPlaceholder"
-                                    Text="{x:Bind ViewModel.BatchSearchTagName, Mode=TwoWay}"
-                                    Visibility="{x:Bind ViewModel.BatchSearchByTag, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
-                                <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.BatchSearchCommand}" loc:Loc.Key="markerupdater.batchSearchButton" />
-                            </Grid>
-                        </StackPanel>
-                    </Border>
-
-                    <Border Style="{StaticResource ToolShellCard}">
-                        <StackPanel Spacing="8">
-                            <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="markerupdater.batchTagAction" />
-                            <Grid ColumnSpacing="8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <ComboBox
-                                    Grid.Column="0"
-                                    loc:Loc.HeaderKey="markerupdater.batchApplyTag"
-                                    IsEditable="True"
-                                    IsTextSearchEnabled="True"
-                                    ItemsSource="{x:Bind ViewModel.AllTagNames, Mode=OneWay}"
-                                    loc:Loc.PlaceholderKey="markerupdater.tagPlaceholder"
-                                    Text="{x:Bind ViewModel.BatchAddTagName, Mode=TwoWay}" />
-                                <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.BatchAddTagCommand}" loc:Loc.Key="common.add" />
-                            </Grid>
-                            <CheckBox loc:Loc.Key="markerupdater.batchRemoveAlsoDelete" IsChecked="{x:Bind ViewModel.BatchRemoveAlsoDeleteFromStash, Mode=TwoWay}" />
-                            <Grid ColumnSpacing="8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <ComboBox
-                                    Grid.Column="0"
-                                    loc:Loc.HeaderKey="markerupdater.batchRemoveTag"
-                                    IsEditable="True"
-                                    IsTextSearchEnabled="True"
-                                    ItemsSource="{x:Bind ViewModel.AllTagNames, Mode=OneWay}"
-                                    loc:Loc.PlaceholderKey="markerupdater.batchTagPlaceholder"
-                                    Text="{x:Bind ViewModel.BatchRemoveTagName, Mode=TwoWay}" />
-                                <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.BatchRemoveTagCommand}" loc:Loc.Key="common.remove" />
-                            </Grid>
-                            <Grid ColumnSpacing="8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <ComboBox
-                                    Grid.Column="0"
-                                    loc:Loc.HeaderKey="markerupdater.batchDeleteTag"
-                                    IsEditable="True"
-                                    IsTextSearchEnabled="True"
-                                    ItemsSource="{x:Bind ViewModel.AllTagNames, Mode=OneWay}"
-                                    loc:Loc.PlaceholderKey="markerupdater.batchDeleteGlobalPlaceholder"
-                                    Text="{x:Bind ViewModel.BatchDeleteGlobalTagName, Mode=TwoWay}" />
-                                <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.BatchDeleteGlobalTagCommand}" loc:Loc.Key="markerupdater.batchDeleteTag" />
-                            </Grid>
-                            <TextBlock
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                loc:Loc.Key="markerupdater.tagDeleteHintFull"
-                                TextWrapping="WrapWholeWords" />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Style="{StaticResource ToolShellCard}">
-                        <StackPanel Spacing="8">
-                            <Grid ColumnSpacing="8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock VerticalAlignment="Center" Style="{StaticResource BodyStrongTextBlockStyle}" Text="{x:Bind ViewModel.BatchResultsSummary, Mode=OneWay}" />
-                                <Button Grid.Column="1" Click="BatchSelectAll_OnClick" loc:Loc.Key="common.selectAll" />
-                                <Button Grid.Column="2" Click="BatchClearSelection_OnClick" loc:Loc.Key="common.clearSelection" />
-                            </Grid>
-                            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="markerupdater.batchDoubleClickHint" />
-                            <ListView
-                                x:Name="BatchList"
-                                MinHeight="240"
-                                DoubleTapped="BatchList_OnDoubleTapped"
-                                ItemsSource="{x:Bind ViewModel.BatchMatches, Mode=OneWay}"
-                                SelectionChanged="BatchList_OnSelectionChanged"
-                                SelectionMode="Extended">
-                                <ListView.ItemTemplate>
-                                    <DataTemplate x:DataType="viewModels:MarkerBatchSceneRowViewModel" xmlns:viewModels="using:HailMary.ViewModels">
-                                        <TextBlock FontFamily="Consolas" Text="{x:Bind Display}" TextTrimming="CharacterEllipsis" />
-                                    </DataTemplate>
-                                </ListView.ItemTemplate>
-                            </ListView>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-            </ScrollViewer>
+                </Grid>
+            </Grid>
         </TabViewItem>
     </TabView>
 </UserControl>

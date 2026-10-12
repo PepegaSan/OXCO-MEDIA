@@ -75,6 +75,12 @@ def detail_from_analyze(result) -> dict:
         "recommended_seam_method": result.recommended_seam_method,
         "range_start_seconds": round(result.range_start_seconds, 3),
         "range_end_seconds": round(result.range_end_seconds, 3),
+        "seam_cost": round(result.seam_cost, 3),
+        "candidates": [
+            {"start_seconds": round(a, 3), "end_seconds": round(b, 3), "score": round(sc, 4)}
+            for a, b, sc in (result.candidates or [])
+        ],
+        "seam_thumbs": result.seam_thumbs or [],
     }
 
 

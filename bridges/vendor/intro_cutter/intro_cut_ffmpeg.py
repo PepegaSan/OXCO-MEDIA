@@ -186,6 +186,7 @@ def run_ffmpeg_cut(
     output_dir: Optional[str] = None,
     target_fps: Optional[float] = None,
     log: LogFn = None,
+    progress=None,
 ) -> Path:
     if intro_sec < 0 or outro_sec < 0:
         raise ValueError("Intro und Outro muessen >= 0 sein.")
@@ -202,7 +203,7 @@ def run_ffmpeg_cut(
 
     ext = output_extension(video_codec, src)
     out_base = resolve_output_directory(output_dir, src)
-    out_path = out_base / f"{src.stem}_introcut{ext}"
+    out_path = _unique_path(out_base / f"{src.stem}_introcut{ext}")
 
     _log(log, f"Quelle: {src}")
     _log(log, f"Dauer: {dur:.3f}s → neu {new_dur:.3f}s")
@@ -224,6 +225,10 @@ def run_ffmpeg_cut(
 
     if has_audio_stream(src):
         a_codec = audio_codec.strip()
+        if ext == ".webm" and a_codec.lower() not in ("libopus", "libvorbis"):
+            # WebM only allows Opus/Vorbis audio — AAC or a copied AAC track would fail.
+            _log(log, "WebM-Ausgabe: Audio wird als Opus kodiert")
+            a_codec = "libopus"
         if a_codec.lower() == "copy":
             a_args = ["-map", "0:a:0", "-c:a", "copy"]
         else:
@@ -246,30 +251,43 @@ def run_ffmpeg_cut(
     # FPS override only when re-encoding (copy can't change rate)
     fps_args = [] if v_codec.lower() == "copy" else fps_output_args(target_fps)
 
+    try:
+        from ffmpeg_progress import run_ffmpeg
+    except ImportError:
+        import sys
+        from pathlib import Path as _P
+        sys.path.insert(0, str(_P(__file__).resolve().parents[2]))
+        from ffmpeg_progress import run_ffmpeg
+
+    if v_codec.lower() == "copy":
+        _log(log, "Copy-Modus: Schnitt landet auf dem nächsten Keyframe vor dem Intro-Ende")
+
+    # Seek in front of -i: FFmpeg jumps to the intro end instead of decoding the intro
+    # (frame-accurate when re-encoding).
     args = [
         ffmpeg,
         "-hide_banner",
         "-y",
+        "-ss",
+        f"{intro_sec:.6f}",
+        "-t",
+        f"{new_dur:.6f}",
         "-i",
         str(src),
-        "-ss",
-        str(intro_sec).replace(",", "."),
-        "-t",
-        str(new_dur).replace(",", "."),
         "-map",
         "0:v:0",
     ] + a_args + v_args + fps_args + mov + [str(out_path)]
 
-    p = subprocess.run(
-        args,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
-    )
-    if p.returncode != 0:
-        err = (p.stderr or p.stdout or "").strip()
-        raise RuntimeError(f"ffmpeg Fehler (Code {p.returncode}):\n{err[:4000]}")
-
+    run_ffmpeg(args, total_seconds=new_dur, progress=progress, label="Intro/Outro", log=log)
     return out_path
+
+
+def _unique_path(base: Path) -> Path:
+    """Never overwrite an earlier result: name_introcut.mp4 → name_introcut_2.mp4 …"""
+    if not base.exists():
+        return base
+    for n in range(2, 10000):
+        candidate = base.with_name(f"{base.stem}_{n}{base.suffix}")
+        if not candidate.exists():
+            return candidate
+    return base

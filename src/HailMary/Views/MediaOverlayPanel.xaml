@@ -75,6 +75,10 @@
                         <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="common.export" />
                     </Expander.Header>
                     <StackPanel Padding="0,8,0,0" Spacing="8">
+                        <TextBlock Text="{x:Bind ViewModel.OpacityLabel, Mode=OneWay}" />
+                        <Slider Minimum="5" Maximum="100" StepFrequency="5" Value="{x:Bind ViewModel.Opacity, Mode=TwoWay}" />
+                        <NumberBox loc:Loc.HeaderKey="mediaoverlay.fadeSeconds" Minimum="0" Maximum="10" SmallChange="0.25" LargeChange="1" SpinButtonPlacementMode="Compact" Value="{x:Bind ViewModel.FadeSeconds, Mode=TwoWay}" />
+                        <CheckBox loc:Loc.Key="mediaoverlay.loopOverlay" IsChecked="{x:Bind ViewModel.LoopOverlay, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.OverlayAudioEnabled, Mode=OneWay}" />
                         <CheckBox loc:Loc.Key="mediaoverlay.mainAudio" IsChecked="{x:Bind ViewModel.MainAudio, Mode=TwoWay}" />
                         <CheckBox loc:Loc.Key="mediaoverlay.overlayAudio" IsChecked="{x:Bind ViewModel.OverlayAudio, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.OverlayAudioEnabled, Mode=OneWay}" />
                         <Grid ColumnSpacing="8">

@@ -112,28 +112,63 @@ def _video_stream(meta: dict[str, Any]) -> Optional[dict[str, Any]]:
     return None
 
 
+def _audio_stream(meta: dict[str, Any]) -> Optional[dict[str, Any]]:
+    for stream in meta.get("streams") or []:
+        if stream.get("codec_type") == "audio":
+            return stream
+    return None
+
+
+def _signature(meta: dict[str, Any]) -> Optional[tuple]:
+    v = _video_stream(meta)
+    if not v:
+        return None
+    a = _audio_stream(meta)
+    audio = (a.get("codec_name"), a.get("sample_rate"), a.get("channels")) if a else None
+    return (
+        v.get("width"), v.get("height"), v.get("codec_name"), v.get("pix_fmt"),
+        v.get("r_frame_rate"), audio,
+    )
+
+
 def can_stream_copy_concat(clips: Sequence[str]) -> bool:
+    """Stream copy only works when every clip has identical video AND audio parameters."""
     if len(clips) < 2:
         return True
-    ref = _video_stream(probe_video(clips[0]))
-    if not ref:
+    ref = _signature(probe_video(clips[0]))
+    if ref is None:
         return False
-    ref_w = ref.get("width")
-    ref_h = ref.get("height")
-    ref_codec = ref.get("codec_name")
-    ref_pix = ref.get("pix_fmt")
-    for clip in clips[1:]:
-        st = _video_stream(probe_video(clip))
-        if not st:
-            return False
-        if (
-            st.get("width") != ref_w
-            or st.get("height") != ref_h
-            or st.get("codec_name") != ref_codec
-            or st.get("pix_fmt") != ref_pix
-        ):
-            return False
-    return True
+    return all(_signature(probe_video(clip)) == ref for clip in clips[1:])
+
+
+def _display_size(stream: dict[str, Any]) -> tuple[int, int]:
+    w, h = int(stream.get("width") or 0), int(stream.get("height") or 0)
+    rot = 0
+    for side in stream.get("side_data_list") or []:
+        try:
+            rot = int(round(float(side.get("rotation", 0)))) % 360
+        except (TypeError, ValueError):
+            pass
+    if rot in (90, 270):
+        w, h = h, w
+    return w, h
+
+
+def _fps_of(stream: dict[str, Any]) -> float:
+    raw = str(stream.get("r_frame_rate") or stream.get("avg_frame_rate") or "30/1")
+    try:
+        num, den = raw.split("/", 1) if "/" in raw else (raw, "1")
+        fps = float(num) / float(den)
+    except (ValueError, ZeroDivisionError):
+        fps = 30.0
+    return fps if 1.0 <= fps <= 240.0 else 30.0
+
+
+def _duration_of(meta: dict[str, Any]) -> float:
+    try:
+        return max(0.0, float((meta.get("format") or {}).get("duration") or 0.0))
+    except (TypeError, ValueError):
+        return 0.0
 
 
 def unique_output_path(output_dir: str, stem: str, ext: str = ".mp4") -> str:
@@ -205,40 +240,75 @@ def concat_ffmpeg(
     }
     vparams = encoder_params.get(encoder, encoder_params["cpu"])
 
+    metas = [probe_video(clip) for clip in clips]
+    first_video = _video_stream(metas[0]) or {}
+    width, height = _display_size(first_video)
+    if width <= 0 or height <= 0:
+        width, height = 1920, 1080
+    width, height = width - width % 2, height - height % 2
+    try:
+        from ffmpeg_fps import fps_output_args, normalize_target_fps
+        from ffmpeg_progress import run_ffmpeg
+    except ImportError:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+        from ffmpeg_fps import fps_output_args, normalize_target_fps
+        from ffmpeg_progress import run_ffmpeg
+    fps = normalize_target_fps(target_fps) or _fps_of(first_video)
+    has_audio = [_audio_stream(m) is not None for m in metas]
+    any_audio = any(has_audio)
+    _log(log, f"Ziel: {width}x{height} @ {fps:g} fps — abweichende Clips werden eingepasst (schwarze Ränder)")
+
     inputs: List[str] = []
     for clip in clips:
         inputs.extend(["-i", clip])
 
+    # Different sizes, frame rates or a missing audio track would make concat fail — bring
+    # every clip to the first clip's canvas, keep its aspect ratio, and fill silent clips.
     n = len(clips)
     parts: List[str] = []
     labels: List[str] = []
     for i in range(n):
-        parts.append(f"[{i}:v]setpts=PTS-STARTPTS[v{i}];")
-        parts.append(f"[{i}:a]asetpts=PTS-STARTPTS[a{i}];")
-        labels.append(f"[v{i}][a{i}]")
-    parts.append(f"{''.join(labels)}concat=n={n}:v=1:a=1[outv][outa]")
+        parts.append(
+            f"[{i}:v:0]scale={width}:{height}:force_original_aspect_ratio=decrease,"
+            f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,"
+            f"fps={fps:g},format=yuv420p,setpts=PTS-STARTPTS[v{i}]"
+        )
+        if any_audio:
+            if has_audio[i]:
+                parts.append(
+                    f"[{i}:a:0]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,"
+                    f"asetpts=PTS-STARTPTS[a{i}]"
+                )
+            else:
+                dur = _duration_of(metas[i]) or 0.1
+                parts.append(f"anullsrc=r=48000:cl=stereo,atrim=duration={dur:.3f},asetpts=PTS-STARTPTS[a{i}]")
+            labels.append(f"[v{i}][a{i}]")
+        else:
+            labels.append(f"[v{i}]")
+    if any_audio:
+        parts.append(f"{''.join(labels)}concat=n={n}:v=1:a=1[outv][outa]")
+        maps = ["-map", "[outv]", "-map", "[outa]"]
+    else:
+        parts.append(f"{''.join(labels)}concat=n={n}:v=1:a=0[outv]")
+        maps = ["-map", "[outv]"]
 
-    cmd = (
-        [ffmpeg, "-y"]
-        + inputs
-        + [
-            "-filter_complex",
-            "".join(parts),
-            "-map",
-            "[outv]",
-            "-map",
-            "[outa]",
-        ]
-        + vparams
-    )
-    try:
-        from ffmpeg_fps import fps_output_args
-    except ImportError:
-        sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-        from ffmpeg_fps import fps_output_args
+    cmd = [ffmpeg, "-y", "-hide_banner"] + inputs + ["-filter_complex", ";".join(parts)] + maps + vparams
     cmd.extend(fps_output_args(target_fps))
-    cmd.extend(["-c:a", "aac", "-b:a", "256k", output_path])
-    _run_ffmpeg(cmd, log)
+    cmd.extend(["-c:a", "aac", "-b:a", "256k"] if any_audio else ["-an"])
+    if output_path.lower().endswith((".mp4", ".m4v", ".mov")):
+        cmd.extend(["-movflags", "+faststart"])
+    cmd.append(output_path)
+    total = sum(_duration_of(m) for m in metas)
+    run_ffmpeg(cmd, total_seconds=total or 1.0, progress=_progress_fn, label="Zusammenfügen", log=None)
+
+
+# Set by the bridge so long joins show progress in the app.
+_progress_fn = None
+
+
+def set_progress_callback(fn) -> None:
+    global _progress_fn
+    _progress_fn = fn
 
 
 def _run_ffmpeg(cmd: List[str], log: Optional[LogFn]) -> None:

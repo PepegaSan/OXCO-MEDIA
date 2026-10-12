@@ -71,7 +71,9 @@ def main() -> int:
         out_dir = result.get("output_dir") or cfg.get("davinci_output_dir") or ""
         name = last_done.get("output_name") or ""
         if out_dir and name:
-            emit(f"OUTPUT:{Path(out_dir) / name}")
+            # Resolve picks the extension from the preset — report the real file, not the bare name.
+            matches = sorted(Path(out_dir).glob(f"{name}.*"), key=lambda p: p.stat().st_mtime, reverse=True)
+            emit(f"OUTPUT:{matches[0] if matches else Path(out_dir) / name}")
     return 0 if result.get("fail", 0) == 0 else 1
 
 

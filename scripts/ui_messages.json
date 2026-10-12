@@ -1640,8 +1640,8 @@
     "en": "System default"
   },
   "texttovideo.color": {
-    "de": "Farbe (#RRGGBB)",
-    "en": "Color (#RRGGBB)"
+    "de": "Textfarbe",
+    "en": "Text color"
   },
   "texttovideo.position": {
     "de": "Position X / Y",
@@ -4706,6 +4706,90 @@
   "texttovideo.status.segmentAddedNumbered": {
     "de": "Abschnitt {0} hinzugefügt.",
     "en": "Segment {0} added."
+  },
+  "texttovideo.alignLeft": {
+    "de": "Linksbündig",
+    "en": "Align left"
+  },
+  "texttovideo.alignCenter": {
+    "de": "Zentriert",
+    "en": "Center"
+  },
+  "texttovideo.alignRight": {
+    "de": "Rechtsbündig",
+    "en": "Align right"
+  },
+  "texttovideo.centerHorizontal": {
+    "de": "Horizontal im Bild zentrieren",
+    "en": "Center horizontally in frame"
+  },
+  "texttovideo.centerVertical": {
+    "de": "Vertikal im Bild zentrieren",
+    "en": "Center vertically in frame"
+  },
+  "texttovideo.animation": {
+    "de": "Animation (bei Von/Bis)",
+    "en": "Animation (at from/to)"
+  },
+  "texttovideo.anim.none": {
+    "de": "Keine",
+    "en": "None"
+  },
+  "texttovideo.anim.fade": {
+    "de": "Einblenden",
+    "en": "Fade"
+  },
+  "texttovideo.anim.slide": {
+    "de": "Hochgleiten",
+    "en": "Slide up"
+  },
+  "texttovideo.anim.pop": {
+    "de": "Pop",
+    "en": "Pop"
+  },
+  "texttovideo.animDuration": {
+    "de": "Dauer (s)",
+    "en": "Duration (s)"
+  },
+  "texttovideo.effectsHeader": {
+    "de": "Kontur, Schatten & Hintergrund",
+    "en": "Outline, shadow & background"
+  },
+  "texttovideo.outlineWidth": {
+    "de": "Kontur (px)",
+    "en": "Outline (px)"
+  },
+  "texttovideo.outlineColor": {
+    "de": "Konturfarbe",
+    "en": "Outline color"
+  },
+  "texttovideo.shadow": {
+    "de": "Weicher Schatten",
+    "en": "Soft shadow"
+  },
+  "texttovideo.boxColor": {
+    "de": "Hintergrundfarbe",
+    "en": "Background color"
+  },
+  "texttovideo.boxOpacity": {
+    "de": "Hintergrund-Deckkraft (%)",
+    "en": "Background opacity (%)"
+  },
+  "texttovideo.boxRadius": {
+    "de": "Eckenradius",
+    "en": "Corner radius"
+  },
+  "texttovideo.preset.social": {
+    "de": "Social-Caption",
+    "en": "Social caption"
+  },
+  "texttovideo.preset.lowerThird": {
+    "de": "Bauchbinde",
+    "en": "Lower third"
+  },
+  "texttovideo.status.renderWarning": {
+    "de": "Text-Hinweis: {0}",
+    "en": "Text notice: {0}"
   },
   "mediaoverlay.audioHeader": { "de": "Ton", "en": "Audio" },
   "mediaoverlay.dragHint": {

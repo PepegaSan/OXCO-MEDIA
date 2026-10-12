@@ -13,6 +13,9 @@ public sealed class MarkerQuickPreset
     /// <summary>1–9 for Shift+digit instant create; 0 = none.</summary>
     public int InstantSlot { get; set; }
 
+    /// <summary>Shortcut badge for the preset chip ("⇧3"), empty without slot.</summary>
+    public string SlotText => InstantSlot is >= 1 and <= 9 ? $"⇧{InstantSlot}" : string.Empty;
+
     public string Display => InstantSlot is >= 1 and <= 9
         ? $"{Label}  (Shift+{InstantSlot})"
         : Label;

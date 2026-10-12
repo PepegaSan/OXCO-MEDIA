@@ -138,6 +138,14 @@
     "enabled": true
   },
   {
+    "id": "filename_cleaner",
+    "label": "Dateinamen bereinigen",
+    "type": "hybrid",
+    "group": "stash",
+    "description": "Entfernt Begriffe wie [Deepfake] oder 720p aus Dateinamen über Stash – auf Wunsch auch die gleichnamigen Stash-Tags.",
+    "enabled": true
+  },
+  {
     "id": "oxco",
     "label": "Oxco",
     "type": "hybrid",

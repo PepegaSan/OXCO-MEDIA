@@ -1,8 +1,11 @@
 using HailMary.ViewModels;
+using HailMary.Views.Helpers;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Windows.Media.Core;
 using Windows.Media.Playback;
+using Windows.System;
 
 namespace HailMary.Views.Controls;
 
@@ -17,10 +20,9 @@ public sealed partial class IntroVideoPreviewHost : UserControl
         ViewModel = viewModel;
         InitializeComponent();
 
-        _positionTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+        _positionTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
         _positionTimer.Tick += (_, _) => SyncPositionFromPlayer();
 
-        ViewModel.PropertyChanged += ViewModel_OnPropertyChanged;
         RangeTimeline.SeekRequested += (_, seconds) => SeekTo(seconds);
 
         TimelineSlider.PointerPressed += (_, _) => _sliderDragging = true;
@@ -40,11 +42,19 @@ public sealed partial class IntroVideoPreviewHost : UserControl
             SeekTo(ViewModel.SliderValue);
         };
 
+        MediaTransport.FocusOnPointer(this, VideoSurface);
+        // (Re)attach on every load: switching tools unloads this control and shows it again later.
+        Loaded += (_, _) =>
+        {
+            ViewModel.PropertyChanged -= ViewModel_OnPropertyChanged;
+            ViewModel.PropertyChanged += ViewModel_OnPropertyChanged;
+        };
         Unloaded += (_, _) =>
         {
             ViewModel.PropertyChanged -= ViewModel_OnPropertyChanged;
-            _positionTimer.Stop();
+            SetPlaying(false);
         };
+        ViewModel.PropertyChanged += ViewModel_OnPropertyChanged;
         _ = LoadVideoAsync();
     }
 
@@ -126,21 +136,71 @@ public sealed partial class IntroVideoPreviewHost : UserControl
         }
     }
 
-    private void BtnPlay_Click(object sender, RoutedEventArgs e)
+    private void BtnPlayPause_Click(object sender, RoutedEventArgs e) => TogglePlayback();
+
+    private void BtnStop_Click(object sender, RoutedEventArgs e)
     {
-        Player?.Play();
-        _positionTimer.Start();
+        StopPlayback();
+        SeekTo(0);
     }
 
-    private void BtnPause_Click(object sender, RoutedEventArgs e)
+    private void TogglePlayback()
     {
-        Player?.Pause();
-        _positionTimer.Stop();
+        if (Player is null)
+        {
+            return;
+        }
+
+        if (Player.PlaybackSession.PlaybackState == MediaPlaybackState.Playing)
+        {
+            Player.Pause();
+            SetPlaying(false);
+            return;
+        }
+
+        Player.Play();
+        SetPlaying(true);
+    }
+
+    private void SetPlaying(bool playing)
+    {
+        MediaTransport.ApplyPlayState(BtnPlayPause, PlayPauseIcon, playing);
+        if (playing)
+        {
+            _positionTimer.Start();
+        }
+        else
+        {
+            _positionTimer.Stop();
+        }
+    }
+
+    private void RootHost_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (!ViewModel.HasVideo)
+        {
+            return;
+        }
+
+        if (MediaTransport.HandleKey(e.Key, Player, ViewModel.SliderMaximum, TogglePlayback, SeekTo))
+        {
+            e.Handled = true;
+        }
+        else if (e.Key == VirtualKey.I)
+        {
+            ViewModel.SetIntroFromPositionCommand.Execute(null);
+            e.Handled = true;
+        }
+        else if (e.Key == VirtualKey.O)
+        {
+            ViewModel.SetOutroFromPositionCommand.Execute(null);
+            e.Handled = true;
+        }
     }
 
     private void StopPlayback()
     {
-        _positionTimer.Stop();
+        SetPlaying(false);
         if (Player is null)
         {
             return;
@@ -177,7 +237,7 @@ public sealed partial class IntroVideoPreviewHost : UserControl
 
         if (Player.PlaybackSession.PlaybackState != MediaPlaybackState.Playing)
         {
-            _positionTimer.Stop();
+            SetPlaying(false);
         }
     }
 }

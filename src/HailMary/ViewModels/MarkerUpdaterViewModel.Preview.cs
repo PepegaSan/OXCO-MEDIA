@@ -116,16 +116,7 @@ public partial class MarkerUpdaterViewModel
     public void MarkInAt(double seconds)
     {
         var clamped = Math.Clamp(seconds, 0, SliderMaximum);
-        var text = TimecodeHelper.FormatForEditor(clamped);
-        if (SelectedMarker is not null)
-        {
-            SelectedMarker.SecondsText = text;
-            NewMarkerSeconds = text;
-        }
-        else
-        {
-            NewMarkerSeconds = text;
-        }
+        NewMarkerSeconds = TimecodeHelper.FormatForEditor(clamped);
 
         _pendingMarkStart = clamped;
         MarkerMarks = Loc.F("markerupdater.markerMarksStart", TimecodeHelper.FormatDisplay(clamped));
@@ -135,21 +126,10 @@ public partial class MarkerUpdaterViewModel
     public void MarkOutAt(double seconds)
     {
         var clamped = Math.Clamp(seconds, 0, SliderMaximum);
-        var text = TimecodeHelper.FormatForEditor(clamped);
-        if (SelectedMarker is not null)
-        {
-            SelectedMarker.EndSecondsText = text;
-            NewMarkerEndSeconds = text;
-        }
-        else
-        {
-            NewMarkerEndSeconds = text;
-        }
+        NewMarkerEndSeconds = TimecodeHelper.FormatForEditor(clamped);
 
         var start = _pendingMarkStart
-                    ?? (SelectedMarker is not null && TryParseSeconds(SelectedMarker.SecondsText, out var existing)
-                        ? existing
-                        : 0);
+                    ?? (TryParseSeconds(NewMarkerSeconds, out var existing) ? existing : 0);
         MarkerMarks = Loc.F(
             "markerupdater.markerMarksStartEnd",
             TimecodeHelper.FormatDisplay(start),
@@ -175,6 +155,7 @@ public partial class MarkerUpdaterViewModel
 
     partial void OnSelectedMarkerChanged(StashMarkerRowViewModel? value)
     {
+        NotifyMarkerEditor();
         if (value is null)
         {
             ClearMarkerEditorFields();

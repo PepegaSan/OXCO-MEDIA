@@ -99,6 +99,39 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
     public IReadOnlyList<string> PostActionOptions { get; } =
         ["keep", "move_to_backup", "delete_original"];
 
+    /// <summary>Asks the user (set by the panel); used before originals get deleted.</summary>
+    public Func<string, string, Task<bool>>? ConfirmAsync { get; set; }
+
+    /// <summary>ComboBox index for the localized post-action list.</summary>
+    public int PostActionIndex
+    {
+        get => Math.Max(0, PostActionOptions.ToList().IndexOf(SelectedPostAction));
+        set
+        {
+            if (value >= 0 && value < PostActionOptions.Count)
+            {
+                SelectedPostAction = PostActionOptions[value];
+            }
+        }
+    }
+
+    /// <summary>ComboBox index for the localized audio-mode list.</summary>
+    public int AudioModeIndex
+    {
+        get => Math.Max(0, AudioModeOptions.ToList().IndexOf(SelectedAudioMode));
+        set
+        {
+            if (value >= 0 && value < AudioModeOptions.Count)
+            {
+                SelectedAudioMode = AudioModeOptions[value];
+            }
+        }
+    }
+
+    partial void OnSelectedPostActionChanged(string value) => OnPropertyChanged(nameof(PostActionIndex));
+
+    partial void OnSelectedAudioModeChanged(string value) => OnPropertyChanged(nameof(AudioModeIndex));
+
     public IReadOnlyList<string> PresetOptions { get; } =
         ["Standard", "Leicht reduziert", "Reduziert"];
 
@@ -148,8 +181,54 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
         }
     }
 
+    private static readonly string[] ScanModeIds = ["bitrate", "problem_codecs", "bitrate_or_codecs"];
+
+    private static readonly string[] RateControlIds = ["auto", "bitrate", "crf"];
+
+    private static readonly string[] CrfPresetIds = ["quality", "balanced", "compact", "tiny"];
+
+    /// <summary>ComboBox index for the scan target.</summary>
+    public int ScanModeIndex
+    {
+        get => Math.Max(0, Array.IndexOf(ScanModeIds, SelectedScanMode));
+        set
+        {
+            if (value >= 0 && value < ScanModeIds.Length)
+            {
+                SelectedScanMode = ScanModeIds[value];
+            }
+        }
+    }
+
+    /// <summary>ComboBox index for the encode control mode.</summary>
+    public int RateControlIndex
+    {
+        get => Math.Max(0, Array.IndexOf(RateControlIds, SelectedRateControl));
+        set
+        {
+            if (value >= 0 && value < RateControlIds.Length)
+            {
+                SelectedRateControl = RateControlIds[value];
+            }
+        }
+    }
+
+    /// <summary>ComboBox index for the CRF quality preset.</summary>
+    public int CrfPresetIndex
+    {
+        get => Math.Max(0, Array.IndexOf(CrfPresetIds, SelectedCrfPreset));
+        set
+        {
+            if (value >= 0 && value < CrfPresetIds.Length)
+            {
+                SelectedCrfPreset = CrfPresetIds[value];
+            }
+        }
+    }
+
     partial void OnSelectedScanModeChanged(string value)
     {
+        OnPropertyChanged(nameof(ScanModeIndex));
         OnPropertyChanged(nameof(ScanModeIsBitrate));
         OnPropertyChanged(nameof(ScanModeIsProblemCodecs));
         OnPropertyChanged(nameof(ScanModeIsBitrateOrCodecs));
@@ -260,6 +339,7 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
 
     partial void OnSelectedRateControlChanged(string value)
     {
+        OnPropertyChanged(nameof(RateControlIndex));
         OnPropertyChanged(nameof(RateControlIsAuto));
         OnPropertyChanged(nameof(RateControlIsBitrate));
         OnPropertyChanged(nameof(RateControlIsCrf));
@@ -279,6 +359,7 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
         OnPropertyChanged(nameof(CrfPresetIsBalanced));
         OnPropertyChanged(nameof(CrfPresetIsCompact));
         OnPropertyChanged(nameof(CrfPresetIsTiny));
+        OnPropertyChanged(nameof(CrfPresetIndex));
         CrfValue = CrfFromPreset(code);
     }
 
@@ -306,6 +387,7 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
                 OnPropertyChanged(nameof(CrfPresetIsBalanced));
                 OnPropertyChanged(nameof(CrfPresetIsCompact));
                 OnPropertyChanged(nameof(CrfPresetIsTiny));
+                OnPropertyChanged(nameof(CrfPresetIndex));
             }
 
             break;
@@ -449,12 +531,14 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
                 return;
             }
 
+            TryDelete(configPath);
             if (!result.Success || !File.Exists(outPath))
             {
                 Status = result.Message;
                 return;
             }
 
+            TryDelete(_lastScanJsonPath);
             _lastScanJsonPath = outPath;
             var json = await File.ReadAllTextAsync(outPath);
             using var doc = JsonDocument.Parse(json);
@@ -492,13 +576,15 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
                 AddScanRow(scanRow);
             }
 
-            UpdateSelectionStatus();
         }
         finally
         {
             EndJobToken();
             IsBusy = false;
         }
+
+        // Only after IsBusy is cleared — the summary is skipped while a job runs.
+        UpdateSelectionStatus();
     }
 
     [RelayCommand]
@@ -537,6 +623,15 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
                 return;
             }
 
+            if (SelectedPostAction == "delete_original" && ConfirmAsync is not null
+                && !await ConfirmAsync(
+                    Loc.T("bitrate.confirmDeleteTitle"),
+                    Loc.F("bitrate.confirmDeleteBody", includedPaths.Count)))
+            {
+                Status = Loc.T("bitrate.convertCancelled");
+                return;
+            }
+
             var scanJson = await File.ReadAllTextAsync(_lastScanJsonPath);
             using var scanDoc = JsonDocument.Parse(scanJson);
             var filteredRowJson = scanDoc.RootElement.GetProperty("rows")
@@ -557,6 +652,8 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
             var result = await AppServices.JobRunner.RunBridgeAsync("bitrate_convert_job.py",
                 ["--config-json", configPath, "--rows-json", rowsPath],
                 _jobCts!.Token);
+            TryDelete(configPath);
+            TryDelete(rowsPath);
             Status = result.ExitCode == -2
                 ? Loc.T("bitrate.convertCancelled")
                 : result.Message;
@@ -725,7 +822,33 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
             return;
         }
 
-        Status = Loc.F("bitrate.rowSelection", Rows.Count, Rows.Count(r => r.IsIncluded));
+        var included = Rows.Where(r => r.IsIncluded).ToList();
+        var savedMb = included.Sum(r => r.EstSaveMbValue);
+        Status = savedMb >= 1
+            ? Loc.F("bitrate.rowSelectionSavings", Rows.Count, included.Count, FormatSize(savedMb))
+            : Loc.F("bitrate.rowSelection", Rows.Count, included.Count);
+    }
+
+    private static string FormatSize(double mb) =>
+        mb >= 1024
+            ? (mb / 1024).ToString("0.0", System.Globalization.CultureInfo.CurrentCulture) + " GB"
+            : mb.ToString("0", System.Globalization.CultureInfo.CurrentCulture) + " MB";
+
+    private static void TryDelete(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        try
+        {
+            File.Delete(path);
+        }
+        catch
+        {
+            // best effort
+        }
     }
 
     [RelayCommand]

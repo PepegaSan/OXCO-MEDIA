@@ -29,6 +29,8 @@
                 MaxPreviewHeight="480"
                 MinPreviewHeight="200"
                 IsHitTestVisible="False" />
+            <!-- Text overlays: the exact PNGs the export burns in, positioned in video pixels. -->
+            <Canvas x:Name="SpriteLayer" IsHitTestVisible="False" />
             <Border
                 x:Name="HitLayer"
                 Background="Transparent"
@@ -38,35 +40,44 @@
                 PointerMoved="HitLayer_OnPointerMoved"
                 PointerReleased="HitLayer_OnPointerReleased"
                 PointerCanceled="HitLayer_OnPointerCanceled"
-                PointerCaptureLost="HitLayer_OnPointerCaptureLost" />
+                PointerCaptureLost="HitLayer_OnPointerCaptureLost"
+                PointerExited="HitLayer_OnPointerExited" />
             <Canvas x:Name="OverlayLayer" IsHitTestVisible="False">
-                <Border
+                <Rectangle
+                    x:Name="GuideVertical"
+                    Width="1"
+                    Fill="#FFFF4FA3"
+                    Visibility="Collapsed" />
+                <Rectangle
+                    x:Name="GuideHorizontal"
+                    Height="1"
+                    Fill="#FFFF4FA3"
+                    Visibility="Collapsed" />
+                <Rectangle
+                    x:Name="HoverGhost"
+                    Stroke="#B3FFFFFF"
+                    StrokeThickness="1"
+                    StrokeDashArray="3,2"
+                    RadiusX="3"
+                    RadiusY="3"
+                    Visibility="Collapsed" />
+                <Rectangle
                     x:Name="LayoutGhost"
-                    BorderBrush="#FF4FC3F7"
-                    BorderThickness="2"
-                    Background="#224FC3F7"
-                    Visibility="Collapsed"
-                    CornerRadius="2" />
+                    Stroke="#FF4FC3F7"
+                    StrokeThickness="1.5"
+                    Fill="#144FC3F7"
+                    RadiusX="3"
+                    RadiusY="3"
+                    Visibility="Collapsed" />
                 <Border
                     x:Name="ResizeHandle"
                     Width="14"
                     Height="14"
-                    Background="#FF4FC3F7"
-                    BorderBrush="White"
-                    BorderThickness="1"
+                    Background="White"
+                    BorderBrush="#FF4FC3F7"
+                    BorderThickness="2"
+                    CornerRadius="7"
                     Visibility="Collapsed" />
-                <Border
-                    x:Name="PlayGhost"
-                    Visibility="Collapsed"
-                    Background="#99000000"
-                    Padding="6,2"
-                    CornerRadius="3">
-                    <TextBlock
-                        x:Name="PlayGhostText"
-                        Foreground="White"
-                        TextWrapping="Wrap"
-                        MaxWidth="520" />
-                </Border>
             </Canvas>
         </Grid>
 
@@ -79,32 +90,47 @@
 
         <Grid ColumnSpacing="8">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                <Button
+                    x:Name="BtnPlayPause"
+                    Width="40"
+                    Height="34"
+                    Padding="0"
+                    Click="BtnPlayPause_Click"
+                    IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
+                    loc:Loc.ToolTipKey="common.play">
+                    <FontIcon x:Name="PlayPauseIcon" FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE768;" />
+                </Button>
+                <Button
+                    Width="40"
+                    Height="34"
+                    Padding="0"
+                    Click="BtnStop_Click"
+                    IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
+                    loc:Loc.ToolTipKey="common.stopButton">
+                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE71A;" />
+                </Button>
+            </StackPanel>
             <Slider
                 x:Name="TimelineSlider"
+                Grid.Column="1"
+                VerticalAlignment="Center"
                 Maximum="{x:Bind ViewModel.SliderMaximum, Mode=OneWay}"
                 Value="{x:Bind ViewModel.SliderValue, Mode=TwoWay}" />
             <TextBlock
-                Grid.Column="1"
+                Grid.Column="2"
                 VerticalAlignment="Center"
                 FontFamily="Consolas"
                 Text="{x:Bind ViewModel.TimeDisplay, Mode=OneWay}" />
         </Grid>
 
-        <StackPanel Orientation="Horizontal" Spacing="6">
-            <Button Click="BtnPlay_Click" loc:Loc.Key="common.play" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Click="BtnPause_Click" loc:Loc.Key="common.pause" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Click="BtnStop_Click" loc:Loc.Key="common.stopButton" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-        </StackPanel>
-
         <TextBlock
             Style="{StaticResource CaptionTextBlockStyle}"
-            loc:Loc.Key="texttovideo.previewHint"
-            TextWrapping="WrapWholeWords" />
-        <TextBlock
-            Style="{StaticResource CaptionTextBlockStyle}"
+            Opacity="0.8"
             loc:Loc.Key="texttovideo.layoutDragHint"
             TextWrapping="WrapWholeWords" />
     </StackPanel>

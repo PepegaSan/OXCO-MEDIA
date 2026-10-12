@@ -53,14 +53,71 @@
             </Grid>
         </StackPanel>
 
-        <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="6">
-            <Button Click="BtnPlay_Click" loc:Loc.Key="common.play" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Click="BtnPause_Click" loc:Loc.Key="common.pause" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Click="BtnStop_Click" loc:Loc.Key="common.stopButton" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Click="BtnMarkIn_Click" loc:Loc.Key="common.markIn" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Click="BtnMarkOut_Click" loc:Loc.Key="common.markOut" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Command="{x:Bind ViewModel.AddSceneCommand}" loc:Loc.Key="cutter.addScene" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-            <Button Command="{x:Bind ViewModel.AddFullVideoSceneCommand}" loc:Loc.Key="cutter.addFullVideo" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" />
-        </StackPanel>
+        <Grid ColumnSpacing="6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" Spacing="4">
+                <Button
+                    x:Name="BtnPlayPause"
+                    Width="40"
+                    Height="34"
+                    Padding="0"
+                    Click="BtnPlayPause_Click"
+                    IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
+                    loc:Loc.ToolTipKey="common.play">
+                    <FontIcon x:Name="PlayPauseIcon" FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE768;" />
+                </Button>
+                <Button
+                    Width="40"
+                    Height="34"
+                    Padding="0"
+                    Click="BtnStop_Click"
+                    IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}"
+                    loc:Loc.ToolTipKey="common.stopButton">
+                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="14" Glyph="&#xE71A;" />
+                </Button>
+            </StackPanel>
+            <StackPanel
+                Grid.Column="1"
+                HorizontalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="4">
+                <Button Click="BtnMarkIn_Click" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" loc:Loc.ToolTipKey="cutter.markInTooltip">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="12" Glyph="&#xE892;" />
+                        <TextBlock loc:Loc.Key="common.markIn" />
+                    </StackPanel>
+                </Button>
+                <Button Click="BtnMarkOut_Click" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" loc:Loc.ToolTipKey="cutter.markOutTooltip">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock loc:Loc.Key="common.markOut" />
+                        <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="12" Glyph="&#xE893;" />
+                    </StackPanel>
+                </Button>
+                <Button Command="{x:Bind ViewModel.AddSceneCommand}" IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}" Style="{StaticResource AccentButtonStyle}" loc:Loc.ToolTipKey="cutter.addSceneTooltip">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="12" Glyph="&#xE710;" />
+                        <TextBlock loc:Loc.Key="cutter.addScene" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+            <Button
+                Grid.Column="2"
+                Command="{x:Bind ViewModel.AddFullVideoSceneCommand}"
+                IsEnabled="{x:Bind ViewModel.HasVideo, Mode=OneWay}">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <FontIcon FontFamily="Segoe MDL2 Assets" FontSize="12" Glyph="&#xE740;" />
+                    <TextBlock loc:Loc.Key="cutter.addFullVideo" />
+                </StackPanel>
+            </Button>
+        </Grid>
+        <TextBlock
+            Style="{StaticResource CaptionTextBlockStyle}"
+            Opacity="0.7"
+            loc:Loc.Key="cutter.shortcutHint"
+            TextWrapping="WrapWholeWords" />
     </StackPanel>
 </UserControl>

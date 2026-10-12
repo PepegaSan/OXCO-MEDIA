@@ -48,7 +48,10 @@ public partial class TextToVideoViewModel
         var w = _videoWidth > 0 ? _videoWidth : 1920;
         var h = _videoHeight > 0 ? _videoHeight : 1080;
         preset.Apply(EditorSegment, w, h);
-        SchedulePreviewRefresh();
+        _centerEditorXPending |= preset.CenterHorizontally;
+        _centerEditorYPending |= preset.CenterVertically;
+        SchedulePreviewRefresh(immediate: true);
+        ApplyPendingCentering();
         Status = Loc.F("texttovideo.status.styleApplied", preset.Label);
     }
 

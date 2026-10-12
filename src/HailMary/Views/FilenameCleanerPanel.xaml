@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="HailMary.Views.FilenameCleanerPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:viewModels="using:HailMary.ViewModels"
+    xmlns:loc="using:HailMary.Services"
+    HorizontalAlignment="Stretch"
+    VerticalAlignment="Stretch"
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <Style x:Key="FcStepBadge" TargetType="Border">
+            <Setter Property="Width" Value="22" />
+            <Setter Property="Height" Value="22" />
+            <Setter Property="CornerRadius" Value="11" />
+            <Setter Property="Background" Value="{ThemeResource AccentFillColorDefaultBrush}" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Padding="{StaticResource HmContentPadding}" ColumnSpacing="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="400" />
+            <ColumnDefinition Width="*" MinWidth="460" />
+        </Grid.ColumnDefinitions>
+
+        <!-- 1: rules -->
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="10">
+                <Border Style="{StaticResource ToolShellCard}">
+                    <StackPanel Spacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Border Style="{StaticResource FcStepBadge}">
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" Style="{StaticResource CaptionTextBlockStyle}" Text="1" />
+                            </Border>
+                            <TextBlock VerticalAlignment="Center" Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="filenamecleaner.stepRules" />
+                        </StackPanel>
+
+                        <RadioButtons loc:Loc.HeaderKey="filenamecleaner.searchMode" SelectedIndex="{x:Bind ViewModel.SearchModeIndex, Mode=TwoWay}">
+                            <RadioButton loc:Loc.Key="filenamecleaner.modeBrackets" />
+                            <RadioButton loc:Loc.Key="filenamecleaner.modeAnywhere" />
+                        </RadioButtons>
+
+                        <!-- terms -->
+                        <StackPanel Spacing="6">
+                            <TextBlock loc:Loc.Key="filenamecleaner.termsHeader" />
+                            <Grid ColumnSpacing="6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox
+                                    x:Name="NewTermBox"
+                                    KeyDown="NewTermBox_KeyDown"
+                                    loc:Loc.PlaceholderKey="filenamecleaner.termPlaceholder"
+                                    Text="{x:Bind ViewModel.NewTermText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button Grid.Column="1" Command="{x:Bind ViewModel.AddTermCommand}" loc:Loc.ToolTipKey="filenamecleaner.addTermTooltip">
+                                    <FontIcon FontSize="12" Glyph="&#xE710;" />
+                                </Button>
+                            </Grid>
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.Terms, Mode=OneWay}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="viewModels:FilenameTermRow">
+                                        <Border
+                                            Margin="0,0,0,4"
+                                            Padding="10,6"
+                                            Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                            CornerRadius="6">
+                                            <Grid ColumnSpacing="8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel VerticalAlignment="Center">
+                                                    <TextBlock FontWeight="SemiBold" Text="{x:Bind Text}" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Opacity="0.65" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind StashInfo, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+                                                <CheckBox
+                                                    Grid.Column="1"
+                                                    MinWidth="0"
+                                                    VerticalAlignment="Center"
+                                                    IsChecked="{x:Bind RemoveStashTag, Mode=TwoWay}"
+                                                    IsEnabled="{x:Bind HasStashTag, Mode=OneWay}"
+                                                    loc:Loc.Key="filenamecleaner.removeStashTag"
+                                                    loc:Loc.ToolTipKey="filenamecleaner.removeStashTagTooltip" />
+                                                <Button
+                                                    Grid.Column="2"
+                                                    Padding="6"
+                                                    VerticalAlignment="Center"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Click="RemoveTerm_Click"
+                                                    Tag="{x:Bind}"
+                                                    loc:Loc.ToolTipKey="filenamecleaner.removeTermTooltip">
+                                                    <FontIcon FontSize="11" Glyph="&#xE711;" />
+                                                </Button>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock
+                                Opacity="0.6"
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                TextWrapping="WrapWholeWords"
+                                loc:Loc.Key="filenamecleaner.noTermsHint"
+                                Visibility="{x:Bind ViewModel.HasTerms, Mode=OneWay, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}" />
+                        </StackPanel>
+
+                        <!-- resolutions -->
+                        <StackPanel Spacing="2">
+                            <ToggleSwitch loc:Loc.HeaderKey="filenamecleaner.removeResolution" IsOn="{x:Bind ViewModel.RemoveResolution, Mode=TwoWay}" />
+                            <CheckBox
+                                IsChecked="{x:Bind ViewModel.ResolutionStashTags, Mode=TwoWay}"
+                                IsEnabled="{x:Bind ViewModel.RemoveResolution, Mode=OneWay}"
+                                loc:Loc.Key="filenamecleaner.resolutionStashToggle" />
+                            <TextBlock Opacity="0.65" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.ResolutionStashInfo, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="2">
+                            <ToggleSwitch
+                                loc:Loc.HeaderKey="filenamecleaner.renameBackup"
+                                IsEnabled="{x:Bind ViewModel.BackupConfigured, Mode=OneWay}"
+                                IsOn="{x:Bind ViewModel.RenameBackup, Mode=TwoWay}" />
+                            <TextBlock Opacity="0.7" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.BackupRootText, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                        </StackPanel>
+                        <TextBox
+                            loc:Loc.HeaderKey="filenamecleaner.pathFilter"
+                            loc:Loc.PlaceholderKey="filenamecleaner.pathFilterPlaceholder"
+                            Text="{x:Bind ViewModel.PathFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <Border Padding="12,10" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6">
+                            <TextBlock Opacity="0.8" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.RulesExample, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                        </Border>
+
+                        <Button HorizontalAlignment="Stretch" Command="{x:Bind ViewModel.BuildPreviewCommand}" Style="{StaticResource AccentButtonStyle}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon FontSize="14" Glyph="&#xE7B3;" />
+                                <TextBlock loc:Loc.Key="filenamecleaner.buildPreview" />
+                            </StackPanel>
+                        </Button>
+                        <TextBlock Opacity="0.7" Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="WrapWholeWords" loc:Loc.Key="filenamecleaner.previewSafe" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource ToolShellCard}">
+                    <StackPanel Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon FontSize="14" Glyph="&#xE7A7;" />
+                            <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="filenamecleaner.undoHeader" />
+                        </StackPanel>
+                        <TextBlock Opacity="0.75" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.UndoInfo, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                        <Button Command="{x:Bind ViewModel.UndoLastCommand}" IsEnabled="{x:Bind ViewModel.CanUndo, Mode=OneWay}" loc:Loc.Key="filenamecleaner.undoButton" />
+                        <InfoBar
+                            IsClosable="False"
+                            IsOpen="{x:Bind ViewModel.CanCatchUpBackup, Mode=OneWay}"
+                            Message="{x:Bind ViewModel.CatchUpInfo, Mode=OneWay}"
+                            Severity="Warning">
+                            <InfoBar.ActionButton>
+                                <Button Command="{x:Bind ViewModel.CatchUpBackupCommand}" loc:Loc.Key="filenamecleaner.catchUpButton" />
+                            </InfoBar.ActionButton>
+                        </InfoBar>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- 2: preview -->
+        <Border Grid.Column="1" Style="{StaticResource ToolShellCard}">
+            <Grid RowSpacing="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Style="{StaticResource FcStepBadge}">
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" Style="{StaticResource CaptionTextBlockStyle}" Text="2" />
+                        </Border>
+                        <TextBlock VerticalAlignment="Center" Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="filenamecleaner.stepPreview" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                        <Button
+                            Command="{x:Bind ViewModel.ResolveAllConflictsCommand}"
+                            Visibility="{x:Bind ViewModel.HasConflicts, Mode=OneWay, Converter={StaticResource BoolToVisibility}}"
+                            loc:Loc.ToolTipKey="filenamecleaner.resolveAllTooltip">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon FontSize="12" Glyph="&#xE8AC;" />
+                                <TextBlock loc:Loc.Key="filenamecleaner.resolveAll" />
+                            </StackPanel>
+                        </Button>
+                        <ToggleButton IsChecked="{x:Bind ViewModel.ShowProblemsOnly, Mode=TwoWay}" loc:Loc.Key="filenamecleaner.problemsOnly" />
+                    </StackPanel>
+                </Grid>
+
+                <StackPanel Grid.Row="1" Spacing="6">
+                    <Border Padding="12,10" Background="{ThemeResource SubtleFillColorSecondaryBrush}" CornerRadius="6">
+                        <StackPanel Spacing="4">
+                            <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="{x:Bind ViewModel.PlanSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                            <TextBlock Opacity="0.8" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.SceneTagSummary, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                        </StackPanel>
+                    </Border>
+                    <ProgressBar Maximum="100" Value="{x:Bind ViewModel.ProgressValue, Mode=OneWay}" Visibility="{x:Bind ViewModel.ShowProgress, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+                </StackPanel>
+
+                <ListView
+                    Grid.Row="2"
+                    ItemsSource="{x:Bind ViewModel.VisiblePlan, Mode=OneWay}"
+                    SelectionMode="None">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Padding" Value="8,4" />
+                            <Setter Property="MinHeight" Value="0" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="viewModels:FilenameRenameRow">
+                            <Grid ColumnSpacing="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="20" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <FontIcon
+                                    VerticalAlignment="Top"
+                                    Margin="0,3,0,0"
+                                    FontSize="13"
+                                    Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                    Glyph="&#xE7BA;"
+                                    Visibility="{x:Bind IsProblem, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+                                <FontIcon
+                                    VerticalAlignment="Top"
+                                    Margin="0,3,0,0"
+                                    FontSize="13"
+                                    Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                                    Glyph="&#xE73E;"
+                                    Visibility="{x:Bind IsDone, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+                                <StackPanel Grid.Column="1" Spacing="1">
+                                    <TextBlock Opacity="0.55" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind OldBasename}" TextDecorations="Strikethrough" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock
+                                        Text="{x:Bind NewBasename, Mode=OneWay}"
+                                        TextTrimming="CharacterEllipsis"
+                                        Visibility="{x:Bind IsReadOnlyName, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+                                    <!-- problem rows: fix the name right here -->
+                                    <Grid
+                                        Margin="0,2"
+                                        ColumnSpacing="6"
+                                        Visibility="{x:Bind IsEditable, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox IsEnabled="{x:Bind CanFix, Mode=OneWay}" Text="{x:Bind NewBasename, Mode=TwoWay}" loc:Loc.ToolTipKey="filenamecleaner.editNameTooltip" />
+                                        <Button
+                                            Grid.Column="1"
+                                            Click="AppendNumber_Click"
+                                            IsEnabled="{x:Bind CanFix, Mode=OneWay}"
+                                            Tag="{x:Bind}"
+                                            loc:Loc.Key="filenamecleaner.appendNumber" />
+                                        <Button
+                                            Grid.Column="2"
+                                            Click="OpenConflict_Click"
+                                            Tag="{x:Bind}"
+                                            Visibility="{x:Bind HasConflictScene, Mode=OneWay, Converter={StaticResource BoolToVisibility}}"
+                                            loc:Loc.ToolTipKey="filenamecleaner.openConflictTooltip">
+                                            <FontIcon FontSize="13" Glyph="&#xE8A7;" />
+                                        </Button>
+                                    </Grid>
+                                    <TextBlock Opacity="0.6" Style="{StaticResource CaptionTextBlockStyle}" TextTrimming="CharacterEllipsis">
+                                        <Run Text="{x:Bind RemovedText}" /><Run Text="   " /><Run Text="{x:Bind Folder}" />
+                                    </TextBlock>
+                                    <TextBlock
+                                        Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                        Style="{StaticResource CaptionTextBlockStyle}"
+                                        Text="{x:Bind Note, Mode=OneWay}"
+                                        TextWrapping="WrapWholeWords"
+                                        Visibility="{x:Bind IsProblem, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+                                    <TextBlock
+                                        Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                        Style="{StaticResource CaptionTextBlockStyle}"
+                                        Text="{x:Bind BackupNote, Mode=OneWay}"
+                                        TextWrapping="WrapWholeWords"
+                                        Visibility="{x:Bind HasBackupNote, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

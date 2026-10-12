@@ -9,7 +9,7 @@ public partial class MarkerAutocutViewModel
 
     public string StashConnectionTooltip => StashConnectionStatus.Tooltip(ConnectionInfo);
 
-    public string PrimaryActionLabel => Loc.T("markerautocut.primaryAction");
+    public string PrimaryActionLabel => Loc.T(IsFfmpegEngine ? "markerautocut.primaryActionFfmpeg" : "markerautocut.primaryAction");
 
     public IAsyncRelayCommand PrimaryActionCommand => ExportCommand;
 

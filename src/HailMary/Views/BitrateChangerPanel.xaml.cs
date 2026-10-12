@@ -12,7 +12,23 @@ public sealed partial class BitrateChangerPanel : UserControl
     public BitrateChangerPanel(BitrateChangerViewModel viewModel)
     {
         ViewModel = viewModel;
+        ViewModel.ConfirmAsync = ConfirmAsync;
         InitializeComponent();
+    }
+
+    private async Task<bool> ConfirmAsync(string title, string message)
+    {
+        var dialog = new ContentDialog
+        {
+            Title = title,
+            Content = new TextBlock { Text = message, TextWrapping = TextWrapping.WrapWholeWords },
+            PrimaryButtonText = Loc.T("common.yes"),
+            CloseButtonText = Loc.T("common.cancel"),
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = XamlRoot,
+        };
+
+        return (await dialog.ShowAsync()) == ContentDialogResult.Primary;
     }
 
     private async void ScenarioHelp_Click(object sender, RoutedEventArgs e)

@@ -85,6 +85,7 @@ def main() -> int:
             video_width=int(info.width),
             video_height=int(info.height),
             target_fps=float(cfg.get("target_fps") or 0),
+            video_fps=float(info.fps),
         )
 
         duration = max(0.01, float(info.duration_sec))

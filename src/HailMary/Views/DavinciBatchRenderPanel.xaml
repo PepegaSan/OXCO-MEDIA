@@ -51,6 +51,7 @@
                             <Button Command="{x:Bind ViewModel.PickVideosCommand}" loc:Loc.Key="common.pickFiles" IsEnabled="{x:Bind ViewModel.CanEditQueue, Mode=OneWay}" />
                             <Button Command="{x:Bind ViewModel.PickFolderCommand}" loc:Loc.Key="common.folder" IsEnabled="{x:Bind ViewModel.CanEditQueue, Mode=OneWay}" />
                             <Button Command="{x:Bind ViewModel.RemoveSelectedCommand}" loc:Loc.Key="common.remove" IsEnabled="{x:Bind ViewModel.CanEditQueue, Mode=OneWay}" />
+                            <Button Command="{x:Bind ViewModel.RemoveDoneCommand}" loc:Loc.Key="davincibatch.removeDone" IsEnabled="{x:Bind ViewModel.CanEditQueue, Mode=OneWay}" />
                             <Button Command="{x:Bind ViewModel.ClearQueueCommand}" loc:Loc.Key="common.clear" IsEnabled="{x:Bind ViewModel.CanEditQueue, Mode=OneWay}" />
                         </StackPanel>
                     </StackPanel>

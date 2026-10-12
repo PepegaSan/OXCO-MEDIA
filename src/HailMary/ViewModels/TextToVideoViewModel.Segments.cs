@@ -27,20 +27,11 @@ public partial class TextToVideoViewModel
         var fresh = new TextOverlaySegment();
         if (styleSource is not null)
         {
-            fresh.Fontsize = styleSource.Fontsize;
-            fresh.Color = styleSource.Color;
-            fresh.PosX = styleSource.PosX;
-            fresh.PosY = styleSource.PosY;
-            fresh.LayoutWidth = styleSource.LayoutWidth;
-            fresh.LayoutHeight = styleSource.LayoutHeight;
-            fresh.LineSpacing = styleSource.LineSpacing;
-            fresh.BoxBorder = styleSource.BoxBorder;
-            fresh.BoxEnabled = styleSource.BoxEnabled;
-            fresh.FontPath = styleSource.FontPath;
-            fresh.ItalicFontPath = styleSource.ItalicFontPath;
-            fresh.Bold = styleSource.Bold;
-            fresh.Italic = styleSource.Italic;
-            fresh.Strike = styleSource.Strike;
+            // Inherit look and placement, start with empty text and no time window.
+            fresh.ApplyFrom(styleSource);
+            fresh.Text = string.Empty;
+            fresh.From = string.Empty;
+            fresh.To = string.Empty;
         }
 
         EditorSegment = fresh;

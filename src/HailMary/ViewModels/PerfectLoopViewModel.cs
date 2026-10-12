@@ -22,10 +22,12 @@ public sealed class SeamMethodChoice
 
 public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ISplitPaneToolHost, ILocalizable
 {
-    private static readonly string[] SeamMethodIds = ["auto", "cut", "crossfade", "morph"];
+    private static readonly string[] SeamMethodIds = ["auto", "cut", "crossfade", "morph", "pingpong"];
 
     private readonly ToolDefinition _tool;
     private int _analyzeEpoch;
+    // Increments per analysis run; only the newest run may apply its result.
+    private int _analyzeRunId;
     private int _previewEpoch;
     private bool _suppressAutoAnalyze;
     private bool _userChoseSeamSettings;
@@ -98,7 +100,7 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ISp
     public string FindBestButtonLabel => Loc.T("perfectloop.findBest");
 
     public bool SeamSliderEnabled =>
-        !string.Equals(SelectedSeamMethod, "cut", StringComparison.OrdinalIgnoreCase);
+        SelectedSeamMethod is not ("cut" or "pingpong");
 
     public bool IsSourcePreview
     {
@@ -154,6 +156,7 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ISp
         }
 
         OnPropertyChanged(nameof(SeamSecondsLabel));
+        EnsureLoopPreview();
     }
 
     partial void OnSelectedSeamMethodItemChanged(SeamMethodChoice? value)
@@ -165,7 +168,10 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ISp
 
         OnPropertyChanged(nameof(SeamSliderEnabled));
         OnPropertyChanged(nameof(SelectedSeamMethod));
+        EnsureLoopPreview();
     }
+
+    partial void OnTargetFpsChanged(double value) => EnsureLoopPreview();
 
     partial void OnPreviewVideoPathChanged(string value)
     {
@@ -188,11 +194,6 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ISp
         }
 
         _userSetRange = true;
-        if (!IsSourcePreview)
-        {
-            ShowSourcePreview();
-        }
-
         _ = QueueAutoAnalyzeAsync();
     }
 
@@ -265,6 +266,7 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ISp
         if (!preserveQualityPreview && !_suppressAutoAnalyze)
         {
             HasQualityPreview = false;
+            ClearAnalysisVisuals();
             QualityHint = BatchFiles.Count > 0 ? Loc.T("perfectloop.qualityPending") : string.Empty;
             ShowSourcePreview();
         }
@@ -302,6 +304,8 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ISp
     {
         var old = _seamPreviewTempPath;
         _seamPreviewTempPath = null;
+        _loopPreviewKey = null;
+        LoopPreviewPath = string.Empty;
         if (string.IsNullOrWhiteSpace(old) || !File.Exists(old))
         {
             return;
@@ -566,6 +570,7 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ISp
         }
 
         var input = files[0];
+        var runId = ++_analyzeRunId;
         IsBusy = true;
         Status = searchBestInRange
             ? Loc.T("perfectloop.findBestRunning")
@@ -582,7 +587,7 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ISp
             seam_seconds = SeamSeconds,
             seam_method = SelectedSeamMethod,
             smart_trim = searchBestInRange,
-            min_loop_seconds = 1.5,
+            min_loop_seconds = MinLoopSeconds,
             ffmpeg_encoder = FfmpegEncoderCatalog.IdFor(FfmpegEncoderCatalog.SoftHardware, SelectedEncoder),
             target_fps = TargetFps,
             mute_audio = true,
@@ -596,6 +601,13 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ISp
             var result = await AppServices.JobRunner.RunBridgeAsync(
                 "perfect_loop_job.py",
                 ["--config-json", configPath, "--output-json", outputJson]);
+
+            // A newer analysis (or another video) took over while this one ran — drop the stale result.
+            if (runId != _analyzeRunId
+                || !string.Equals(input, SourceVideoPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
 
             if (!result.Success)
             {
@@ -616,7 +628,11 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ISp
         }
         finally
         {
-            IsBusy = false;
+            if (runId == _analyzeRunId)
+            {
+                IsBusy = false;
+            }
+
             try
             {
                 File.Delete(configPath);
@@ -671,6 +687,11 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ISp
                 hint += " " + Loc.T("perfectloop.scoreSeamNote");
             }
 
+            if (score < 0.25 && recommendedMethod != "pingpong")
+            {
+                hint += " " + Loc.T("perfectloop.pingpongHint");
+            }
+
             QualityHint = hint;
             HasQualityPreview = true;
 
@@ -692,6 +713,8 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ISp
                     _suppressAutoAnalyze = false;
                 }
             }
+
+            ApplyAnalyzeExtras(first);
 
             // Only seed defaults once — never overwrite after the user touched method/seam.
             if (!applyRecommendations || _userChoseSeamSettings)
@@ -741,6 +764,7 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ISp
 
         IsPreviewEncoding = true;
         PreviewHint = Loc.T("perfectloop.previewEncoding");
+        var key = CurrentLoopKey();
 
         var previewPath = Path.Combine(Path.GetTempPath(), $"hm_perfect_loop_prev_{Guid.NewGuid():N}.mp4");
         var configPath = Path.Combine(Path.GetTempPath(), $"hm_perfect_loop_prev_{Guid.NewGuid():N}.json");
@@ -786,7 +810,9 @@ public partial class PerfectLoopViewModel : ToolIoViewModel, IToolShellHost, ISp
 
             var oldTemp = _seamPreviewTempPath;
             _seamPreviewTempPath = previewPath;
-            PreviewHint = Loc.T("perfectloop.previewSource");
+            _loopPreviewKey = key;
+            LoopPreviewPath = previewPath;
+            PreviewHint = Loc.T("perfectloop.previewSeam");
             if (!string.IsNullOrWhiteSpace(oldTemp)
                 && !string.Equals(oldTemp, previewPath, StringComparison.OrdinalIgnoreCase))
             {
