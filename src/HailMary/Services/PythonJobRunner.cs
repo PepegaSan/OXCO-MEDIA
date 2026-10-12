@@ -54,29 +54,7 @@ public sealed class PythonJobRunner
 
         try
         {
-            var psi = new ProcessStartInfo
-            {
-                FileName = python,
-                Arguments = argsBuilder.ToString(),
-                WorkingDirectory = AppPaths.BridgesDirectory,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                StandardOutputEncoding = Encoding.UTF8,
-                StandardErrorEncoding = Encoding.UTF8,
-            };
-
-            ApplyPath(psi);
-
-            psi.Environment["HAIL_MARY_PROJECTS_ROOT"] = _settings.ProjectsRoot;
-            psi.Environment["PYTHONIOENCODING"] = "utf-8";
-            psi.Environment["PYTHONUTF8"] = "1";
-
-            foreach (var pair in _session.BuildEnvironment())
-            {
-                psi.Environment[pair.Key] = pair.Value;
-            }
+            var psi = CreateStartInfo(python, argsBuilder.ToString());
 
             using var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
             var stdout = new StringBuilder();
@@ -200,6 +178,45 @@ public sealed class PythonJobRunner
                 AppServices.JobProgress.EndJob();
             }
         }
+    }
+
+    /// <summary>Start info for a long-running bridge (stdin/stdout protocol), same environment as jobs.</summary>
+    public ProcessStartInfo CreateBridgeServerStartInfo(string bridgeFileName)
+    {
+        var scriptPath = Path.Combine(AppPaths.BridgesDirectory, bridgeFileName);
+        var psi = CreateStartInfo(_settings.ResolvePythonExecutable(), $"\"{scriptPath}\"");
+        psi.RedirectStandardInput = true;
+        psi.StandardInputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+        return psi;
+    }
+
+    private ProcessStartInfo CreateStartInfo(string python, string arguments)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = python,
+            Arguments = arguments,
+            WorkingDirectory = AppPaths.BridgesDirectory,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
+        };
+
+        ApplyPath(psi);
+
+        psi.Environment["HAIL_MARY_PROJECTS_ROOT"] = _settings.ProjectsRoot;
+        psi.Environment["PYTHONIOENCODING"] = "utf-8";
+        psi.Environment["PYTHONUTF8"] = "1";
+
+        foreach (var pair in _session.BuildEnvironment())
+        {
+            psi.Environment[pair.Key] = pair.Value;
+        }
+
+        return psi;
     }
 
     private static void TryKillProcessTree(Process process)

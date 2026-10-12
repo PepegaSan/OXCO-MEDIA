@@ -14,6 +14,7 @@
             </ResourceDictionary.MergedDictionaries>
             <conv:BoolToVisibilityConverter x:Key="BoolToVisibility" />
             <conv:HexToBrushConverter x:Key="HexToBrush" />
+            <conv:StringToDoubleConverter x:Key="StringToDouble" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

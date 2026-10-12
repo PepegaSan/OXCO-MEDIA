@@ -6,112 +6,107 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:drop="using:HailMary.Views.Helpers"
     xmlns:controls="using:HailMary.Views.Controls"
+    xmlns:loc="using:HailMary.Services"
     HorizontalAlignment="Stretch"
-    VerticalAlignment="Stretch"
     KeyDown="RootHost_KeyDown"
-    mc:Ignorable="d" xmlns:loc="using:HailMary.Services">
+    mc:Ignorable="d">
 
-    <controls:ToolSplitLayout SettingsWidth="360">
-        <controls:ToolSplitLayout.Main>
-            <Grid Padding="16,12,12,8" RowSpacing="8">
+    <Border Style="{StaticResource ToolShellCard}">
+        <Grid RowSpacing="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Header: title + transport + view toggles -->
+            <Grid ColumnSpacing="6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" Spacing="6" loc:Loc.ToolTipKey="oxco.keyboardHint">
+                    <TextBlock VerticalAlignment="Center" Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="common.preview" />
+                    <FontIcon VerticalAlignment="Center" FontSize="12" Glyph="&#xE946;" Opacity="0.7" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="12,0,0,0" Orientation="Horizontal" Spacing="4">
+                    <Button Command="{x:Bind ViewModel.PreviewJumpPrevCutCommand}" Content="⏮" loc:Loc.ToolTipKey="oxco.tip.prevCut" />
+                    <Button Command="{x:Bind ViewModel.PreviewStepBackCommand}" Content="◀" />
+                    <Button MinWidth="72" Command="{x:Bind ViewModel.TogglePreviewPlayCommand}" Content="{x:Bind ViewModel.PreviewPlayButtonText, Mode=OneWay}" />
+                    <Button Command="{x:Bind ViewModel.PreviewStepForwardCommand}" Content="▶" />
+                    <Button Command="{x:Bind ViewModel.PreviewJumpNextCutCommand}" Content="⏭" loc:Loc.ToolTipKey="oxco.tip.nextCut" />
+                    <Button Command="{x:Bind ViewModel.LoadPreviewCommand}" loc:Loc.ToolTipKey="oxco.tip.reloadPreview">
+                        <FontIcon FontSize="14" Glyph="&#xE72C;" />
+                    </Button>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                    <CheckBox MinWidth="0" VerticalAlignment="Center" IsChecked="{x:Bind ViewModel.PreviewSideBySide, Mode=TwoWay}" loc:Loc.Key="oxco.sideBySide" />
+                    <CheckBox MinWidth="0" VerticalAlignment="Center" IsChecked="{x:Bind ViewModel.PreviewOverlay, Mode=TwoWay}" loc:Loc.Key="oxco.diffOverlay" />
+                    <NumberBox
+                        Width="96"
+                        VerticalAlignment="Center"
+                        Maximum="60"
+                        Minimum="1"
+                        SpinButtonPlacementMode="Compact"
+                        Value="{x:Bind ViewModel.PreviewMaxFps, Mode=TwoWay}"
+                        loc:Loc.ToolTipKey="oxco.maxFps" />
+                </StackPanel>
+            </Grid>
+
+            <!-- Image -->
+            <Grid Grid.Row="1">
+                <controls:AspectFitImagePresenter
+                    HorizontalAlignment="Stretch"
+                    ImageSource="{x:Bind ViewModel.PreviewImage, Mode=OneWay}"
+                    MaxPreviewHeight="560"
+                    MinPreviewHeight="200" />
+                <ProgressRing
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    IsActive="{x:Bind ViewModel.PreviewIsBusy, Mode=OneWay}"
+                    Visibility="{x:Bind ViewModel.PreviewIsBusy, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    loc:Loc.Key="oxco.preview.pickPair"
+                    Visibility="{x:Bind ViewModel.PreviewIsLoaded, Mode=OneWay, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}" />
+            </Grid>
+
+            <!-- Result timeline: metric curve, threshold, kept/cut strip, playhead -->
+            <controls:OxcoResultTimeline
+                Grid.Row="2"
+                EmptyText="{x:Bind ViewModel.TimelineEmptyText, Mode=OneWay}"
+                FrameCount="{x:Bind ViewModel.PreviewFrameTotal, Mode=OneWay}"
+                Metric="{x:Bind ViewModel.TimelineMetric, Mode=OneWay}"
+                MetricOffset="{x:Bind ViewModel.TimelineMetricOffset, Mode=OneWay}"
+                PixelMax="{x:Bind ViewModel.TimelinePixelMax, Mode=OneWay}"
+                PositionFrame="{x:Bind ViewModel.PreviewFrameIndex, Mode=OneWay}"
+                SeekRequested="Timeline_SeekRequested"
+                Segments="{x:Bind ViewModel.TimelineSegments, Mode=OneWay}"
+                Threshold="{x:Bind ViewModel.TimelineThreshold, Mode=OneWay}" />
+
+            <!-- Info -->
+            <Grid Grid.Row="3" ColumnSpacing="12" RowSpacing="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6">
-                    <Button Command="{x:Bind ViewModel.LoadPreviewCommand}" loc:Loc.Key="common.load" />
-                    <Button Command="{x:Bind ViewModel.TogglePreviewPlayCommand}" Content="{x:Bind ViewModel.PreviewPlayButtonText, Mode=OneWay}" />
-                    <TextBlock VerticalAlignment="Center" loc:Loc.Key="oxco.maxFps" />
-                    <NumberBox
-                        Width="64"
-                        Maximum="60"
-                        Minimum="1"
-                        SpinButtonPlacementMode="Inline"
-                        Value="{x:Bind ViewModel.PreviewMaxFps, Mode=TwoWay}" />
-                    <CheckBox loc:Loc.Key="oxco.sideBySide" IsChecked="{x:Bind ViewModel.PreviewSideBySide, Mode=TwoWay}" VerticalAlignment="Center" />
+                <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.TimelineInfoText, Mode=OneWay}" TextWrapping="WrapWholeWords" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                    <TextBlock FontWeight="SemiBold" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.PreviewDiffText, Mode=OneWay}" />
+                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.PreviewSwapText, Mode=OneWay}" />
                 </StackPanel>
-                <Grid Grid.Row="1">
-                    <controls:AspectFitImagePresenter
-                        HorizontalAlignment="Stretch"
-                        MaxPreviewHeight="640"
-                        MinPreviewHeight="180"
-                        ImageSource="{x:Bind ViewModel.PreviewImage, Mode=OneWay}" />
-                    <ProgressRing
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        IsActive="{x:Bind ViewModel.PreviewIsBusy, Mode=OneWay}"
-                        Visibility="{x:Bind ViewModel.PreviewIsBusy, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
-                    <TextBlock
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Foreground="#CCCCCC"
-                        loc:Loc.Key="oxco.noVideoClickLoad"
-                        Visibility="{x:Bind ViewModel.PreviewIsLoaded, Mode=OneWay, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}" />
-                </Grid>
-                <controls:VideoRangeTimeline
-                    Grid.Row="2"
-                    DurationSeconds="{x:Bind ViewModel.PreviewDurationSeconds, Mode=OneWay}"
-                    PositionSeconds="{x:Bind ViewModel.PreviewPositionSeconds, Mode=OneWay}"
-                    Peaks="{x:Bind ViewModel.PreviewWaveformPeaks, Mode=OneWay}"
-                    SeekRequested="PreviewTimeline_SeekRequested" />
-                <StackPanel Grid.Row="3" Spacing="4">
-                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.PreviewInfoText, Mode=OneWay}" />
-                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="oxco.keyboardHint" />
-                </StackPanel>
+                <TextBlock Grid.Row="1" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.PreviewInfoText, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Row="1" Grid.Column="1" FontFamily="Consolas" Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.PreviewTimeText, Mode=OneWay}" />
             </Grid>
-        </controls:ToolSplitLayout.Main>
-        <controls:ToolSplitLayout.Settings>
-            <StackPanel Padding="16,12" Spacing="12">
-                <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" IsExpanded="True">
-                    <Expander.Header>
-                        <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="audiocleaner.filesHeader" />
-                    </Expander.Header>
-                    <StackPanel Padding="0,8,0,0" Spacing="8">
-                        <Grid ColumnSpacing="8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" loc:Loc.HeaderKey="oxco.previewOriginalLabel" Text="{x:Bind ViewModel.PreviewPathA, Mode=TwoWay}" drop:VideoDrop.IsEnabled="True" drop:VideoDrop.PathPropertyName="PreviewPathA" />
-                            <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.PickPreviewPathACommand}" loc:Loc.Key="common.addDots" />
-                        </Grid>
-                        <Grid ColumnSpacing="8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" loc:Loc.HeaderKey="oxco.previewDeepfakeLabel" Text="{x:Bind ViewModel.PreviewPathB, Mode=TwoWay}" drop:VideoDrop.IsEnabled="True" drop:VideoDrop.PathPropertyName="PreviewPathB" />
-                            <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{x:Bind ViewModel.PickPreviewPathBCommand}" loc:Loc.Key="common.addDots" />
-                        </Grid>
-                        <CheckBox loc:Loc.Key="oxco.linkWorkflow" IsChecked="{x:Bind ViewModel.PreviewLinkPaths, Mode=TwoWay}" />
-                        <CheckBox loc:Loc.Key="oxco.autoLoad" IsChecked="{x:Bind ViewModel.PreviewAutoLoad, Mode=TwoWay}" />
-                        <Button Command="{x:Bind ViewModel.SyncPreviewFromWorkflowNowCommand}" loc:Loc.Key="oxco.syncNow" HorizontalAlignment="Left" />
-                        <TextBlock Style="{StaticResource CaptionTextBlockStyle}" loc:Loc.Key="oxco.previewLinkHintFull" TextWrapping="WrapWholeWords" />
-                    </StackPanel>
-                </Expander>
-                <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" IsExpanded="True">
-                    <Expander.Header>
-                        <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="oxco.testDiffSection" />
-                    </Expander.Header>
-                    <StackPanel Padding="0,8,0,0" Spacing="8">
-                        <TextBlock loc:Loc.Key="oxco.noise" />
-                        <Slider Maximum="80" Minimum="1" Value="{x:Bind ViewModel.PreviewNoise, Mode=TwoWay}" />
-                        <TextBlock Text="{x:Bind ViewModel.PreviewNoise, Mode=OneWay}" />
-                        <TextBlock loc:Loc.Key="oxco.pixelThreshold" />
-                        <Slider Maximum="4000" Minimum="1" Value="{x:Bind ViewModel.PreviewPixel, Mode=TwoWay}" />
-                        <TextBlock Text="{x:Bind ViewModel.PreviewPixel, Mode=OneWay}" />
-                        <CheckBox loc:Loc.Key="oxco.diffOverlay" IsChecked="{x:Bind ViewModel.PreviewOverlay, Mode=TwoWay}" />
-                        <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.PreviewDiffText, Mode=OneWay}" />
-                        <TextBlock Text="{x:Bind ViewModel.PreviewSwapText, Mode=OneWay}" />
-                        <Button Command="{x:Bind ViewModel.ApplyPreviewToFiltersCommand}" loc:Loc.Key="oxco.toFilterTab" HorizontalAlignment="Left" />
-                        <Button Command="{x:Bind ViewModel.SavePreviewThresholdsCommand}" loc:Loc.Key="oxco.saveThresholds" HorizontalAlignment="Left" />
-                    </StackPanel>
-                </Expander>
-            </StackPanel>
-        </controls:ToolSplitLayout.Settings>
-    </controls:ToolSplitLayout>
+        </Grid>
+    </Border>
 </UserControl>

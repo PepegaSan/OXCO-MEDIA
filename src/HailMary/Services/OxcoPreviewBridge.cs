@@ -77,6 +77,9 @@ public static class OxcoPreviewBridge
         bool sideBySide,
         bool overlay,
         int maxWidth = 1280,
+        string analysisMode = "classic",
+        int analysisWidth = 640,
+        int pixelMax = 0,
         CancellationToken cancellationToken = default)
     {
         var configPath = WriteTempConfig(new
@@ -86,9 +89,12 @@ public static class OxcoPreviewBridge
             frame_index = frameIndex,
             noise,
             pixel_threshold = pixelThreshold,
+            pixel_max = pixelMax,
             side_by_side = sideBySide,
             overlay,
             max_width = maxWidth,
+            analysis_mode = analysisMode,
+            analysis_width = analysisWidth,
         });
         var outPath = Path.Combine(Path.GetTempPath(), $"hm_oxco_prev_frame_{Guid.NewGuid():N}.json");
         try

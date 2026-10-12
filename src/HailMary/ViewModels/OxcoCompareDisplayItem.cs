@@ -44,6 +44,17 @@ public partial class OxcoCompareDisplayItem : ObservableObject
 
     [ObservableProperty] private double _rowBorderThickness = 2;
 
+    /// <summary>Compare result badge (deepfake list), e.g. "✓ −0.4s".</summary>
+    [ObservableProperty] private string _resultText = string.Empty;
+
+    [ObservableProperty] private string? _resultColor;
+
+    [ObservableProperty] private string? _resultToolTip;
+
+    public bool HasResult => !string.IsNullOrEmpty(ResultText);
+
+    partial void OnResultTextChanged(string value) => OnPropertyChanged(nameof(HasResult));
+
     public Thickness UniformRowBorderThickness => new(RowBorderThickness);
 
     partial void OnRowBorderThicknessChanged(double value) =>

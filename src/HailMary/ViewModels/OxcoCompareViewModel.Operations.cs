@@ -129,6 +129,7 @@ public partial class OxcoCompareViewModel
             return;
         }
 
+        await ReleasePreviewFilesAsync();
         IsBusy = true;
         try
         {
@@ -287,6 +288,7 @@ public partial class OxcoCompareViewModel
             return;
         }
 
+        await ReleasePreviewFilesAsync();
         Directory.CreateDirectory(destDir);
         var moved = new List<string>();
         var errors = new List<string>();

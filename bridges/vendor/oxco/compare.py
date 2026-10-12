@@ -1,3 +1,11 @@
+"""
+Oxco compare: analyse an original and its deepfake frame by frame, cut short swap dropouts,
+export the result (EDL / FFmpeg / DaVinci Resolve).
+
+CLI (Hail Mary): compare.py SOURCE DEEPFAKE [--auto] [--retry-export-only | --defer-davinci | --davinci-export-only]
+Settings come from the ini in OXCO_SETTINGS_INI (or settings.ini next to this file).
+"""
+
 import cv2
 import json
 import sys
@@ -5,29 +13,38 @@ import os
 import shutil
 import time
 import subprocess
-import tkinter as tk
-from tkinter import filedialog, messagebox, simpledialog
 import configparser
 import re
 import datetime
 import random
 
+import oxco_analysis as oa
+
 TEXTS = {
     'en': {
-        'first_run_title': "First Run / Erster Start",
-        'first_run_msg': "The file 'settings.ini' was created in the program folder.\n\nPlease open this file, adjust the language (en/de), export settings, and API path if needed, then restart the script.\n\n---\n\nDie Datei 'settings.ini' wurde im Programmordner neu erstellt.\n\nBitte öffne diese Datei, passe bei Bedarf die Sprache (en/de), Exporteinstellungen sowie den Pfad zur API an und starte das Skript danach erneut.",
-        'file_dialog_source': "1. Select ORIGINAL Video (Source)",
-        'file_dialog_df': "2. Select DEEPFAKE Video",
-        'confirm_source_title': "Clarify File Assignment",
-        'confirm_source_msg': "Is the following file the ORIGINAL video (Source)?\n\n{name}",
-        'abort_double_file_title': "Abort",
-        'abort_double_file_msg': "The same file was sent twice. Operation aborted.",
-        'cache_step1_title': "Step 1",
-        'cache_step1_msg': "File cached for AutoCut:\n{name}\n\nPlease right-click the second file -> Send to -> Deepfake AutoCut.",
-        'no_files_sendto': "No files passed via Send To. Starting manual file selection...",
-        'abort_not_both': "Abort: Not both videos were selected.",
-        'press_enter': "\nPress Enter to exit...",
         'unexpected_error': "\nAn unexpected error occurred: {error}",
+        'usage': "Usage: compare.py SOURCE DEEPFAKE [--auto] [--retry-export-only|--defer-davinci|--davinci-export-only]",
+        'set_mode': "- Analysis mode: {val}",
+        'mode_classic': "classic (changed pixels, full resolution)",
+        'mode_blob': "blob (largest changed region, {w}px analysis width, blur {blur})",
+        'set_postfilter': "- Post filter: min. difference run {run} fr. | min. kept piece {keep} fr. | cut padding {pad} fr.",
+        'set_sync': "- Auto sync offset: {val}",
+        'sync_applied': "[INFO] Frame offset detected: deepfake frame k = source frame k{sign}{n} (score {s0:.2f} → {sb:.2f}). Skipping {n} leading frame(s) of the {which}.\n",
+        'sync_none': "[INFO] No frame offset between the videos (checked ±{n} frames).\n",
+        'which_source': "source",
+        'which_deepfake': "deepfake",
+        'reader_info': "[INFO] Decoder: {reader} | analysis size {w}x{h}\n",
+        'metrics_reused': "[INFO] Reusing cached analysis ({frames} frames) — only filters are applied again, no decoding.\n",
+        'metrics_saved': "[INFO] Per-frame metrics saved: {path}\n",
+        'analysis_time': "[INFO] Analysis took {sec:.1f}s ({fps:.0f} frame pairs/s).\n",
+        'cut_summary': "[INFO] Result: {kept:.1f}s kept, {cut:.1f}s cut in {n} piece(s).\n",
+        'no_swap_warning': "[WARN] Not a single frame exceeds the threshold — is this really the matching original/deepfake pair? (Nothing is cut.)\n",
+        'all_swap_warning': "[WARN] Every analysed frame differs — wrong pairing, different edit or a global colour/scale change? Check the preview; 'Pixel max' can ignore global changes.\n",
+        'retry_refilter': "[INFO] Retry: applying current filters to the cached analysis ({frames} frames).\n",
+        'davinci_res_fallback': "[INFO] Frame size for Resolve taken from OpenCV: {w}x{h}\n",
+        'davinci_res_default': "[WARN] Could not read the deepfake frame size; using 1920x1080 for the Resolve timeline.\n",
+        'ffmpeg_no_audio': "[INFO] {name} has no audio track — exporting video only.\n",
+        'ffmpeg_retry_no_audio': "[INFO] FFmpeg failed with audio; retrying without audio track...\n",
         'loading_settings': "Loading settings from settings.ini:",
         'set_buffer': "- Buffer: {val} seconds",
         'set_noise': "- Noise Filter: {val}",
@@ -64,9 +81,6 @@ TEXTS = {
         'retry_export_path_mismatch': "[ERROR] Checkpoint does not match these two video paths. Run full Compare again.\n",
         'retry_export_missing_file': "[ERROR] Source or deepfake file is missing on disk.\n",
         'retry_export_auto_only': "[ERROR] --retry-export-only is only supported with two paths and --auto (Oxco Retry).\n",
-        'manual_res_title': "Manual Resolution Input",
-        'manual_res_prompt': "Could not read video resolution.\nPlease enter the resolution manually (e.g., 1920x1080):",
-        'manual_res_invalid': "[Info] Invalid input or canceled. Falling back to 1920x1080.",
         'ffmpeg_render': "Rendering {name} via FFmpeg ({codec})...",
         'ffmpeg_progress': "\rProgress: {percent:.1f}% ({frame}/{total} frames)",
         'ffmpeg_error': "\n\n--- FFmpeg Error for {name} ---",
@@ -115,7 +129,6 @@ TEXTS = {
         'davinci_timeline_fps': "[INFO] DaVinci timeline frame rate: {rate} (same as compare analysis; Resolve clip metadata was {clip}).\n",
         'davinci_set_failed': "[WARN] DaVinci API refused setting {key}={val!r} on {where} (timeline may keep previous FPS until this succeeds).\n",
         'davinci_fps_verify': "[INFO] DaVinci FPS read-back — Project (Master Settings dropdown): {proj} | Active timeline object: {tl}\n",
-        'davinci_ffprobe_wh_warn': "[INFO] ffprobe did not report width/height for the deepfake file. Enter frame size when prompted (or place ffprobe.exe next to the app). Master FPS is applied before import only when resolution is known.\n",
         'davinci_master_preset': "[INFO] Resolve Master after pre-import preset: timelineFrameRate read-back={fps} | {w}x{h}\n",
         'davinci_fps_locked_hint': "[WARN] Master timeline FPS is still {read} (wanted {target}). Resolve often locks FPS once the Media Pool already has clips — use an empty pool, a new project, or a project template that matches the target rate.\n",
         'davinci_temp_project': "[INFO] Using temporary Resolve project '{temp}' for this export (Master FPS can be set with no timelines). Your project '{orig}' will be reopened when finished.\n",
@@ -151,20 +164,29 @@ TEXTS = {
         'sync_info_no_ffprobe_duration': "[INFO] ffprobe not found — skipping container duration cross-check (place ffprobe.exe next to the app or on PATH).\n",
     },
     'de': {
-        'first_run_title': "Erster Start / First Run",
-        'first_run_msg': "Die Datei 'settings.ini' wurde im Programmordner neu erstellt.\n\nBitte öffne diese Datei, passe bei Bedarf die Sprache (en/de), Exporteinstellungen sowie den Pfad zur API an und starte das Skript danach erneut.\n\n---\n\nThe file 'settings.ini' was created in the program folder.\n\nPlease open this file, adjust the language (en/de), export settings, and API path if needed, then restart the script.",
-        'file_dialog_source': "1. ORIGINAL-Video auswählen (Source)",
-        'file_dialog_df': "2. DEEPFAKE-Video auswählen",
-        'confirm_source_title': "Dateizuordnung klären",
-        'confirm_source_msg': "Ist folgende Datei das ORIGINAL-Video (Source)?\n\n{name}",
-        'abort_double_file_title': "Abbruch",
-        'abort_double_file_msg': "Die gleiche Datei wurde zweimal gesendet. Vorgang abgebrochen.",
-        'cache_step1_title': "Schritt 1",
-        'cache_step1_msg': "Datei für AutoCut gemerkt:\n{name}\n\nBitte klicke nun auf die zweite Datei -> Senden an -> Deepfake AutoCut.",
-        'no_files_sendto': "Keine Dateien über Senden an übergeben. Starte manuelle Dateiauswahl...",
-        'abort_not_both': "Abbruch: Es wurden nicht beide Videos ausgewählt.",
-        'press_enter': "\nDrücke Enter zum Beenden...",
         'unexpected_error': "\nEin unerwarteter Fehler ist aufgetreten: {error}",
+        'usage': "Aufruf: compare.py ORIGINAL DEEPFAKE [--auto] [--retry-export-only|--defer-davinci|--davinci-export-only]",
+        'set_mode': "- Analyse-Modus: {val}",
+        'mode_classic': "klassisch (geänderte Pixel, volle Auflösung)",
+        'mode_blob': "Blob (größter geänderter Bereich, Analysebreite {w}px, Blur {blur})",
+        'set_postfilter': "- Nachfilter: min. Unterschied {run} Fr. | min. behaltenes Stück {keep} Fr. | Schnitt-Polster {pad} Fr.",
+        'set_sync': "- Auto-Versatz-Erkennung: {val}",
+        'sync_applied': "[INFO] Frame-Versatz erkannt: Deepfake-Frame k = Original-Frame k{sign}{n} (Wert {s0:.2f} → {sb:.2f}). Überspringe {n} Frame(s) am Anfang vom {which}.\n",
+        'sync_none': "[INFO] Kein Frame-Versatz zwischen den Videos (geprüft ±{n} Frames).\n",
+        'which_source': "Original",
+        'which_deepfake': "Deepfake",
+        'reader_info': "[INFO] Decoder: {reader} | Analysegröße {w}x{h}\n",
+        'metrics_reused': "[INFO] Gespeicherte Analyse wird wiederverwendet ({frames} Frames) — nur die Filter werden neu angewendet, kein Dekodieren.\n",
+        'metrics_saved': "[INFO] Messwerte pro Frame gespeichert: {path}\n",
+        'analysis_time': "[INFO] Analyse dauerte {sec:.1f}s ({fps:.0f} Frame-Paare/s).\n",
+        'cut_summary': "[INFO] Ergebnis: {kept:.1f}s behalten, {cut:.1f}s geschnitten in {n} Stück(en).\n",
+        'no_swap_warning': "[WARN] Kein einziger Frame liegt über der Schwelle — ist das wirklich das passende Original/Deepfake-Paar? (Es wird nichts geschnitten.)\n",
+        'all_swap_warning': "[WARN] Jeder analysierte Frame weicht ab — falsches Paar, anderer Schnitt oder globale Farb-/Größenänderung? Vorschau prüfen; „Pixel max“ kann globale Änderungen ignorieren.\n",
+        'retry_refilter': "[INFO] Erneut: aktuelle Filter werden auf die gespeicherte Analyse angewendet ({frames} Frames).\n",
+        'davinci_res_fallback': "[INFO] Bildgröße für Resolve von OpenCV gelesen: {w}x{h}\n",
+        'davinci_res_default': "[WARN] Bildgröße des Deepfakes nicht lesbar; Resolve-Timeline nutzt 1920x1080.\n",
+        'ffmpeg_no_audio': "[INFO] {name} hat keine Tonspur — es wird nur Video exportiert.\n",
+        'ffmpeg_retry_no_audio': "[INFO] FFmpeg mit Ton fehlgeschlagen; neuer Versuch ohne Tonspur...\n",
         'loading_settings': "Lade Einstellungen aus settings.ini:",
         'set_buffer': "- Puffer: {val} Sekunden",
         'set_noise': "- Rausch-Filter: {val}",
@@ -205,9 +227,6 @@ TEXTS = {
         'ffmpeg_progress': "\rFortschritt: {percent:.1f}% ({frame}/{total} Frames)",
         'ffmpeg_error': "\n\n--- FFmpeg Fehler bei {name} ---",
         'ffmpeg_success': "\n-> Erfolgreich erstellt.",
-        'manual_res_title': "Manuelle Auflösungseingabe",
-        'manual_res_prompt': "Video-Auflösung konnte nicht ausgelesen werden.\nBitte manuell eingeben (z.B. 1920x1080):",
-        'manual_res_invalid': "[Info] Ungültige Eingabe oder abgebrochen. Fallback auf 1920x1080.",
         'davinci_api_missing': "\n[FEHLER] DaVinci API (DaVinciResolveScript) nicht gefunden!",
         'davinci_api_path_searched': "Python hat explizit in diesem Ordner gesucht:\n{path}",
         'davinci_api_check_explorer': "Bitte prüfe im Windows Explorer, ob dieser Ordner und die Datei 'DaVinciResolveScript.py' dort wirklich existieren.",
@@ -252,7 +271,6 @@ TEXTS = {
         'davinci_timeline_fps': "[INFO] DaVinci-Timeline: {rate} (wie Compare-Analyse; Resolve-Clip-Metadaten: {clip}).\n",
         'davinci_set_failed': "[WARN] DaVinci-API lehnt {key}={val!r} auf {where} ab (Timeline behält evtl. alte FPS).\n",
         'davinci_fps_verify': "[INFO] DaVinci FPS zur Kontrolle — Projekt (Master/Dropdown): {proj} | Timeline-Objekt: {tl}\n",
-        'davinci_ffprobe_wh_warn': "[INFO] ffprobe liefert keine Breite/Höhe für die Deepfake-Datei. Bitte Auflösung eingeben (oder ffprobe.exe neben die App legen). Master-FPS wird nur vor dem Import gesetzt, wenn die Auflösung bekannt ist.\n",
         'davinci_master_preset': "[INFO] Resolve Master nach Vorab-Preset: timelineFrameRate (read-back)={fps} | {w}x{h}\n",
         'davinci_fps_locked_hint': "[WARN] Master-Timeline-FPS bleibt {read} (Ziel {target}). Resolve sperrt die FPS oft, sobald der Media Pool schon Clips hat — leerer Pool, neues Projekt oder passende Projektvorlage.\n",
         'davinci_temp_project': "[INFO] Temporäres Resolve-Projekt '{temp}' für diesen Export (Master-FPS ohne bestehende Timelines). Danach wird '{orig}' wieder geöffnet.\n",
@@ -1162,44 +1180,12 @@ def load_config():
     config = configparser.ConfigParser()
     
     if not os.path.exists(config_path):
+        # Missing ini = defaults below (Hail Mary always passes a job ini via OXCO_SETTINGS_INI).
         if override:
             print(f"[ERROR] Job settings.ini not found: {config_path}", flush=True)
             sys.exit(1)
-        config['SETTINGS'] = {
-            'language': 'en',
-            'buffer_seconds': '2.0',
-            'pixel_noise_threshold': '15',
-            'changed_pixels_threshold': '200',
-            'changed_pixels_max_threshold': '0',
-            'enable_ffmpeg_export': '0',
-            'ffmpeg_export_target': 'both',
-            'ffmpeg_encoder': 'nvidia_h264',
-            'enable_fullcheck_edl': '0',
-            'enable_autodelete_edl': '1',
-            'enable_davinci_export': '0',
-            'davinci_render_timeout_seconds': '1800',
-            'davinci_render_preset': 'AutoCutPreset',
-            'davinci_scriptapp_retry_attempts': '24',
-            'davinci_scriptapp_retry_delay_seconds': '5',
-            'export_avoid_overwrite': '0',
-            'davinci_startup_wait_seconds': '20',
-        }
-        config['PATHS'] = {
-            'davinci_api_path': r'C:\ProgramData\Blackmagic Design\DaVinci Resolve\Support\Developer\Scripting\Modules',
-            'davinci_exe_path': r'C:\Program Files\Blackmagic Design\DaVinci Resolve\Resolve.exe',
-            'final_export_dir': ''
-        }
-        with open(config_path, "w", encoding="utf-8", newline="\n") as configfile:
-            config.write(configfile)
-            
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes("-topmost", True)
-        messagebox.showinfo("First Run / Erster Start", TEXTS['en']['first_run_msg'])
-        root.destroy()
-        sys.exit(0)
-            
-    _read_ini_file(config, config_path)
+    else:
+        _read_ini_file(config, config_path)
 
     if not config.has_section('SETTINGS'):
         config.add_section('SETTINGS')
@@ -1219,7 +1205,17 @@ def load_config():
         'ffmpeg_export_target': parse_ffmpeg_export_target(
             config.get('SETTINGS', 'ffmpeg_export_target', fallback='both')
         ),
-        'ffmpeg_encoder': config.get('SETTINGS', 'ffmpeg_encoder', fallback='nvidia_h264').lower(),
+        'ffmpeg_encoder': normalize_ffmpeg_encoder(config.get('SETTINGS', 'ffmpeg_encoder', fallback='cpu')),
+        'analysis_mode': parse_analysis_mode(config.get('SETTINGS', 'analysis_mode', fallback='classic')),
+        'analysis_width': _ini_int_clamped(config, 'SETTINGS', 'analysis_width', 64, 3840, 640),
+        'analysis_blur': _ini_int_clamped(config, 'SETTINGS', 'analysis_blur', 0, 15, 3),
+        'analysis_hwaccel': _ini_bool(config, 'SETTINGS', 'analysis_hwaccel', False),
+        'auto_sync_offset': _ini_bool(config, 'SETTINGS', 'auto_sync_offset', True),
+        'max_sync_offset_frames': _ini_int_clamped(config, 'SETTINGS', 'max_sync_offset_frames', 0, 120, 12),
+        'min_diff_run_frames': _ini_int_clamped(config, 'SETTINGS', 'min_diff_run_frames', 1, 100, 2),
+        'min_keep_seconds': _ini_float_clamped(config, 'SETTINGS', 'min_keep_seconds', 0.0, 10.0, 0.25),
+        'cut_padding_frames': _ini_int_clamped(config, 'SETTINGS', 'cut_padding_frames', 0, 60, 0),
+        'reuse_metrics': _ini_bool(config, 'SETTINGS', 'reuse_metrics', True),
         'enable_fullcheck_edl': _ini_bool(config, 'SETTINGS', 'enable_fullcheck_edl', False),
         'enable_autodelete_edl': _ini_bool(config, 'SETTINGS', 'enable_autodelete_edl', True),
         'enable_davinci_export': _ini_bool(config, 'SETTINGS', 'enable_davinci_export', False),
@@ -1247,22 +1243,42 @@ def load_config():
     }
 
 
-def write_settings_pixel_thresholds(base_dir, pixel_noise_threshold=None, changed_pixels_threshold=None):
-    """Update only pixel thresholds in settings.ini; other keys unchanged."""
-    config_path = os.path.join(base_dir, 'settings.ini')
-    if not os.path.exists(config_path):
-        return False
-    config = configparser.ConfigParser()
-    _read_ini_file(config, config_path)
-    if not config.has_section('SETTINGS'):
-        return False
-    if pixel_noise_threshold is not None:
-        config.set('SETTINGS', 'pixel_noise_threshold', str(int(pixel_noise_threshold)))
-    if changed_pixels_threshold is not None:
-        config.set('SETTINGS', 'changed_pixels_threshold', str(int(changed_pixels_threshold)))
-    with open(config_path, "w", encoding="utf-8", newline="\n") as f:
-        config.write(f)
-    return True
+def parse_analysis_mode(raw):
+    v = (raw or "classic").strip().lower()
+    return v if v in oa.ANALYSIS_MODES else "classic"
+
+
+FFMPEG_ENCODER_PARAMS = {
+    'cpu': ["-c:v", "libx264", "-preset", "fast", "-crf", "18"],
+    'cpu_hevc': ["-c:v", "libx265", "-preset", "fast", "-crf", "22"],
+    'nvidia_h264': ["-c:v", "h264_nvenc", "-preset", "p6", "-cq", "18"],
+    'nvidia_hevc': ["-c:v", "hevc_nvenc", "-preset", "p6", "-cq", "18"],
+    'nvidia_av1': ["-c:v", "av1_nvenc", "-preset", "p6", "-cq", "18"],
+    'amd_h264': ["-c:v", "h264_amf", "-rc", "cqp", "-qp_p", "18", "-qp_i", "18"],
+    'amd_hevc': ["-c:v", "hevc_amf", "-rc", "cqp", "-qp_p", "18", "-qp_i", "18"],
+    'intel_h264': ["-c:v", "h264_qsv", "-global_quality", "18"],
+    'intel_hevc': ["-c:v", "hevc_qsv", "-global_quality", "20"],
+}
+
+# Codec names used elsewhere in Hail Mary (Bitrate tab, settings.ini) → keys above.
+_FFMPEG_ENCODER_ALIASES = {
+    'libx264': 'cpu',
+    'libx265': 'cpu_hevc',
+    'h264_nvenc': 'nvidia_h264',
+    'hevc_nvenc': 'nvidia_hevc',
+    'av1_nvenc': 'nvidia_av1',
+    'h264_amf': 'amd_h264',
+    'hevc_amf': 'amd_hevc',
+    'h264_qsv': 'intel_h264',
+    'hevc_qsv': 'intel_hevc',
+}
+
+
+def normalize_ffmpeg_encoder(raw):
+    """Accept compare keys and plain FFmpeg codec names; unknown → CPU (works on every machine)."""
+    v = (raw or "").strip().lower()
+    v = _FFMPEG_ENCODER_ALIASES.get(v, v)
+    return v if v in FFMPEG_ENCODER_PARAMS else 'cpu'
 
 
 def frame_to_tc(frame, fps_int):
@@ -1278,6 +1294,7 @@ def compare_export_filename_tag(
     noise_thresh,
     pixel_thresh,
     changed_pixels_max: int = 0,
+    analysis_mode: str = "classic",
 ):
     """Suffix from Compare filter (buffer / noise / pixel / optional max cap), filename-safe."""
     b = f"{float(buffer_seconds):g}".replace(".", "-")
@@ -1285,7 +1302,19 @@ def compare_export_filename_tag(
     mx = int(changed_pixels_max) if changed_pixels_max else 0
     if mx > 0:
         s += f"_m{mx}"
+    if analysis_mode == "blob":
+        s += "_blob"
     return s
+
+
+def _settings_filename_tag(settings):
+    return compare_export_filename_tag(
+        settings["buffer_seconds"],
+        settings["pixel_noise_threshold"],
+        settings["changed_pixels_threshold"],
+        settings.get("changed_pixels_max_threshold", 0) or 0,
+        settings.get("analysis_mode", "classic"),
+    )
 
 
 def allocate_unique_media_output_path(base_without_ext, ext, settings):
@@ -1296,12 +1325,7 @@ def allocate_unique_media_output_path(base_without_ext, ext, settings):
     """
     if not settings.get("export_avoid_overwrite"):
         return base_without_ext + ext
-    tag = compare_export_filename_tag(
-        settings["buffer_seconds"],
-        settings["pixel_noise_threshold"],
-        settings["changed_pixels_threshold"],
-        settings.get("changed_pixels_max_threshold", 0) or 0,
-    )
+    tag = _settings_filename_tag(settings)
     candidates = [f"{base_without_ext}{tag}{ext}"] + [
         f"{base_without_ext}{tag}_{i}{ext}" for i in range(2, 21)
     ]
@@ -1316,12 +1340,7 @@ def pick_unique_davinci_custom_name(base_name, target_dir, settings):
     stem = f"{base_name}_DaVinci_Export"
     if not settings.get("export_avoid_overwrite"):
         return stem
-    tag = compare_export_filename_tag(
-        settings["buffer_seconds"],
-        settings["pixel_noise_threshold"],
-        settings["changed_pixels_threshold"],
-        settings.get("changed_pixels_max_threshold", 0) or 0,
-    )
+    tag = _settings_filename_tag(settings)
     exts = (".mp4", ".mov", ".mxf", ".mkv")
 
     def stem_taken(cand_stem):
@@ -1394,59 +1413,107 @@ def write_edl(output_path, all_seqs, fps_int, video_path, auto_remove):
 
             event_num += 1
 
-def export_video_ffmpeg(video_path, output_path, all_seqs, fps_float, total_frames, ffmpeg_exe, lang, encoder_setting):
+def probe_has_audio(ffprobe_exe, video_path):
+    """True/False when ffprobe can tell, None when unknown (no ffprobe or probe error)."""
+    if not ffprobe_exe or not video_path or not os.path.isfile(video_path):
+        return None
+    try:
+        kw = {}
+        if hasattr(subprocess, "CREATE_NO_WINDOW"):
+            kw["creationflags"] = subprocess.CREATE_NO_WINDOW
+        completed = subprocess.run(
+            [ffprobe_exe, "-v", "error", "-select_streams", "a", "-show_entries", "stream=index", "-of", "json", video_path],
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=90, **kw,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return None
+    if completed.returncode != 0:
+        return None
+    try:
+        payload = json.loads(completed.stdout or "{}")
+    except json.JSONDecodeError:
+        return None
+    return bool(payload.get("streams"))
+
+
+def build_ffmpeg_select_filter(good_seqs, fps_float, with_audio, audio_chunk_samples=128):
+    """
+    One-pass cut list: `select` by frame number (frame-exact), audio by time in small chunks
+    (asetnsamples keeps each cut within ~3 ms instead of a whole 1024-sample audio frame).
+    """
+    v_terms = "+".join(f"between(n,{int(a)},{int(b) - 1})" for a, b, _ in good_seqs)
+    lines = [f"[0:v:0]select='{v_terms}',setpts=N/({fps_float:.9f})/TB[outv]"]
+    if with_audio:
+        a_terms = "+".join(
+            f"gte(t,{a / fps_float:.6f})*lt(t,{b / fps_float:.6f})" for a, b, _ in good_seqs
+        )
+        lines.append(
+            f"[0:a:0]asetnsamples=n={int(audio_chunk_samples)}:p=0,aselect='{a_terms}',asetpts=N/SR/TB[outa]"
+        )
+    return ";\n".join(lines) + "\n"
+
+
+def export_video_ffmpeg(video_path, output_path, all_seqs, fps_float, total_frames, ffmpeg_exe, lang, encoder_setting, ffprobe_exe=None):
     """True bei Erfolg oder nichts zu tun; False bei FFmpeg-Fehler."""
-    good_seqs = [seq for seq in all_seqs if seq[2]]
+    good_seqs = [seq for seq in all_seqs if seq[2] and seq[1] > seq[0]]
     if not good_seqs:
         return True
 
+    encoder_key = normalize_ffmpeg_encoder(encoder_setting)
+    out_frames = sum(b - a for a, b, _ in good_seqs)
+    has_audio = probe_has_audio(ffprobe_exe, video_path)
+    if has_audio is False:
+        print(TEXTS[lang]["ffmpeg_no_audio"].format(name=os.path.basename(video_path)), flush=True)
+
+    print(TEXTS[lang]['ffmpeg_render'].format(name=os.path.basename(output_path), codec=encoder_key))
+    ok = _run_ffmpeg_cut(
+        video_path, output_path, good_seqs, fps_float, out_frames, ffmpeg_exe, lang, encoder_key,
+        with_audio=has_audio is not False,
+    )
+    if not ok and has_audio is None:
+        # Unknown audio layout (no ffprobe): the usual failure is a missing audio stream.
+        print(TEXTS[lang]["ffmpeg_retry_no_audio"], flush=True)
+        ok = _run_ffmpeg_cut(
+            video_path, output_path, good_seqs, fps_float, out_frames, ffmpeg_exe, lang, encoder_key,
+            with_audio=False,
+        )
+    if ok:
+        print(TEXTS[lang]["ffmpeg_success"])
+    return ok
+
+
+def _run_ffmpeg_cut(video_path, output_path, good_seqs, fps_float, out_frames, ffmpeg_exe, lang, encoder_key, *, with_audio):
     filter_path = output_path + "_filter.txt"
     with open(filter_path, 'w', encoding='utf-8') as f:
-        concat_inputs = []
-        for i, (start, end, _) in enumerate(good_seqs):
-            start_sec = start / fps_float
-            end_sec = end / fps_float
-            
-            f.write(f"[0:v]trim=start={start_sec:.5f}:end={end_sec:.5f},setpts=PTS-STARTPTS[v{i}];\n")
-            f.write(f"[0:a]atrim=start={start_sec:.5f}:end={end_sec:.5f},asetpts=PTS-STARTPTS[a{i}];\n")
-            
-            concat_inputs.append(f"[v{i}][a{i}]")
-
-        f.write(f"{''.join(concat_inputs)}concat=n={len(good_seqs)}:v=1:a=1[outv][outa]\n")
-
-    print(TEXTS[lang]['ffmpeg_render'].format(name=os.path.basename(output_path), codec=encoder_setting))
-    encoder_params = {
-        'cpu': ["-c:v", "libx264", "-preset", "fast", "-crf", "18"],
-        'cpu_hevc': ["-c:v", "libx265", "-preset", "fast", "-crf", "22"],
-        'nvidia_h264': ["-c:v", "h264_nvenc", "-preset", "p6", "-cq", "18"],
-        'nvidia_hevc': ["-c:v", "hevc_nvenc", "-preset", "p6", "-cq", "18"],
-        'nvidia_av1': ["-c:v", "av1_nvenc", "-preset", "p6", "-cq", "18"],
-        'amd_h264': ["-c:v", "h264_amf", "-rc", "cqp", "-qp_p", "18", "-qp_i", "18"],
-        'amd_hevc': ["-c:v", "hevc_amf", "-rc", "cqp", "-qp_p", "18", "-qp_i", "18"]
-    }
-    
-    # Fallback auf nvidia_h264, falls eine ungueltige Eingabe gemacht wird
-    selected_params = encoder_params.get(encoder_setting, encoder_params['nvidia_h264'])
+        f.write(build_ffmpeg_select_filter(good_seqs, fps_float, with_audio))
 
     cmd = [
-        ffmpeg_exe, "-y",
+        ffmpeg_exe, "-y", "-hide_banner",
         "-i", video_path,
         "-filter_complex_script", filter_path,
         "-map", "[outv]",
-        "-map", "[outa]"
-    ] + selected_params + [
-        "-c:a", "aac", "-b:a", "256k",
-        output_path
     ]
-    
+    if with_audio:
+        cmd += ["-map", "[outa]"]
+    cmd += FFMPEG_ENCODER_PARAMS[encoder_key]
+    cmd += ["-r", f"{fps_float:.9f}"]
+    if with_audio:
+        cmd += ["-c:a", "aac", "-b:a", "256k"]
+    cmd += [output_path]
+
     try:
+        kw = {}
+        if hasattr(subprocess, "CREATE_NO_WINDOW"):
+            kw["creationflags"] = subprocess.CREATE_NO_WINDOW
         process = subprocess.Popen(
             cmd,
             stderr=subprocess.PIPE,
-            stdout=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stdin=subprocess.DEVNULL,
             universal_newlines=True,
             encoding="utf-8",
             errors="replace",
+            **kw,
         )
 
         frame_pattern = re.compile(r"frame=\s*(\d+)")
@@ -1458,11 +1525,11 @@ def export_video_ffmpeg(video_path, output_path, all_seqs, fps_float, total_fram
                 last_lines.pop(0)
 
             match = frame_pattern.search(line)
-            if match and total_frames > 0:
+            if match and out_frames > 0:
                 frame = int(match.group(1))
-                percent = (frame / total_frames) * 100
+                percent = min(100.0, (frame / out_frames) * 100)
                 sys.stdout.write(
-                    TEXTS[lang]["ffmpeg_progress"].format(percent=percent, frame=frame, total=total_frames)
+                    TEXTS[lang]["ffmpeg_progress"].format(percent=percent, frame=frame, total=out_frames)
                 )
                 sys.stdout.flush()
 
@@ -1474,7 +1541,6 @@ def export_video_ffmpeg(video_path, output_path, all_seqs, fps_float, total_fram
                 print(line)
             print("---------------------------------\n")
             return False
-        print(TEXTS[lang]["ffmpeg_success"])
         return True
     except Exception as ex:
         print(TEXTS[lang]["ffmpeg_error"].format(name=os.path.basename(video_path)))
@@ -1487,6 +1553,7 @@ def export_video_ffmpeg(video_path, output_path, all_seqs, fps_float, total_fram
                 os.remove(filter_path)
             except Exception:
                 pass
+
 
 def export_via_davinci(
     deepfake_video,
@@ -1564,27 +1631,17 @@ def export_via_davinci(
         width, height = probe_video_wh_ffprobe(ffprobe_exe, abs_video_fs)
 
     if not width or not height:
-        print(TEXTS[lang]["davinci_ffprobe_wh_warn"], flush=True)
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes("-topmost", True)
+        # Runs as a hidden subprocess — never prompt; fall back to OpenCV, then 1080p.
+        cap = cv2.VideoCapture(abs_video_fs)
         try:
-            user_res = simpledialog.askstring(
-                TEXTS[lang]["manual_res_title"],
-                TEXTS[lang]["manual_res_prompt"],
-                initialvalue="1920x1080",
-            )
+            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) or 0)
+            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0)
         finally:
-            root.destroy()
-
-        if user_res:
-            try:
-                width, height = [int(x) for x in user_res.lower().replace(" ", "").split("x", 1)]
-            except Exception:
-                print(TEXTS[lang]["manual_res_invalid"])
-                width, height = 1920, 1080
+            cap.release()
+        if width > 0 and height > 0:
+            print(TEXTS[lang]["davinci_res_fallback"].format(w=width, h=height), flush=True)
         else:
-            print(TEXTS[lang]["manual_res_invalid"])
+            print(TEXTS[lang]["davinci_res_default"], flush=True)
             width, height = 1920, 1080
 
     try:
@@ -1639,14 +1696,55 @@ def _ensure_stdio_utf8() -> None:
     """Windows-Konsole nutzt oft cp1252; unsere Meldungen enthalten z. B. „→“ (U+2192)."""
     try:
         if hasattr(sys.stdout, "reconfigure"):
-            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
         if hasattr(sys.stderr, "reconfigure"):
-            sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+            sys.stderr.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
     except Exception:
         pass
 
 
+def _resolve_lang(settings) -> str:
+    lang = settings.get("language", "en") or "en"
+    if isinstance(lang, str):
+        lang = lang.lower()
+    return lang if lang in TEXTS else "en"
+
+
+def _locate_ffmpeg_tools():
+    """(ffmpeg_exe or None, ffprobe_exe or None) — app folder first, then PATH."""
+    base_dir = get_base_dir()
+    local_ffmpeg = os.path.join(base_dir, "ffmpeg.exe")
+    ffmpeg_exe = local_ffmpeg if os.path.isfile(local_ffmpeg) else shutil.which("ffmpeg")
+    local_ffprobe = os.path.join(base_dir, "ffprobe.exe")
+    ffprobe_exe = local_ffprobe if os.path.isfile(local_ffprobe) else shutil.which("ffprobe")
+    return ffmpeg_exe, ffprobe_exe
+
+
+def _analysis_params(settings) -> "oa.AnalysisParams":
+    return oa.AnalysisParams(
+        mode=settings.get("analysis_mode", "classic"),
+        noise=settings["pixel_noise_threshold"],
+        analysis_width=settings.get("analysis_width", 640),
+        blur=settings.get("analysis_blur", 3),
+        hwaccel=settings.get("analysis_hwaccel", False),
+        auto_sync=settings.get("auto_sync_offset", True),
+        max_sync_offset=settings.get("max_sync_offset_frames", 12),
+    ).normalized()
+
+
+def _filter_params(settings, fps_float) -> "oa.FilterParams":
+    return oa.FilterParams(
+        pixel_threshold=int(settings["changed_pixels_threshold"]),
+        pixel_max=int(settings.get("changed_pixels_max_threshold", 0) or 0),
+        buffer_frames=int(fps_float * float(settings["buffer_seconds"])),
+        min_diff_run=int(settings.get("min_diff_run_frames", 2)),
+        min_keep_frames=int(round(float(settings.get("min_keep_seconds", 0.25)) * fps_float)),
+        cut_padding=int(settings.get("cut_padding_frames", 0)),
+    )
+
+
 EXPORT_CHECKPOINT_FILENAME = "oxco_compare_export_checkpoint.json"
+CHECKPOINT_VERSION = 2
 
 
 def export_checkpoint_path() -> str:
@@ -1673,9 +1771,14 @@ def _write_export_checkpoint(
     fps_float: float,
     fps_int: int,
     total_frames: int,
+    *,
+    src_offset: int = 0,
+    df_offset: int = 0,
+    metrics_path: str = "",
 ) -> None:
+    """all_seqs are in analysis-frame indices; src_offset/df_offset map them to each file's frame numbers."""
     data = {
-        "version": 1,
+        "version": CHECKPOINT_VERSION,
         "source_video": os.path.normcase(os.path.abspath(source_video)),
         "deepfake_video": os.path.normcase(os.path.abspath(deepfake_video)),
         "lang": lang,
@@ -1683,9 +1786,16 @@ def _write_export_checkpoint(
         "fps_float": float(fps_float),
         "fps_int": int(fps_int),
         "total_frames": int(total_frames),
+        "src_offset": int(src_offset),
+        "df_offset": int(df_offset),
+        "metrics_path": metrics_path or "",
     }
     try:
-        with open(export_checkpoint_path(), "w", encoding="utf-8") as f:
+        path = export_checkpoint_path()
+        folder = os.path.dirname(path)
+        if folder:
+            os.makedirs(folder, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
         print(TEXTS[lang]["checkpoint_written"], flush=True)
     except OSError as e:
@@ -1693,7 +1803,7 @@ def _write_export_checkpoint(
 
 
 def _load_export_checkpoint_data(source_video: str, deepfake_video: str, lang: str):
-    """Lädt Checkpoint; Rückgabe (all_seqs, fps_float, fps_int, total_frames) oder None."""
+    """Lädt Checkpoint (v1 oder v2); Rückgabe dict oder None."""
     ck_path = export_checkpoint_path()
     if not os.path.isfile(ck_path):
         print(TEXTS[lang]["retry_export_no_checkpoint"], flush=True)
@@ -1705,7 +1815,7 @@ def _load_export_checkpoint_data(source_video: str, deepfake_video: str, lang: s
         print(TEXTS[lang]["retry_export_ck_read_err"].format(error=e), flush=True)
         return None
 
-    if data.get("version") != 1:
+    if data.get("version") not in (1, CHECKPOINT_VERSION):
         print(TEXTS[lang]["retry_export_no_checkpoint"], flush=True)
         return None
 
@@ -1726,12 +1836,15 @@ def _load_export_checkpoint_data(source_video: str, deepfake_video: str, lang: s
         print(TEXTS[lang]["retry_export_no_checkpoint"], flush=True)
         return None
 
-    return (
-        all_seqs,
-        float(data["fps_float"]),
-        int(data["fps_int"]),
-        int(data["total_frames"]),
-    )
+    return {
+        "all_seqs": all_seqs,
+        "fps_float": float(data["fps_float"]),
+        "fps_int": int(data["fps_int"]),
+        "total_frames": int(data["total_frames"]),
+        "src_offset": int(data.get("src_offset") or 0),
+        "df_offset": int(data.get("df_offset") or 0),
+        "metrics_path": str(data.get("metrics_path") or ""),
+    }
 
 
 def run_compare_export_pipeline(
@@ -1746,11 +1859,12 @@ def run_compare_export_pipeline(
     *,
     davinci_only: bool = False,
     keep_checkpoint_on_exit: bool = False,
+    src_offset: int = 0,
+    df_offset: int = 0,
 ) -> int:
     """EDL + FFmpeg + DaVinci gemäß settings; Rückgabe 0 oder 3."""
-    base_dir = get_base_dir()
-    local_ffmpeg = os.path.join(base_dir, "ffmpeg.exe")
-    ffmpeg_exe = local_ffmpeg if os.path.exists(local_ffmpeg) else "ffmpeg"
+    ffmpeg_found, ffprobe_exe = _locate_ffmpeg_tools()
+    ffmpeg_exe = ffmpeg_found or "ffmpeg"
 
     enable_ffmpeg = False if davinci_only else settings["enable_ffmpeg_export"]
     ffmpeg_export_target = settings["ffmpeg_export_target"]
@@ -1770,11 +1884,13 @@ def run_compare_export_pipeline(
     except (TypeError, ValueError):
         davinci_startup_wait_seconds = 20
 
-    print(
-        f"[INFO] Export-Modus: FFmpeg={'an' if enable_ffmpeg else 'aus'}, "
-        f"DaVinci={'an' if enable_davinci else 'aus'}\n",
-        flush=True,
-    )
+    # Analysis indices → frame numbers of each file (non-zero when a leading-frame offset was detected).
+    seqs_src = oa.shift_seqs(all_seqs, src_offset)
+    seqs_df = oa.shift_seqs(all_seqs, df_offset)
+
+    ffmpeg_state = "an" if enable_ffmpeg else "aus"
+    davinci_state = "an" if enable_davinci else "aus"
+    print(f"[INFO] Export-Modus: FFmpeg={ffmpeg_state}, DaVinci={davinci_state}\n", flush=True)
 
     if enable_davinci:
         ensure_resolve_running_for_compare(davinci_exe_path, davinci_startup_wait_seconds, lang)
@@ -1792,8 +1908,8 @@ def run_compare_export_pipeline(
     if enable_autodelete_edl:
         edl_src_auto = f"{path_src_base}_SOURCE_AutoDelete.edl"
         edl_df_auto = f"{path_df_base}_DEEPFAKE_AutoDelete.edl"
-        write_edl(edl_src_auto, all_seqs, fps_int, source_video, auto_remove=True)
-        write_edl(edl_df_auto, all_seqs, fps_int, deepfake_video, auto_remove=True)
+        write_edl(edl_src_auto, seqs_src, fps_int, source_video, auto_remove=True)
+        write_edl(edl_df_auto, seqs_df, fps_int, deepfake_video, auto_remove=True)
         print(TEXTS[lang]["edl_auto_created"])
         print(f"- {os.path.basename(edl_src_auto)}")
         print(f"- {os.path.basename(edl_df_auto)}")
@@ -1801,26 +1917,26 @@ def run_compare_export_pipeline(
     if enable_fullcheck:
         edl_src_full = f"{path_src_base}_SOURCE_FullCheck.edl"
         edl_df_full = f"{path_df_base}_DEEPFAKE_FullCheck.edl"
-        write_edl(edl_src_full, all_seqs, fps_int, source_video, auto_remove=False)
-        write_edl(edl_df_full, all_seqs, fps_int, deepfake_video, auto_remove=False)
+        write_edl(edl_src_full, seqs_src, fps_int, source_video, auto_remove=False)
+        write_edl(edl_df_full, seqs_df, fps_int, deepfake_video, auto_remove=False)
         print(TEXTS[lang]["edl_full_created"])
 
+    ffmpeg_ok_all = True
     if enable_ffmpeg:
         vid_src_auto = allocate_unique_media_output_path(f"{path_src_base}_AutoCut", ".mp4", settings)
         vid_df_auto = allocate_unique_media_output_path(f"{path_df_base}_AutoCut", ".mp4", settings)
-        ffmpeg_ok_all = True
         if ffmpeg_export_target in ("both", "source"):
             if not export_video_ffmpeg(
-                source_video, vid_src_auto, all_seqs, fps_float, total_frames, ffmpeg_exe, lang, ffmpeg_encoder
+                source_video, vid_src_auto, seqs_src, fps_float, total_frames, ffmpeg_exe, lang, ffmpeg_encoder,
+                ffprobe_exe=ffprobe_exe,
             ):
                 ffmpeg_ok_all = False
         if ffmpeg_export_target in ("both", "deepfake"):
             if not export_video_ffmpeg(
-                deepfake_video, vid_df_auto, all_seqs, fps_float, total_frames, ffmpeg_exe, lang, ffmpeg_encoder
+                deepfake_video, vid_df_auto, seqs_df, fps_float, total_frames, ffmpeg_exe, lang, ffmpeg_encoder,
+                ffprobe_exe=ffprobe_exe,
             ):
                 ffmpeg_ok_all = False
-    else:
-        ffmpeg_ok_all = True
 
     davinci_ok = True
     if enable_davinci:
@@ -1840,7 +1956,7 @@ def run_compare_export_pipeline(
                 davinci_ok = export_via_davinci(
                     deepfake_video,
                     source_video,
-                    all_seqs,
+                    seqs_df,
                     davinci_api_path,
                     lang,
                     final_export_dir,
@@ -1858,11 +1974,7 @@ def run_compare_export_pipeline(
         else:
             print(TEXTS[lang]["compare_summary_davinci_fail"])
 
-    export_failed = False
-    if enable_ffmpeg and not ffmpeg_ok_all:
-        export_failed = True
-    if enable_davinci and not davinci_ok:
-        export_failed = True
+    export_failed = (enable_ffmpeg and not ffmpeg_ok_all) or (enable_davinci and not davinci_ok)
 
     print(TEXTS[lang]["all_done"])
     if export_failed:
@@ -1873,116 +1985,214 @@ def run_compare_export_pipeline(
     return 0
 
 
+def _refilter_from_metrics(ck: dict, source_video: str, deepfake_video: str, settings: dict, lang: str):
+    """Re-apply the current filters to cached metrics when they were measured with the current analysis params."""
+    data = oa.load_metrics(ck.get("metrics_path"))
+    if not data:
+        return None
+    if data.get("params") != _analysis_params(settings).cache_key():
+        return None
+
+    def same(a, b):
+        return os.path.normcase(os.path.abspath(a or "")) == os.path.normcase(os.path.abspath(b))
+
+    if not (same(data.get("source_video"), source_video) and same(data.get("deepfake_video"), deepfake_video)):
+        return None
+    metric = data.get("metric") or []
+    print(TEXTS[lang]["retry_refilter"].format(frames=len(metric)), flush=True)
+    seqs, _flags = oa.compute_segments(metric, _filter_params(settings, ck["fps_float"]))
+    _print_cut_summary(seqs, ck["fps_float"], lang, deepfake_video, ck.get("metrics_path", ""))
+    return seqs
+
+
 def run_retry_export_from_checkpoint(source_video: str, deepfake_video: str, settings: dict) -> int:
-    """Nur Export erneut (keine Pixelanalyse). Rückgabe 0/3/1."""
-    lang = settings.get("language", "en") or "en"
-    if isinstance(lang, str):
-        lang = lang.lower()
-    if lang not in TEXTS:
-        lang = "en"
-
-    try:
-        if hasattr(sys.stdout, "reconfigure"):
-            sys.stdout.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
-        if hasattr(sys.stderr, "reconfigure"):
-            sys.stderr.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
-    except Exception:
-        pass
-
-    loaded = _load_export_checkpoint_data(source_video, deepfake_video, lang)
-    if loaded is None:
+    """Nur Export erneut (keine Pixelanalyse); aktuelle Filter werden auf gespeicherte Messwerte angewendet. 0/3/1."""
+    lang = _resolve_lang(settings)
+    ck = _load_export_checkpoint_data(source_video, deepfake_video, lang)
+    if ck is None:
         return 1
 
-    all_seqs, fps_float, fps_int, total_frames = loaded
+    all_seqs = _refilter_from_metrics(ck, source_video, deepfake_video, settings, lang) or ck["all_seqs"]
+    if not any(v for _a, _b, v in all_seqs):
+        print(TEXTS[lang]['no_diff'])
+        return 0
     print(TEXTS[lang]["retry_export_start"], flush=True)
     return run_compare_export_pipeline(
-        source_video, deepfake_video, settings, lang, all_seqs, fps_float, fps_int, total_frames
+        source_video, deepfake_video, settings, lang, all_seqs,
+        ck["fps_float"], ck["fps_int"], ck["total_frames"],
+        src_offset=ck["src_offset"], df_offset=ck["df_offset"],
     )
 
 
 def run_davinci_export_from_checkpoint(source_video: str, deepfake_video: str, settings: dict) -> int:
     """Nur DaVinci-Export aus Checkpoint (Pipeline-Phase nach Analyse)."""
-    lang = settings.get("language", "en") or "en"
-    if isinstance(lang, str):
-        lang = lang.lower()
-    if lang not in TEXTS:
-        lang = "en"
-
-    try:
-        if hasattr(sys.stdout, "reconfigure"):
-            sys.stdout.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
-        if hasattr(sys.stderr, "reconfigure"):
-            sys.stderr.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
-    except Exception:
-        pass
-
-    loaded = _load_export_checkpoint_data(source_video, deepfake_video, lang)
-    if loaded is None:
+    lang = _resolve_lang(settings)
+    ck = _load_export_checkpoint_data(source_video, deepfake_video, lang)
+    if ck is None:
         return 1
 
-    all_seqs, fps_float, fps_int, total_frames = loaded
     print("[INFO] Pipeline: DaVinci-Export startet (Analyse war bereits fertig).\n", flush=True)
     return run_compare_export_pipeline(
         source_video,
         deepfake_video,
         settings,
         lang,
-        all_seqs,
-        fps_float,
-        fps_int,
-        total_frames,
+        ck["all_seqs"],
+        ck["fps_float"],
+        ck["fps_int"],
+        ck["total_frames"],
         davinci_only=True,
+        src_offset=ck["src_offset"],
+        df_offset=ck["df_offset"],
     )
+
+
+def _print_cut_summary(seqs, fps_float, lang, deepfake_video="", metrics_path=""):
+    kept, cut, n = oa.segment_summary(seqs)
+    print(TEXTS[lang]["cut_summary"].format(kept=kept / fps_float, cut=cut / fps_float, n=n), flush=True)
+    # Machine-readable line for Hail Mary (result badge per deepfake, timeline reload).
+    result = {
+        "deepfake": os.path.abspath(deepfake_video) if deepfake_video else "",
+        "kept_seconds": round(kept / fps_float, 3),
+        "cut_seconds": round(cut / fps_float, 3),
+        "cuts": n,
+        "metrics": metrics_path or "",
+    }
+    print("HM_RESULT:" + json.dumps(result, ensure_ascii=False), flush=True)
+
+
+def _print_settings(settings, lang, params, fp):
+    on, off = TEXTS[lang]['on'], TEXTS[lang]['off']
+    print(TEXTS[lang]['loading_settings'])
+    if params.mode == "blob":
+        mode_txt = TEXTS[lang]['mode_blob'].format(w=params.analysis_width, blur=params.blur)
+    else:
+        mode_txt = TEXTS[lang]['mode_classic']
+    print(TEXTS[lang]['set_mode'].format(val=mode_txt))
+    print(TEXTS[lang]['set_buffer'].format(val=settings['buffer_seconds']))
+    print(TEXTS[lang]['set_noise'].format(val=params.noise))
+    print(TEXTS[lang]['set_pixel'].format(val=fp.pixel_threshold))
+    print(TEXTS[lang]['set_pixel_max'].format(val=fp.pixel_max))
+    print(TEXTS[lang]['set_postfilter'].format(run=fp.min_diff_run, keep=fp.min_keep_frames, pad=fp.cut_padding))
+    sync_txt = f"{on} (±{params.max_sync_offset})" if params.auto_sync and params.max_sync_offset > 0 else off
+    print(TEXTS[lang]['set_sync'].format(val=sync_txt))
+    print(TEXTS[lang]['set_davinci'].format(val=on if settings['enable_davinci_export'] else off))
+    if settings['enable_davinci_export']:
+        _dto = settings.get('davinci_render_timeout_seconds', 1800)
+        _tout = TEXTS[lang]['davinci_timeout_off'] if _dto == 0 else f"{_dto}s"
+        print(TEXTS[lang]['set_davinci_timeout'].format(val=_tout))
+    print(TEXTS[lang]['set_ffmpeg'].format(val=on if settings['enable_ffmpeg_export'] else off))
+    if settings['enable_ffmpeg_export']:
+        target_key = f"ffmpeg_target_{settings['ffmpeg_export_target']}"
+        print(TEXTS[lang]['set_ffmpeg_target'].format(val=TEXTS[lang][target_key]))
+    print(TEXTS[lang]['set_fullcheck'].format(val=on if settings['enable_fullcheck_edl'] else off))
+    print(TEXTS[lang]['set_export_unique'].format(val=on if settings.get('export_avoid_overwrite') else off))
+
+
+def _probe_inputs(source_video, deepfake_video, ffprobe_exe, lang):
+    """FPS, frame-count hint and source size; prints the cheap sync sanity warnings."""
+    cap_src = cv2.VideoCapture(source_video)
+    cap_df = cv2.VideoCapture(deepfake_video)
+    try:
+        try:
+            opencv_fps_raw = float(cap_src.get(cv2.CAP_PROP_FPS))
+        except (TypeError, ValueError):
+            opencv_fps_raw = 0.0
+        r_fps, avg_fps = (None, None)
+        if ffprobe_exe:
+            r_fps, avg_fps = probe_video_stream_fps_rates(ffprobe_exe, source_video)
+        picked = pick_analysis_fps_from_probes(opencv_fps_raw, r_fps, avg_fps, lang)
+        if picked is not None:
+            fps_float = float(picked)
+            if (not opencv_fps_raw or opencv_fps_raw <= 0) and fps_float > 0:
+                print(TEXTS[lang]['fps_ffprobe_only'].format(fps=f"{fps_float:.6g}"), flush=True)
+        else:
+            fps_float = opencv_fps_raw
+        if not fps_float or fps_float <= 0:
+            print(TEXTS[lang]['fps_fallback'])
+            fps_float = 30.0
+        try:
+            total_frames = max(0, int(cap_src.get(cv2.CAP_PROP_FRAME_COUNT)))
+        except (TypeError, ValueError):
+            total_frames = 0
+        src_w = int(cap_src.get(cv2.CAP_PROP_FRAME_WIDTH) or 0)
+        src_h = int(cap_src.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0)
+        print_stream_sync_warnings(lang, ffprobe_exe, source_video, deepfake_video, cap_src, cap_df)
+    finally:
+        cap_src.release()
+        cap_df.release()
+    return fps_float, total_frames, (src_w, src_h)
+
+
+def _run_analysis(source_video, deepfake_video, settings, params, lang, *, ffmpeg_exe, fps_float, total_frames, src_wh):
+    """Decode + measure (or reuse cached metrics). Returns (AnalysisResult, metrics_path)."""
+    metrics_path = oa.metrics_cache_path(source_video, deepfake_video, params)
+    cached = oa.load_metrics(metrics_path) if settings.get("reuse_metrics", True) else None
+    if cached:
+        result = oa.result_from_payload(cached)
+        print(TEXTS[lang]['metrics_reused'].format(frames=result.frames), flush=True)
+        return result, metrics_path
+
+    print(TEXTS[lang]['start_analysis'].format(frames=total_frames))
+
+    def progress(current, expected):
+        if expected <= 0:
+            return
+        percent = min(100.0, current / expected * 100)
+        sys.stdout.write(TEXTS[lang]['analyzing'].format(percent=percent, current=current, total=expected))
+        sys.stdout.flush()
+        print(f"HM_PROGRESS:{percent:.1f}:Analyse", flush=True)
+
+    result = oa.analyze_pair(
+        source_video,
+        deepfake_video,
+        params,
+        src_wh=src_wh,
+        ffmpeg_exe=ffmpeg_exe,
+        total_hint=total_frames,
+        progress=progress,
+    )
+    print(TEXTS[lang]['frames_processed'].format(count=result.frames))
+    print(TEXTS[lang]['reader_info'].format(reader=result.reader, w=result.width, h=result.height), flush=True)
+    if params.auto_sync and params.max_sync_offset > 0:
+        shift = result.src_offset or result.df_offset
+        if shift:
+            print(TEXTS[lang]['sync_applied'].format(
+                sign="+" if result.src_offset else "-",
+                n=shift,
+                s0=result.sync_scores[0],
+                sb=result.sync_scores[1],
+                which=TEXTS[lang]['which_source'] if result.src_offset else TEXTS[lang]['which_deepfake'],
+            ), flush=True)
+        else:
+            print(TEXTS[lang]['sync_none'].format(n=params.max_sync_offset), flush=True)
+    if total_frames > 0 and result.frames + max(result.src_offset, result.df_offset) < total_frames:
+        print(TEXTS[lang]["sync_warn_truncated"].format(got=result.frames, expected=total_frames), flush=True)
+    if result.seconds > 0 and result.frames > 0:
+        print(TEXTS[lang]['analysis_time'].format(sec=result.seconds, fps=result.frames / result.seconds), flush=True)
+    if result.frames > 0 and oa.save_metrics(
+        metrics_path, oa.build_metrics_payload(source_video, deepfake_video, params, result, fps_float)
+    ):
+        print(TEXTS[lang]['metrics_saved'].format(path=metrics_path), flush=True)
+    return result, metrics_path
 
 
 def main(source_video, deepfake_video, settings, defer_davinci: bool = False):
-    lang = (settings.get('language', 'en') or 'en')
-    if isinstance(lang, str):
-        lang = lang.lower()
-    if lang not in TEXTS:
-        lang = 'en'
-
+    lang = _resolve_lang(settings)
     _remove_export_checkpoint_silent()
+    _ensure_stdio_utf8()
 
-    try:
-        if hasattr(sys.stdout, "reconfigure"):
-            sys.stdout.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
-        if hasattr(sys.stderr, "reconfigure"):
-            sys.stderr.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
-    except Exception:
-        pass
-        
-    base_dir = get_base_dir()
-    local_ffmpeg = os.path.join(base_dir, "ffmpeg.exe")
-    ffmpeg_exe = local_ffmpeg if os.path.exists(local_ffmpeg) else "ffmpeg"
-    
-    buffer_seconds = settings['buffer_seconds']
-    noise_thresh = settings['pixel_noise_threshold']
-    pixel_thresh = settings['changed_pixels_threshold']
-    pixel_max = int(settings.get("changed_pixels_max_threshold", 0) or 0)
-    enable_ffmpeg = settings['enable_ffmpeg_export']
-    ffmpeg_export_target = settings['ffmpeg_export_target']
-    ffmpeg_encoder = settings['ffmpeg_encoder']
-    enable_fullcheck = settings['enable_fullcheck_edl']
-    enable_autodelete_edl = settings['enable_autodelete_edl']
+    ffmpeg_exe, ffprobe_exe = _locate_ffmpeg_tools()
     enable_davinci = settings['enable_davinci_export']
-    davinci_api_path = settings['davinci_api_path']
-    final_export_dir = settings.get('final_export_dir', '')
-    davinci_render_timeout_seconds = settings.get('davinci_render_timeout_seconds', 1800)
-    scriptapp_retries = settings.get("davinci_scriptapp_retry_attempts", 60)
-    scriptapp_delay = settings.get("davinci_scriptapp_retry_delay_seconds", 3.0)
     davinci_exe_path = settings.get("davinci_exe_path", "") or ""
     try:
-        _dsw = settings.get("davinci_startup_wait_seconds", 20)
-        davinci_startup_wait_seconds = max(0, min(600, int(_dsw)))
+        davinci_startup_wait_seconds = max(0, min(600, int(settings.get("davinci_startup_wait_seconds", 20))))
     except (TypeError, ValueError):
         davinci_startup_wait_seconds = 20
 
-    print(
-        f"[INFO] Export-Modus: FFmpeg={'an' if enable_ffmpeg else 'aus'}, "
-        f"DaVinci={'an' if enable_davinci else 'aus'}\n",
-        flush=True,
-    )
+    ffmpeg_state = "an" if settings['enable_ffmpeg_export'] else "aus"
+    davinci_state = "an" if enable_davinci else "aus"
+    print(f"[INFO] Export-Modus: FFmpeg={ffmpeg_state}, DaVinci={davinci_state}\n", flush=True)
 
     if enable_davinci and not defer_davinci:
         ensure_resolve_running_for_compare(davinci_exe_path, davinci_startup_wait_seconds, lang)
@@ -1993,136 +2203,36 @@ def main(source_video, deepfake_video, settings, defer_davinci: bool = False):
             flush=True,
         )
 
-    cap_src = cv2.VideoCapture(source_video)
-    cap_df = cv2.VideoCapture(deepfake_video)
-
-    try:
-        opencv_fps_raw = float(cap_src.get(cv2.CAP_PROP_FPS))
-    except (TypeError, ValueError):
-        opencv_fps_raw = 0.0
-    ffprobe_local = os.path.join(base_dir, "ffprobe.exe")
-    ffprobe_exe = ffprobe_local if os.path.isfile(ffprobe_local) else shutil.which("ffprobe")
-    r_fps, avg_fps = (None, None)
-    if ffprobe_exe:
-        r_fps, avg_fps = probe_video_stream_fps_rates(ffprobe_exe, source_video)
-    picked = pick_analysis_fps_from_probes(opencv_fps_raw, r_fps, avg_fps, lang)
-    if picked is not None:
-        fps_float = float(picked)
-        if (not opencv_fps_raw or opencv_fps_raw <= 0) and fps_float > 0:
-            print(TEXTS[lang]['fps_ffprobe_only'].format(fps=f"{fps_float:.6g}"), flush=True)
-    else:
-        fps_float = opencv_fps_raw
-    if not fps_float or fps_float <= 0:
-        print(TEXTS[lang]['fps_fallback'])
-        fps_float = 30.0
+    fps_float, total_frames, src_wh = _probe_inputs(source_video, deepfake_video, ffprobe_exe, lang)
     fps_int = max(1, int(round(fps_float)))
-    buffer_frames = int(fps_float * buffer_seconds)
-    total_frames = int(cap_src.get(cv2.CAP_PROP_FRAME_COUNT))
+    params = _analysis_params(settings)
+    fp = _filter_params(settings, fps_float)
+    _print_settings(settings, lang, params, fp)
 
-    print_stream_sync_warnings(lang, ffprobe_exe, source_video, deepfake_video, cap_src, cap_df)
-
-    print(TEXTS[lang]['loading_settings'])
-    print(TEXTS[lang]['set_buffer'].format(val=buffer_seconds))
-    print(TEXTS[lang]['set_noise'].format(val=noise_thresh))
-    print(TEXTS[lang]['set_pixel'].format(val=pixel_thresh))
-    print(TEXTS[lang]['set_pixel_max'].format(val=pixel_max))
-    print(TEXTS[lang]['set_davinci'].format(val=TEXTS[lang]['on'] if enable_davinci else TEXTS[lang]['off']))
-    if enable_davinci:
-        _dto = davinci_render_timeout_seconds
-        _tout = TEXTS[lang]['davinci_timeout_off'] if _dto == 0 else f"{_dto}s"
-        print(TEXTS[lang]['set_davinci_timeout'].format(val=_tout))
-    print(TEXTS[lang]['set_ffmpeg'].format(val=TEXTS[lang]['on'] if enable_ffmpeg else TEXTS[lang]['off']))
-    if enable_ffmpeg:
-        print(TEXTS[lang]['set_ffmpeg_target'].format(
-            val=TEXTS[lang][f'ffmpeg_target_{ffmpeg_export_target}']
-        ))
-    print(TEXTS[lang]['set_fullcheck'].format(val=TEXTS[lang]['on'] if enable_fullcheck else TEXTS[lang]['off']))
-    print(
-        TEXTS[lang]['set_export_unique'].format(
-            val=TEXTS[lang]['on'] if settings.get('export_avoid_overwrite') else TEXTS[lang]['off']
-        )
+    result, metrics_path = _run_analysis(
+        source_video, deepfake_video, settings, params, lang,
+        ffmpeg_exe=ffmpeg_exe, fps_float=fps_float, total_frames=total_frames, src_wh=src_wh,
     )
-
-    print(TEXTS[lang]['start_analysis'].format(frames=total_frames))
-    
-    raw_diff = []
-    actual_frame_count = 0
-    
-    for _ in range(total_frames):
-        ret_s, frame_s = cap_src.read()
-        ret_d, frame_d = cap_df.read()
-        
-        if not ret_s or not ret_d:
-            break
-            
-        gray_s = cv2.cvtColor(frame_s, cv2.COLOR_BGR2GRAY)
-        gray_d = cv2.cvtColor(frame_d, cv2.COLOR_BGR2GRAY)
-        if gray_d.shape != gray_s.shape:
-            gray_d = cv2.resize(gray_d, (gray_s.shape[1], gray_s.shape[0]), interpolation=cv2.INTER_LINEAR)
-        
-        diff = cv2.absdiff(gray_s, gray_d)
-        _, thresh = cv2.threshold(diff, noise_thresh, 255, cv2.THRESH_BINARY)
-        changed_pixels = cv2.countNonZero(thresh)
-
-        has_diff = changed_pixels > pixel_thresh
-        if has_diff and pixel_max > 0 and changed_pixels > pixel_max:
-            has_diff = False
-        raw_diff.append(has_diff)
-        actual_frame_count += 1
-
-        if total_frames > 0 and (actual_frame_count % 30 == 0 or actual_frame_count == total_frames):
-            percent = (actual_frame_count / total_frames) * 100
-            sys.stdout.write(TEXTS[lang]['analyzing'].format(percent=percent, current=actual_frame_count, total=total_frames))
-            sys.stdout.flush()
-            print(f"HM_PROGRESS:{percent:.1f}:Analyse", flush=True)
-
-    cap_src.release()
-    cap_df.release()
-
-    if total_frames > 0 and actual_frame_count < total_frames:
-        print(
-            TEXTS[lang]["sync_warn_truncated"].format(got=actual_frame_count, expected=total_frames),
-            flush=True,
-        )
-
-    print(TEXTS[lang]['frames_processed'].format(count=actual_frame_count))
     print("HM_PROGRESS:100:Analyse", flush=True)
     print("HM_PROGRESS_END", flush=True)
-    
-    keep_frames = []
-    false_streak = 0
-    
-    for i in range(len(raw_diff)):
-        if raw_diff[i]:
-            keep_frames.append(i)
-            false_streak = 0
-        else:
-            false_streak += 1
-            if false_streak >= buffer_frames:
-                keep_frames.append(i)
-                if false_streak == buffer_frames:
-                    for j in range(1, buffer_frames):
-                        keep_frames.append(i - j)
+    if metrics_path and os.path.isfile(metrics_path):
+        print(f"HM_METRICS:{metrics_path}", flush=True)
 
-    keep_frames_set = set(keep_frames)
-    
-    if not keep_frames_set:
+    all_seqs, flags = oa.compute_segments(result.metric, fp)
+    if flags and not any(flags):
+        print(TEXTS[lang]['no_swap_warning'], flush=True)
+    elif flags and all(flags):
+        print(TEXTS[lang]['all_swap_warning'], flush=True)
+    _print_cut_summary(all_seqs, fps_float, lang, deepfake_video, metrics_path or "")
+
+    if not any(v for _a, _b, v in all_seqs):
         print(TEXTS[lang]['no_diff'])
         return 0
 
-    all_seqs = []
-    if actual_frame_count > 0:
-        current_state = 0 in keep_frames_set
-        start_frame = 0
-        for i in range(1, actual_frame_count):
-            state = i in keep_frames_set
-            if state != current_state:
-                all_seqs.append((start_frame, i, current_state))
-                start_frame = i
-                current_state = state
-        all_seqs.append((start_frame, actual_frame_count, current_state))
-
-    _write_export_checkpoint(source_video, deepfake_video, lang, all_seqs, fps_float, fps_int, total_frames)
+    _write_export_checkpoint(
+        source_video, deepfake_video, lang, all_seqs, fps_float, fps_int, total_frames,
+        src_offset=result.src_offset, df_offset=result.df_offset, metrics_path=metrics_path or "",
+    )
     if defer_davinci and enable_davinci:
         export_settings = dict(settings)
         export_settings["enable_davinci_export"] = False
@@ -2136,43 +2246,16 @@ def main(source_video, deepfake_video, settings, defer_davinci: bool = False):
             fps_int,
             total_frames,
             keep_checkpoint_on_exit=True,
+            src_offset=result.src_offset,
+            df_offset=result.df_offset,
         )
         if rc in (0, 3):
             print("HM_PIPELINE_DAVINCI_PENDING", flush=True)
         return rc
     return run_compare_export_pipeline(
-        source_video, deepfake_video, settings, lang, all_seqs, fps_float, fps_int, total_frames
+        source_video, deepfake_video, settings, lang, all_seqs, fps_float, fps_int, total_frames,
+        src_offset=result.src_offset, df_offset=result.df_offset,
     )
-
-def get_files_via_gui(lang):
-    root = tk.Tk()
-    root.withdraw()
-    root.attributes("-topmost", True)
-    
-    source = filedialog.askopenfilename(title=TEXTS[lang]['file_dialog_source'], filetypes=[("Video Files", "*.mp4 *.mov *.avi *.mkv")])
-    if not source:
-        root.destroy()
-        return None, None
-        
-    deepfake = filedialog.askopenfilename(title=TEXTS[lang]['file_dialog_df'], filetypes=[("Video Files", "*.mp4 *.mov *.avi *.mkv")])
-    root.destroy()
-    if not deepfake:
-        return None, None
-        
-    return source, deepfake
-
-def confirm_source(file1, file2, lang):
-    root = tk.Tk()
-    root.withdraw()
-    root.attributes("-topmost", True)
-    
-    name1 = os.path.basename(file1)
-    answer = messagebox.askyesno(TEXTS[lang]['confirm_source_title'], TEXTS[lang]['confirm_source_msg'].format(name=name1))
-    root.destroy()
-    if answer:
-        return file1, file2
-    else:
-        return file2, file1
 
 
 def _strip_compare_script_from_argv(parts):
@@ -2191,129 +2274,40 @@ def _strip_compare_script_from_argv(parts):
     return parts
 
 
-def parse_compare_cli_args():
-    """
-    Normalize argv for compare.exe, ``python compare.py``, and ``python compare.py --`` from GUI.
-
-    Returns (mode, a, b, retry_export_only, defer_davinci, davinci_export_only) where mode is:
-      'two_auto' | 'two_confirm' | 'one_file' | 'none'
-    """
-    parts = list(sys.argv[1:])
+def parse_compare_cli_args(argv=None):
+    """Returns (source, deepfake, retry_export_only, defer_davinci, davinci_export_only) or None."""
+    parts = list(sys.argv[1:] if argv is None else argv)
+    flags = {"--retry-export-only", "--defer-davinci", "--davinci-export-only", "--auto"}
     retry_export_only = "--retry-export-only" in parts
     defer_davinci = "--defer-davinci" in parts
     davinci_export_only = "--davinci-export-only" in parts
-    parts = [
-        p
-        for p in parts
-        if p not in ("--retry-export-only", "--defer-davinci", "--davinci-export-only")
-    ]
-    if parts and parts[-1] == "--auto":
-        parts = parts[:-1]
-        auto = True
-    else:
-        auto = False
-    parts = _strip_compare_script_from_argv(parts)
-
-    if len(parts) == 2:
-        return (("two_auto", parts[0], parts[1]) if auto else ("two_confirm", parts[0], parts[1])) + (
-            retry_export_only,
-            defer_davinci,
-            davinci_export_only,
-        )
-    if len(parts) == 1:
-        return ("one_file", parts[0], None, retry_export_only, defer_davinci, davinci_export_only)
-    return ("none", None, None, retry_export_only, defer_davinci, davinci_export_only)
+    parts = _strip_compare_script_from_argv([p for p in parts if p not in flags])
+    if len(parts) != 2:
+        return None
+    return parts[0], parts[1], retry_export_only, defer_davinci, davinci_export_only
 
 
 if __name__ == "__main__":
     _ensure_stdio_utf8()
     settings = load_config()
-    lang = settings.get('language', 'en').lower()
-    if lang not in TEXTS:
-        lang = 'en'
-        
-    source_video = None
-    deepfake_video = None
+    lang = _resolve_lang(settings)
 
-    mode, path_a, path_b, retry_export_only, defer_davinci, davinci_export_only = parse_compare_cli_args()
-
-    if mode == "two_auto":
-        source_video, deepfake_video = path_a, path_b
-    elif mode == "two_confirm":
-        source_video, deepfake_video = confirm_source(path_a, path_b, lang)
-    elif mode == "one_file":
-        cache_file = os.path.join(get_base_dir(), "autocut_cache.txt")
-        current_file = path_a
-
-        if os.path.exists(cache_file):
-            with open(cache_file, "r", encoding="utf-8") as f:
-                cached_file = f.read().strip()
-            
-            os.remove(cache_file)
-
-            if cached_file == current_file:
-                root = tk.Tk()
-                root.withdraw()
-                root.attributes("-topmost", True)
-                messagebox.showinfo(TEXTS[lang]['abort_double_file_title'], TEXTS[lang]['abort_double_file_msg'])
-                root.destroy()
-                sys.exit(0)
-
-            source_video, deepfake_video = confirm_source(cached_file, current_file, lang)
-        else:
-            with open(cache_file, "w", encoding="utf-8") as f:
-                f.write(current_file)
-            
-            root = tk.Tk()
-            root.withdraw()
-            root.attributes("-topmost", True)
-            messagebox.showinfo(TEXTS[lang]['cache_step1_title'], TEXTS[lang]['cache_step1_msg'].format(name=os.path.basename(current_file)))
-            root.destroy()
-            sys.exit(0)
-    else:
-        print(TEXTS[lang]['no_files_sendto'])
-        source_video, deepfake_video = get_files_via_gui(lang)
-
-    if not source_video or not deepfake_video:
-        print(TEXTS[lang]['abort_not_both'])
-        input(TEXTS[lang]['press_enter'])
+    parsed = parse_compare_cli_args()
+    if parsed is None:
+        print(TEXTS[lang]['usage'], flush=True)
         sys.exit(1)
-        
-    is_auto_mode = mode == "two_auto"
+    source_video, deepfake_video, retry_export_only, defer_davinci, davinci_export_only = parsed
 
-    status = 0
     try:
         if davinci_export_only:
-            if mode != "two_auto":
-                print(TEXTS[lang]["retry_export_auto_only"], flush=True)
-                status = 1
-            else:
-                status = run_davinci_export_from_checkpoint(source_video, deepfake_video, settings)
+            status = run_davinci_export_from_checkpoint(source_video, deepfake_video, settings)
         elif retry_export_only:
-            if mode != "two_auto":
-                print(TEXTS[lang]["retry_export_auto_only"], flush=True)
-                status = 1
-            else:
-                status = run_retry_export_from_checkpoint(source_video, deepfake_video, settings)
+            status = run_retry_export_from_checkpoint(source_video, deepfake_video, settings)
         else:
             status = main(source_video, deepfake_video, settings, defer_davinci=defer_davinci)
-        if status is None:
-            status = 0
     except Exception as e:
-        try:
-            print(TEXTS[lang]['unexpected_error'].format(error=e))
-        except UnicodeEncodeError:
-            print(
-                TEXTS[lang]['unexpected_error']
-                .format(error=e)
-                .encode("ascii", errors="replace")
-                .decode("ascii")
-            )
-        # Im Fehlerfall auch bei Auto-Mode kurz warten, damit man die Fehlermeldung lesen kann
-        if is_auto_mode:
-            time.sleep(10)
+        import traceback
+        print(TEXTS[lang]['unexpected_error'].format(error=e), flush=True)
+        traceback.print_exc()
         sys.exit(1)
-
-    if not is_auto_mode:
-        input(TEXTS[lang]['press_enter'])
-    sys.exit(int(status))
+    sys.exit(int(status or 0))

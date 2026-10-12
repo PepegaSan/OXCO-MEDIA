@@ -7,7 +7,6 @@ import base64
 import json
 import os
 import sys
-from io import BytesIO
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -36,10 +35,10 @@ def _oxco_dir() -> Path:
 def _import_oxco():
     oxco_dir = _oxco_dir()
     sys.path.insert(0, str(oxco_dir))
-    import oxco_player as op  # noqa: E402
+    import oxco_analysis as oa  # noqa: E402
     import oxco_workers as ow  # noqa: E402
 
-    return op, ow
+    return oa, ow
 
 
 def cmd_probe(data: dict, out_path: Path) -> int:
@@ -88,20 +87,108 @@ def cmd_probe(data: dict, out_path: Path) -> int:
     return 0
 
 
-def cmd_render(data: dict, out_path: Path) -> int:
-    op, ow = _import_oxco()
+def _to_bgr(frame):
+    import cv2  # noqa: E402
+
+    if frame is None:
+        return None
+    if frame.ndim == 2:
+        return cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+    if frame.shape[2] == 4:
+        return cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
+    return frame
+
+
+def _overlay(base_bgr, mask, box, opacity: float = 0.5):
+    """Magenta = changed pixels (after noise filter); green box = largest region (blob mode)."""
     import cv2  # noqa: E402
     import numpy as np  # noqa: E402
-    from PIL import Image  # noqa: E402
+
+    tint = cv2.merge([mask, np.zeros_like(mask), mask])
+    out = cv2.addWeighted(base_bgr, 1.0, tint, opacity, 0)
+    if box is not None:
+        x, y, w, h = box
+        cv2.rectangle(out, (x, y), (x + w, y + h), (0, 220, 0), 2)
+    return out
+
+
+def preview_params(oa, data: dict):
+    return oa.AnalysisParams(
+        mode=str(data.get("analysis_mode") or "classic"),
+        noise=int(data.get("noise", 15)),
+        analysis_width=int(data.get("analysis_width", 640) or 640),
+        blur=int(data.get("analysis_blur", 3) or 0),
+    ).normalized()
+
+
+def compose_preview(oa, fa, fb, data: dict) -> dict:
+    """
+    Side-by-side / overlay image + the same measurement the analysis uses.
+    fa/fb: BGR frames (fb may be None). Returns the JSON payload (without frame_index/frame_count).
+    """
+    import cv2  # noqa: E402
+    import numpy as np  # noqa: E402
+
+    pixel_threshold = int(data.get("pixel_threshold", 200))
+    pixel_max = int(data.get("pixel_max", 0) or 0)
+    side_by_side = bool(data.get("side_by_side", False))
+    overlay = bool(data.get("overlay", True))
+    max_width = int(data.get("max_width", 1280))
+    params = preview_params(oa, data)
+
+    fa = _to_bgr(fa)
+    ho, wo = fa.shape[:2]
+    fb = _to_bgr(fb) if fb is not None else None
+    if fb is not None and (fb.shape[1], fb.shape[0]) != (wo, ho):
+        fb = cv2.resize(fb, (wo, ho), interpolation=cv2.INTER_LINEAR)
+
+    diff_count = 0
+    total_changed = 0
+    diff_over = False
+    mask = None
+    box = None
+    if fb is not None:
+        diff_count, total_changed, mask, box = oa.preview_measure(fa, fb, params)
+        diff_over = diff_count > pixel_threshold and (pixel_max <= 0 or diff_count <= pixel_max)
+
+    if side_by_side and fb is not None:
+        left, right = fa.copy(), fb.copy()
+        if overlay and mask is not None:
+            left = _overlay(left, mask, box)
+            right = _overlay(right, mask, box)
+        cv2.putText(left, "A", (16, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 220, 0), 2)
+        cv2.putText(right, "B", (16, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (60, 60, 255), 2)
+        out_bgr = np.hstack([left, right])
+    else:
+        out_bgr = fa.copy()
+        if overlay and mask is not None:
+            out_bgr = _overlay(out_bgr, mask, box)
+
+    h, w = out_bgr.shape[:2]
+    if max_width > 0 and w > max_width:
+        scale = max_width / w
+        out_bgr = cv2.resize(out_bgr, (max(1, int(w * scale)), max(1, int(h * scale))), interpolation=cv2.INTER_AREA)
+
+    ok, jpg = cv2.imencode(".jpg", out_bgr, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
+    if not ok:
+        raise RuntimeError("JPEG encode failed")
+    return {
+        "diff_count": diff_count,
+        "total_changed": total_changed,
+        "analysis_mode": params.mode,
+        "diff_over_threshold": diff_over,
+        "image_base64": base64.standard_b64encode(jpg.tobytes()).decode("ascii"),
+        "width": int(out_bgr.shape[1]),
+        "height": int(out_bgr.shape[0]),
+    }
+
+
+def cmd_render(data: dict, out_path: Path) -> int:
+    oa, ow = _import_oxco()
 
     path_a = (data.get("path_a") or "").strip()
     path_b = (data.get("path_b") or "").strip()
     frame_index = int(data.get("frame_index", 0))
-    noise = int(data.get("noise", 15))
-    pixel_threshold = int(data.get("pixel_threshold", 200))
-    side_by_side = bool(data.get("side_by_side", False))
-    overlay = bool(data.get("overlay", True))
-    max_width = int(data.get("max_width", 1280))
 
     if not path_a or not Path(path_a).is_file():
         emit("ERROR: path_a ungültig")
@@ -122,73 +209,13 @@ def cmd_render(data: dict, out_path: Path) -> int:
 
     frame_index = max(0, min(frame_index, total - 1))
     fa = ow.read_preview_frame_bgr(pa, meta_a, frame_index)
-    fb = None
-    if pb_path is not None:
-        fb = ow.read_preview_frame_bgr(pb_path, meta_b, frame_index)
-
     if fa is None:
         emit("ERROR: Frame konnte nicht gelesen werden")
         return 1
+    fb = ow.read_preview_frame_bgr(pb_path, meta_b, frame_index) if pb_path is not None else None
 
-    fa = op._to_bgr(fa)
-    if fa is None:
-        emit("ERROR: Frame-Konvertierung fehlgeschlagen")
-        return 1
-
-    ho, wo = fa.shape[:2]
-    diff_count = 0
-    diff_over = False
-    if fb is not None:
-        fb_u = op._to_bgr(fb)
-        if fb_u is not None:
-            fb_u = op._match_size(fb_u, wo, ho)
-            diff_count = op._compare_diff_count(fa, fb_u, noise)
-            diff_over = diff_count > pixel_threshold
-
-    if side_by_side and fb is not None:
-        fb_u = op._to_bgr(fb)
-        if fb_u is not None:
-            fb_u = op._match_size(fb_u, wo, ho)
-            left = fa.copy()
-            right = fb_u.copy()
-            if overlay:
-                left = op._apply_diff_overlay(left, fb_u, noise, 0.5)
-                right = op._apply_diff_overlay(fb_u, fa, noise, 0.5)
-            cv2.putText(left, "A", (16, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 220, 0), 2)
-            cv2.putText(right, "B", (16, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (60, 60, 255), 2)
-            out_bgr = np.hstack([left, right])
-        else:
-            out_bgr = fa
-    else:
-        out_bgr = fa.copy()
-        if fb is not None and overlay:
-            fb_u = op._to_bgr(fb)
-            if fb_u is not None:
-                fb_u = op._match_size(fb_u, wo, ho)
-                out_bgr = op._apply_diff_overlay(out_bgr, fb_u, noise, 0.5)
-
-    rgb = cv2.cvtColor(out_bgr, cv2.COLOR_BGR2RGB)
-    h, w = rgb.shape[:2]
-    if max_width > 0 and w > max_width:
-        scale = max_width / w
-        nw = max(1, int(w * scale))
-        nh = max(1, int(h * scale))
-        rgb = cv2.resize(rgb, (nw, nh), interpolation=cv2.INTER_AREA)
-
-    img = Image.fromarray(rgb)
-    buf = BytesIO()
-    img.save(buf, format="JPEG", quality=85)
-    b64 = base64.standard_b64encode(buf.getvalue()).decode("ascii")
-
-    payload = {
-        "frame_index": frame_index,
-        "frame_count": total,
-        "diff_count": diff_count,
-        "diff_over_threshold": diff_over,
-        "image_base64": b64,
-        "width": int(rgb.shape[1]),
-        "height": int(rgb.shape[0]),
-    }
+    payload = {"frame_index": frame_index, "frame_count": total}
+    payload.update(compose_preview(oa, fa, fb, data))
     out_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
     return 0
 

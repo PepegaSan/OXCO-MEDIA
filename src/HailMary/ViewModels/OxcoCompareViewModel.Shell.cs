@@ -51,6 +51,10 @@ public partial class OxcoCompareViewModel
         OnPropertyChanged(nameof(BrPresetOptions));
         CompareSortLabel = OxcoCompareListService.LocalizeSortMode(CompareSortMode);
         CompareGroupLabel = OxcoCompareListService.LocalizeGroupMode(CompareGroupMode);
+        RefreshAnalysisLocalization();
+        OnPropertyChanged(nameof(TimelineEmptyText));
+        RecomputeTimeline();
+        ApplyResultBadges();
         var presetKey = OxcoBitratePresets.PresetKeyFromLabel(BrPreset) ?? BrPreset;
         if (OxcoBitratePresets.PresetKeys.Contains(presetKey))
         {

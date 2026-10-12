@@ -169,6 +169,7 @@ public partial class OxcoCompareViewModel
         }
 
         PersistSettings();
+        await ReleasePreviewFilesAsync();
         IsBusy = true;
         Status = Loc.T("oxco.status.bitrateConvertRunning");
         try

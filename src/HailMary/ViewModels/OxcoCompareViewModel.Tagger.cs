@@ -312,6 +312,7 @@ public partial class OxcoCompareViewModel
         }
 
         ReleaseTaggerPreview();
+        await ReleasePreviewFilesAsync();
         PersistSettings();
         IsBusy = true;
         Status = Loc.T("oxco.taggerRunning");

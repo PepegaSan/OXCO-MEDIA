@@ -263,6 +263,46 @@ AppServices.Initialize();
     }
 }
 
+// --- OxcoSegmentFilter (C# port must match oxco_analysis.compute_segments) ---
+{
+    const string area = "OxcoSegmentFilter";
+    var fixture = FindUpwards(Path.Combine("tests", "python", "fixtures", "oxco_segment_vectors.json"));
+    if (fixture is null)
+    {
+        Fail(area, "Shared vectors", "tests/python/fixtures/oxco_segment_vectors.json not found");
+    }
+    else
+    {
+        using var doc = JsonDocument.Parse(File.ReadAllText(fixture));
+        var cases = 0;
+        var mismatches = new List<string>();
+        foreach (var c in doc.RootElement.EnumerateArray())
+        {
+            cases++;
+            var metric = c.GetProperty("metric").EnumerateArray().Select(v => v.GetInt32()).ToArray();
+            var p = c.GetProperty("params");
+            var fp = new OxcoFilterParams(
+                p.GetProperty("pixel_threshold").GetInt32(),
+                p.GetProperty("pixel_max").GetInt32(),
+                p.GetProperty("buffer_frames").GetInt32(),
+                p.GetProperty("min_diff_run").GetInt32(),
+                p.GetProperty("min_keep_frames").GetInt32(),
+                p.GetProperty("cut_padding").GetInt32());
+            var expected = c.GetProperty("segments").EnumerateArray()
+                .Select(s => new OxcoSegment(s[0].GetInt32(), s[1].GetInt32(), s[2].GetBoolean()))
+                .ToList();
+            var actual = OxcoSegmentFilter.Compute(metric, fp).Segments;
+            if (!actual.SequenceEqual(expected))
+            {
+                mismatches.Add($"case {cases}");
+            }
+        }
+
+        Assert(area, $"Matches Python reference ({cases} vectors)", mismatches.Count == 0,
+            failDetail: string.Join(", ", mismatches.Take(5)));
+    }
+}
+
 // --- Live: Stash GraphQL ---
 {
     const string area = "StashLive";
@@ -408,6 +448,20 @@ foreach (var group in results.GroupBy(r => r.Area))
 Console.WriteLine();
 Console.WriteLine($"Total: {results.Count(r => r.Pass)}/{results.Count} passed, {failed.Count} failed");
 return failed.Count == 0 ? 0 : 1;
+
+static string? FindUpwards(string relativePath)
+{
+    for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+    {
+        var candidate = Path.Combine(dir.FullName, relativePath);
+        if (File.Exists(candidate))
+        {
+            return candidate;
+        }
+    }
+
+    return null;
+}
 
 static string? FindSampleVideo(string? root)
 {

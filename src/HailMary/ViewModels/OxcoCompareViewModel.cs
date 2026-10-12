@@ -44,6 +44,7 @@ public partial class OxcoCompareViewModel : ObservableObject, IToolShellHost, IS
         TaggerPattern = _settings.TaggerPattern;
         CompareSortLabel = OxcoCompareListService.LocalizeSortMode(CompareSortMode);
         CompareGroupLabel = OxcoCompareListService.LocalizeGroupMode(CompareGroupMode);
+        InitializeAnalysisFromSettings(_settings);
         InitializePreviewFromFilters();
         InitializeBitrateFromSettings(_settings);
         InitializeTaggerFromSettings(_settings);
@@ -122,6 +123,7 @@ public partial class OxcoCompareViewModel : ObservableObject, IToolShellHost, IS
             BrPreset = OxcoBitratePresets.PresetKeyFromLabel(BrPreset) ?? BrPreset,
             BrRuleValues = BuildBrRuleValues(),
         };
+        FillAnalysisSettings(_settings);
         OxcoCompareConfigReader.Save(_settings);
     }
 

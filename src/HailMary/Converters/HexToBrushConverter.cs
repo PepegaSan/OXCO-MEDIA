@@ -14,17 +14,20 @@ public sealed class HexToBrushConverter : IValueConverter
         }
 
         hex = hex.TrimStart('#');
-        if (hex.Length != 6)
+        if (hex.Length is not (6 or 8))
         {
             return null;
         }
 
         try
         {
-            var r = byte.Parse(hex[..2], System.Globalization.NumberStyles.HexNumber);
-            var g = byte.Parse(hex[2..4], System.Globalization.NumberStyles.HexNumber);
-            var b = byte.Parse(hex[4..6], System.Globalization.NumberStyles.HexNumber);
-            return new SolidColorBrush(Color.FromArgb(255, r, g, b));
+            // #RRGGBB or #AARRGGBB
+            var a = hex.Length == 8 ? byte.Parse(hex[..2], System.Globalization.NumberStyles.HexNumber) : (byte)255;
+            var rgb = hex.Length == 8 ? hex[2..] : hex;
+            var r = byte.Parse(rgb[..2], System.Globalization.NumberStyles.HexNumber);
+            var g = byte.Parse(rgb[2..4], System.Globalization.NumberStyles.HexNumber);
+            var b = byte.Parse(rgb[4..6], System.Globalization.NumberStyles.HexNumber);
+            return new SolidColorBrush(Color.FromArgb(a, r, g, b));
         }
         catch
         {

@@ -19,6 +19,30 @@ public sealed class OxcoCompareSettings
 
     public string FilterPixelMax { get; set; } = "0";
 
+    /// <summary>"classic" | "blob". New installs start with blob; existing configs without the key stay classic.</summary>
+    public string AnalysisMode { get; set; } = "blob";
+
+    /// <summary>Blob-mode thresholds (Filter* above hold the classic ones — the scales differ).</summary>
+    public string BlobNoise { get; set; } = "12";
+
+    public string BlobPixel { get; set; } = "100";
+
+    public string BlobPixelMax { get; set; } = "0";
+
+    public string AnalysisWidth { get; set; } = "640";
+
+    public bool AnalysisHwaccel { get; set; }
+
+    public bool AutoSyncOffset { get; set; } = true;
+
+    public string MinDiffRunFrames { get; set; } = "2";
+
+    public string MinKeepSeconds { get; set; } = "0.25";
+
+    public string CutPaddingFrames { get; set; } = "0";
+
+    public string CompareFfmpegEncoder { get; set; } = FfmpegEncoderCatalog.DefaultLibx264Id;
+
     public bool FilterFfmpeg { get; set; }
 
     public bool FilterDavinci { get; set; } = true;
@@ -126,6 +150,17 @@ public static class OxcoCompareConfigReader
                     FilterNoise = Get(root, "FilterNoise", "filter_noise", "15"),
                     FilterPixel = Get(root, "FilterPixel", "filter_pixel", "200"),
                     FilterPixelMax = Get(root, "FilterPixelMax", "filter_pixel_max", "0"),
+                    AnalysisMode = Get(root, "AnalysisMode", "analysis_mode", "classic"),
+                    BlobNoise = Get(root, "BlobNoise", "blob_noise", "12"),
+                    BlobPixel = Get(root, "BlobPixel", "blob_pixel", "100"),
+                    BlobPixelMax = Get(root, "BlobPixelMax", "blob_pixel_max", "0"),
+                    AnalysisWidth = Get(root, "AnalysisWidth", "analysis_width", "640"),
+                    AnalysisHwaccel = GetBool(root, "AnalysisHwaccel", "analysis_hwaccel", false),
+                    AutoSyncOffset = GetBool(root, "AutoSyncOffset", "auto_sync_offset", true),
+                    MinDiffRunFrames = Get(root, "MinDiffRunFrames", "min_diff_run_frames", "2"),
+                    MinKeepSeconds = Get(root, "MinKeepSeconds", "min_keep_seconds", "0.25"),
+                    CutPaddingFrames = Get(root, "CutPaddingFrames", "cut_padding_frames", "0"),
+                    CompareFfmpegEncoder = Get(root, "CompareFfmpegEncoder", "compare_ffmpeg_encoder", FfmpegEncoderCatalog.DefaultLibx264Id),
                     FilterFfmpeg = GetBool(root, "FilterFfmpeg", "filter_ffmpeg", false),
                     FilterDavinci = GetBool(root, "FilterDavinci", "filter_davinci", true),
                     FilterFfmpegTarget = Get(root, "FilterFfmpegTarget", "filter_ffmpeg_target", "deepfake"),
@@ -202,6 +237,17 @@ public static class OxcoCompareConfigReader
             ["FilterNoise"] = settings.FilterNoise,
             ["FilterPixel"] = settings.FilterPixel,
             ["FilterPixelMax"] = settings.FilterPixelMax,
+            ["AnalysisMode"] = settings.AnalysisMode,
+            ["BlobNoise"] = settings.BlobNoise,
+            ["BlobPixel"] = settings.BlobPixel,
+            ["BlobPixelMax"] = settings.BlobPixelMax,
+            ["AnalysisWidth"] = settings.AnalysisWidth,
+            ["AnalysisHwaccel"] = settings.AnalysisHwaccel,
+            ["AutoSyncOffset"] = settings.AutoSyncOffset,
+            ["MinDiffRunFrames"] = settings.MinDiffRunFrames,
+            ["MinKeepSeconds"] = settings.MinKeepSeconds,
+            ["CutPaddingFrames"] = settings.CutPaddingFrames,
+            ["CompareFfmpegEncoder"] = settings.CompareFfmpegEncoder,
             ["FilterFfmpeg"] = settings.FilterFfmpeg,
             ["filter_ffmpeg"] = settings.FilterFfmpeg,
             ["FilterDavinci"] = settings.FilterDavinci,

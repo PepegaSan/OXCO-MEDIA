@@ -596,6 +596,7 @@ public partial class OxcoCompareViewModel
         }
 
         RefreshDeepfakeSelectionBorders();
+        ApplyResultBadges();
 
         if (SelectedDeepfakeEntries.Count > 0)
         {
@@ -661,7 +662,7 @@ public partial class OxcoCompareViewModel
             Resolution = OxcoCompareListService.FormatResolution(entry.Width, entry.Height),
             Size = OxcoCompareListService.FormatFileSize(entry.Size),
             SortTime = OxcoCompareListService.FormatSortTime(entry, patternText),
-            BackgroundColor = bg,
+            BackgroundColor = TintRowBackground(bg),
             ForegroundColor = OxcoCompareListService.ForegroundForBackground(bg),
             IsMatchHighlight = isMatch,
             IsBestMatch = isBestMatch,
@@ -672,6 +673,19 @@ public partial class OxcoCompareViewModel
             RowBorderColor = rowBorder,
             RowBorderThickness = rowBorderThickness,
         };
+    }
+
+    /// <summary>Signature/match colours as a translucent tint, so rows read well in light and dark theme.</summary>
+    private static string? TintRowBackground(string? hex)
+    {
+        if (string.IsNullOrWhiteSpace(hex)
+            || hex.Equals(OxcoCompareListService.DefaultRowBackground, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var rgb = hex.TrimStart('#');
+        return rgb.Length == 6 ? $"#59{rgb}" : hex;
     }
 
     internal void RefreshDeepfakeSelectionBorders()
@@ -752,6 +766,14 @@ public partial class OxcoCompareViewModel
             return new JobResult { Success = false, Message = Status };
         }
 
+        var deepfakeAtStart = DeepfakePath;
+        if (pipelinePhase != "davinci_export")
+        {
+            _compareResults.Remove(deepfakeAtStart);
+            ApplyResultBadges();
+        }
+
+        string? metricsPath = null;
         var configPath = Path.Combine(Path.GetTempPath(), $"hailmary_oxco_{Guid.NewGuid():N}.json");
         var payload = new Dictionary<string, object?>
         {
@@ -770,7 +792,15 @@ public partial class OxcoCompareViewModel
             result = await AppServices.JobRunner.RunBridgeAsync(
                 "oxco_compare_job.py",
                 ["--config-json", configPath],
-                jobToken);
+                jobToken,
+                onOutputLine: line =>
+                {
+                    var reported = HandleCompareOutputLine(line, deepfakeAtStart);
+                    if (reported is not null)
+                    {
+                        metricsPath = reported;
+                    }
+                });
         }
         catch (Exception ex)
         {
@@ -786,6 +816,8 @@ public partial class OxcoCompareViewModel
             TryDeleteFile(configPath);
         }
 
+        FinishCompareResult(deepfakeAtStart, pipelinePhase, result, metricsPath);
+
         if (resetCompareCts)
         {
             Status = result.Message;
@@ -799,23 +831,27 @@ public partial class OxcoCompareViewModel
         return result;
     }
 
-    private Dictionary<string, object?> BuildCompareFilterPayload() =>
-        new()
+    private Dictionary<string, object?> BuildCompareFilterPayload()
+    {
+        var payload = new Dictionary<string, object?>
         {
             ["export_dir"] = CompareExportDir,
             ["language"] = AppServices.Localization.Language,
-            ["buffer_seconds"] = double.Parse(FilterBuffer.Replace(',', '.'), System.Globalization.CultureInfo.InvariantCulture),
-            ["pixel_noise"] = int.Parse(FilterNoise),
-            ["changed_pixels"] = int.Parse(FilterPixel),
-            ["changed_pixels_max"] = int.Parse(string.IsNullOrWhiteSpace(FilterPixelMax) ? "0" : FilterPixelMax),
+            ["buffer_seconds"] = ParseFilterDouble(FilterBuffer, 2.0),
+            ["pixel_noise"] = ParseFilterInt(FilterNoise, 15),
+            ["changed_pixels"] = ParseFilterInt(FilterPixel, 200),
+            ["changed_pixels_max"] = ParseFilterInt(FilterPixelMax, 0),
             ["enable_ffmpeg"] = FilterFfmpeg ? 1 : 0,
             ["enable_davinci"] = FilterDavinci ? 1 : 0,
             ["ffmpeg_target"] = FilterFfmpegTarget,
-            ["davinci_timeout"] = int.Parse(FilterDavinciTimeout),
+            ["davinci_timeout"] = ParseFilterInt(FilterDavinciTimeout, 1800),
             ["export_unique"] = FilterExportUnique ? 1 : 0,
             ["davinci_api_path"] = DavinciResolvePaths.GetApiModulesPath(),
             ["davinci_render_preset"] = DavinciRenderPreset,
             ["davinci_exe_path"] = DavinciResolvePaths.GetExePath(),
-            ["davinci_startup_wait"] = int.Parse(DavinciStartupWaitSeconds),
+            ["davinci_startup_wait"] = ParseFilterInt(DavinciStartupWaitSeconds, 20),
         };
+        AppendAnalysisFilters(payload);
+        return payload;
+    }
 }

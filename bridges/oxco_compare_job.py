@@ -50,6 +50,20 @@ def _coerce_filter_bool(value, default: bool = False) -> bool:
     return bool(value)
 
 
+def _opt_int(filters: dict, key: str) -> int | None:
+    value = filters.get(key)
+    return None if value is None or value == "" else int(float(value))
+
+
+def _opt_float(filters: dict, key: str) -> float | None:
+    value = filters.get(key)
+    return None if value is None or value == "" else float(str(value).replace(",", "."))
+
+
+def _opt_bool(filters: dict, key: str) -> bool | None:
+    return None if filters.get(key) is None else _coerce_filter_bool(filters.get(key))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Oxco compare bridge")
     parser.add_argument("--config-json", required=True)
@@ -89,9 +103,13 @@ def main() -> int:
     phase = (data.get("pipeline_phase") or "full").strip().lower()
     checkpoint_path = (data.get("checkpoint_path") or "").strip()
     extra_args: list[str] = []
-    env_extra: dict[str, str] = {}
+    # User-writable state (the vendored oxco folder may sit under Program Files).
+    oxco_state = _projects_root() / "Oxco"
+    env_extra: dict[str, str] = {"OXCO_METRICS_DIR": str(oxco_state / "metrics_cache")}
     if checkpoint_path:
         env_extra["OXCO_CHECKPOINT_PATH"] = checkpoint_path
+    else:
+        env_extra["OXCO_CHECKPOINT_PATH"] = str(oxco_state / "oxco_compare_export_checkpoint.json")
 
     enable_ffmpeg = _coerce_filter_bool(filters.get("enable_ffmpeg"), False)
     enable_davinci = _coerce_filter_bool(filters.get("enable_davinci"), True)
@@ -143,6 +161,15 @@ def main() -> int:
             davinci_exe_path=str(filters.get("davinci_exe_path") or ""),
             davinci_startup_wait_seconds=int(filters.get("davinci_startup_wait", 20)),
             ffmpeg_encoder=str(filters.get("ffmpeg_encoder") or ""),
+            analysis_mode=str(filters.get("analysis_mode") or ""),
+            analysis_width=_opt_int(filters, "analysis_width"),
+            analysis_hwaccel=_opt_bool(filters, "analysis_hwaccel"),
+            auto_sync_offset=_opt_bool(filters, "auto_sync_offset"),
+            max_sync_offset_frames=_opt_int(filters, "max_sync_offset_frames"),
+            min_diff_run_frames=_opt_int(filters, "min_diff_run_frames"),
+            min_keep_seconds=_opt_float(filters, "min_keep_seconds"),
+            cut_padding_frames=_opt_int(filters, "cut_padding_frames"),
+            reuse_metrics=_opt_bool(filters, "reuse_metrics"),
         )
     except (TypeError, ValueError) as exc:
         emit(f"Filter ungueltig: {exc}")

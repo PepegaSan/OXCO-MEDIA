@@ -467,8 +467,17 @@ def apply_compare_overrides(
     davinci_exe_path: str = "",
     davinci_startup_wait_seconds: int = 20,
     ffmpeg_encoder: str = "",
+    analysis_mode: str = "",
+    analysis_width: Optional[int] = None,
+    analysis_hwaccel: Optional[bool] = None,
+    auto_sync_offset: Optional[bool] = None,
+    max_sync_offset_frames: Optional[int] = None,
+    min_diff_run_frames: Optional[int] = None,
+    min_keep_seconds: Optional[float] = None,
+    cut_padding_frames: Optional[int] = None,
+    reuse_metrics: Optional[bool] = None,
 ) -> str:
-    """Nur relevante Schlüssel setzen; EDL-Ausgaben bleiben aus (0)."""
+    """Nur relevante Schlüssel setzen; EDL-Ausgaben bleiben aus (0). None = Wert aus settings.ini behalten."""
     cfg = configparser.ConfigParser()
     cfg.read_string(ini_text)
     if not cfg.has_section("SETTINGS"):
@@ -504,6 +513,26 @@ def apply_compare_overrides(
     enc = (ffmpeg_encoder or "").strip().lower()
     if enc:
         cfg.set("SETTINGS", "ffmpeg_encoder", enc)
+    mode = (analysis_mode or "").strip().lower()
+    if mode in ("classic", "blob"):
+        cfg.set("SETTINGS", "analysis_mode", mode)
+    optional = {
+        "analysis_width": None if analysis_width is None else str(max(64, min(3840, int(analysis_width)))),
+        "analysis_hwaccel": None if analysis_hwaccel is None else ("1" if analysis_hwaccel else "0"),
+        "auto_sync_offset": None if auto_sync_offset is None else ("1" if auto_sync_offset else "0"),
+        "max_sync_offset_frames": None
+        if max_sync_offset_frames is None
+        else str(max(0, min(120, int(max_sync_offset_frames)))),
+        "min_diff_run_frames": None
+        if min_diff_run_frames is None
+        else str(max(1, min(100, int(min_diff_run_frames)))),
+        "min_keep_seconds": None if min_keep_seconds is None else str(max(0.0, min(10.0, float(min_keep_seconds)))),
+        "cut_padding_frames": None if cut_padding_frames is None else str(max(0, min(60, int(cut_padding_frames)))),
+        "reuse_metrics": None if reuse_metrics is None else ("1" if reuse_metrics else "0"),
+    }
+    for key, value in optional.items():
+        if value is not None:
+            cfg.set("SETTINGS", key, value)
     buf = io.StringIO()
     cfg.write(buf)
     return buf.getvalue()
@@ -930,6 +959,8 @@ def read_preview_frame_bgr(
     max_width: Optional[int] = None,
 ) -> Any:
     if sequential and cap is not None:
+        import cv2
+
         try:
             if cap.isOpened():
                 ok, frame = cap.read()
@@ -1431,7 +1462,7 @@ def parse_drop_suffix_entries(raw_text: str) -> List[DropStripEntry]:
 
 
 COMPARE_EXPORT_BLOCK_RE = re.compile(
-    r"_b[\d][\w.-]*_n\d+_p\d+(?:_m\d+)?",
+    r"_b[\d][\w.-]*_n\d+_p\d+(?:_m\d+)?(?:_blob)?",
     re.IGNORECASE,
 )
 DAVINCI_EXPORT_BLOCK_RE = re.compile(r"_davinci_export", re.IGNORECASE)

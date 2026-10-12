@@ -29,30 +29,38 @@ public sealed partial class OxcoComparePreviewHost : UserControl
 
     private void RootHost_KeyDown(object sender, KeyRoutedEventArgs e)
     {
-        if (ViewModel is null || !ViewModel.PreviewIsLoaded)
+        if (ViewModel is null || !ViewModel.PreviewIsLoaded || e.OriginalSource is TextBox or NumberBox)
         {
             return;
         }
 
-        if (e.Key == VirtualKey.Space)
+        switch (e.Key)
         {
-            ViewModel.TogglePreviewPlayCommand.Execute(null);
-            e.Handled = true;
+            case VirtualKey.Space:
+                ViewModel.TogglePreviewPlayCommand.Execute(null);
+                break;
+            case VirtualKey.Left:
+                ViewModel.PreviewStepBackCommand.Execute(null);
+                break;
+            case VirtualKey.Right:
+                ViewModel.PreviewStepForwardCommand.Execute(null);
+                break;
+            case VirtualKey.PageUp:
+                ViewModel.PreviewJumpPrevCutCommand.Execute(null);
+                break;
+            case VirtualKey.PageDown:
+                ViewModel.PreviewJumpNextCutCommand.Execute(null);
+                break;
+            default:
+                return;
         }
-        else if (e.Key == VirtualKey.Left)
-        {
-            ViewModel.PreviewStepBackCommand.Execute(null);
-            e.Handled = true;
-        }
-        else if (e.Key == VirtualKey.Right)
-        {
-            ViewModel.PreviewStepForwardCommand.Execute(null);
-            e.Handled = true;
-        }
+
+        e.Handled = true;
     }
 
-    private void PreviewTimeline_SeekRequested(object sender, double seconds)
+    private void Timeline_SeekRequested(object sender, int frame)
     {
-        ViewModel?.SeekPreviewToSeconds(seconds);
+        Focus(FocusState.Programmatic);
+        ViewModel?.SeekPreviewToFrame(frame);
     }
 }

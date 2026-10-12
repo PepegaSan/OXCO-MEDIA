@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="HailMary.Views.Controls.OxcoResultTimeline"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Height="84"
+    HorizontalAlignment="Stretch"
+    SizeChanged="Root_OnSizeChanged">
+
+    <Grid
+        x:Name="HitGrid"
+        Background="Transparent"
+        PointerPressed="HitGrid_OnPointerPressed"
+        PointerMoved="HitGrid_OnPointerMoved"
+        PointerReleased="HitGrid_OnPointerReleased"
+        PointerCanceled="HitGrid_OnPointerCanceled"
+        PointerCaptureLost="HitGrid_OnPointerCaptureLost">
+        <Border
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="4" />
+        <!-- metric curve + threshold (top), keep/cut strip (bottom) -->
+        <Canvas x:Name="CurveLayer" IsHitTestVisible="False" />
+        <Canvas x:Name="StripLayer" IsHitTestVisible="False" />
+        <TextBlock
+            x:Name="EmptyHint"
+            Margin="10,6"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            FontSize="11"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            IsHitTestVisible="False"
+            TextWrapping="WrapWholeWords" />
+        <Rectangle
+            x:Name="Playhead"
+            Width="2"
+            HorizontalAlignment="Left"
+            Fill="{ThemeResource TextFillColorPrimaryBrush}"
+            IsHitTestVisible="False" />
+    </Grid>
+</UserControl>

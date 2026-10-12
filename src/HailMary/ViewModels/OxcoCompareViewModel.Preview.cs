@@ -1,46 +1,39 @@
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Text.Json.Nodes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HailMary.Services;
 using Microsoft.UI.Dispatching;
-using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Storage.Streams;
 
 namespace HailMary.ViewModels;
 
+/// <summary>
+/// Compare preview of the active pair (SourcePath / DeepfakePath) through a long-running preview worker.
+/// Measurement uses the current filter values (mode, noise, pixel threshold), exactly like the analysis.
+/// </summary>
 public partial class OxcoCompareViewModel
 {
     private readonly DispatcherQueue _previewDispatcher = DispatcherQueue.GetForCurrentThread();
+    private readonly OxcoPreviewWorker _previewWorker = new();
     private CancellationTokenSource? _previewRenderCts;
-    private CancellationTokenSource? _previewAutoLoadCts;
+    private CancellationTokenSource? _previewLoadCts;
     private DispatcherTimer? _previewPlayTimer;
-    private int _previewFrameCount;
-    private bool _previewSyncingFromWorkflow;
     private bool _previewRenderInFlight;
     private int? _pendingPreviewFrame;
-
-    [ObservableProperty] private string _previewPathA = string.Empty;
-
-    [ObservableProperty] private string _previewPathB = string.Empty;
-
-    [ObservableProperty] private bool _previewLinkPaths = true;
-
-    [ObservableProperty] private bool _previewAutoLoad = true;
+    private double _previewFps = 25;
 
     [ObservableProperty] private bool _previewSideBySide = true;
 
     [ObservableProperty] private bool _previewOverlay = true;
 
-    [ObservableProperty] private double _previewNoise = 15;
-
-    [ObservableProperty] private double _previewPixel = 200;
-
     [ObservableProperty] private double _previewMaxFps = 24;
 
     [ObservableProperty] private double _previewFrameIndex;
 
-    [ObservableProperty] private double _previewFrameMax = 1;
+    [ObservableProperty] private int _previewFrameTotal;
 
     [ObservableProperty] private string _previewDiffText = "—";
 
@@ -48,56 +41,31 @@ public partial class OxcoCompareViewModel
 
     [ObservableProperty] private string _previewInfoText = Loc.T("oxco.noVideoLoaded");
 
+    [ObservableProperty] private string _previewTimeText = string.Empty;
+
     [ObservableProperty] private bool _previewIsLoaded;
 
     [ObservableProperty] private bool _previewIsPlaying;
-
-    public string PreviewPlayButtonText => PreviewIsPlaying ? Loc.T("common.pause") : Loc.T("common.play");
 
     [ObservableProperty] private bool _previewIsBusy;
 
     [ObservableProperty] private BitmapImage? _previewImage;
 
-    [ObservableProperty] private float[]? _previewWaveformPeaks;
+    public string PreviewPlayButtonText => PreviewIsPlaying ? Loc.T("common.pause") : Loc.T("common.play");
 
-    [ObservableProperty] private double _previewDurationSeconds;
-
-    public double PreviewPositionSeconds =>
-        PreviewDurationSeconds <= 0 || PreviewFrameMax <= 0
-            ? 0
-            : PreviewFrameIndex / PreviewFrameMax * PreviewDurationSeconds;
-
-    partial void OnPreviewIsPlayingChanged(bool value) =>
-        OnPropertyChanged(nameof(PreviewPlayButtonText));
+    partial void OnPreviewIsPlayingChanged(bool value) => OnPropertyChanged(nameof(PreviewPlayButtonText));
 
     partial void OnSourcePathChanged(string value)
     {
-        OnWorkflowPathsChanged();
         RefreshListRowHighlights();
+        OnActivePairChanged();
     }
 
     partial void OnDeepfakePathChanged(string value)
     {
-        OnWorkflowPathsChanged();
         RefreshListRowHighlights();
+        OnActivePairChanged();
     }
-
-    partial void OnPreviewLinkPathsChanged(bool value)
-    {
-        if (value)
-        {
-            SyncPreviewPathsFromWorkflow();
-            SchedulePreviewAutoLoad();
-        }
-    }
-
-    partial void OnPreviewPathAChanged(string value) => UnlinkPreviewIfDiverged(isA: true);
-
-    partial void OnPreviewPathBChanged(string value) => UnlinkPreviewIfDiverged(isA: false);
-
-    partial void OnPreviewNoiseChanged(double value) => _ = RenderPreviewFrameDebouncedAsync();
-
-    partial void OnPreviewPixelChanged(double value) => _ = RenderPreviewFrameDebouncedAsync();
 
     partial void OnPreviewSideBySideChanged(bool value) => _ = RenderPreviewFrameDebouncedAsync();
 
@@ -105,183 +73,160 @@ public partial class OxcoCompareViewModel
 
     partial void OnPreviewMaxFpsChanged(double value)
     {
-        if (_previewPlayTimer is not null && PreviewIsPlaying)
+        if (_previewPlayTimer is not null)
         {
-            _previewPlayTimer.Interval = TimeSpan.FromMilliseconds(
-                Math.Max(16, 1000.0 / Math.Max(1, (int)value)));
+            _previewPlayTimer.Interval = PlaybackInterval();
         }
     }
 
     partial void OnPreviewFrameIndexChanged(double value)
     {
-        OnPropertyChanged(nameof(PreviewPositionSeconds));
+        UpdatePreviewTimeText();
         if (!PreviewIsPlaying)
         {
             _ = RenderPreviewFrameDebouncedAsync();
         }
     }
 
-    public void SeekPreviewToSeconds(double seconds)
+    private void OnActivePairChanged()
     {
-        if (_previewFrameCount <= 0 || PreviewDurationSeconds <= 0)
-        {
-            return;
-        }
-
-        var t = Math.Clamp(seconds, 0, PreviewDurationSeconds);
-        PreviewFrameIndex = Math.Clamp(
-            Math.Round(t / PreviewDurationSeconds * PreviewFrameMax),
-            0,
-            PreviewFrameMax);
+        SchedulePreviewLoad();
+        ScheduleMetricsLoad();
     }
 
-    public async Task LoadPreviewWaveformAsync(string? path)
-    {
-        PreviewWaveformPeaks = null;
-        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
-        {
-            return;
-        }
-
-        var peaks = await WaveformPeakExtractor.ExtractAsync(path);
-        if (string.Equals(path, PreviewPathA, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(path, PreviewPathB, StringComparison.OrdinalIgnoreCase))
-        {
-            PreviewWaveformPeaks = peaks;
-        }
-    }
-
+    /// <summary>Called after list selection changed the pair.</summary>
     internal void RefreshPreviewFromWorkflow()
     {
-        if (!PreviewLinkPaths)
-        {
-            PreviewLinkPaths = true;
-        }
-
-        SyncPreviewPathsFromWorkflow();
         if (!string.IsNullOrWhiteSpace(DeepfakePath))
         {
             PreviewSideBySide = true;
         }
 
-        SchedulePreviewAutoLoad();
+        SchedulePreviewLoad();
     }
 
-    partial void OnPreviewAutoLoadChanged(bool value)
+    internal void InitializePreviewFromFilters()
     {
-        if (value)
+        if (PreviewIsLoaded)
         {
-            SchedulePreviewAutoLoad();
+            _ = RenderPreviewFrameDebouncedAsync();
+        }
+        else
+        {
+            SchedulePreviewLoad();
         }
     }
 
-    private void OnWorkflowPathsChanged()
+    /// <summary>Frees the open video files (call before moving / recycling / converting them).</summary>
+    internal async Task ReleasePreviewFilesAsync()
     {
-        if (!PreviewLinkPaths)
+        StopPreviewPlayback();
+        PreviewIsLoaded = false;
+        PreviewImage = null;
+        await _previewWorker.ReleaseFilesAsync();
+    }
+
+    public void SeekPreviewToFrame(int frame)
+    {
+        if (!PreviewIsLoaded || PreviewFrameTotal <= 0)
         {
             return;
         }
 
-        SyncPreviewPathsFromWorkflow();
-        if (!string.IsNullOrWhiteSpace(DeepfakePath))
-        {
-            PreviewSideBySide = true;
-        }
-
-        SchedulePreviewAutoLoad();
+        StopPreviewPlayback();
+        PreviewFrameIndex = Math.Clamp(frame, 0, PreviewFrameTotal - 1);
     }
 
-    private void SyncPreviewPathsFromWorkflow()
+    private void SchedulePreviewLoad()
     {
-        _previewSyncingFromWorkflow = true;
-        try
-        {
-            PreviewPathA = SourcePath;
-            PreviewPathB = DeepfakePath;
-        }
-        finally
-        {
-            _previewSyncingFromWorkflow = false;
-        }
-    }
-
-    private void UnlinkPreviewIfDiverged(bool isA)
-    {
-        if (_previewSyncingFromWorkflow || !PreviewLinkPaths)
-        {
-            return;
-        }
-
-        if (isA && !string.Equals(PreviewPathA, SourcePath, StringComparison.OrdinalIgnoreCase))
-        {
-            PreviewLinkPaths = false;
-        }
-        else if (!isA && !string.Equals(PreviewPathB, DeepfakePath, StringComparison.OrdinalIgnoreCase))
-        {
-            PreviewLinkPaths = false;
-        }
-    }
-
-    private void SchedulePreviewAutoLoad()
-    {
-        if (!PreviewAutoLoad)
-        {
-            return;
-        }
-
-        _previewAutoLoadCts?.Cancel();
-        _previewAutoLoadCts = new CancellationTokenSource();
-        var token = _previewAutoLoadCts.Token;
+        _previewLoadCts?.Cancel();
+        _previewLoadCts = new CancellationTokenSource();
+        var token = _previewLoadCts.Token;
         _ = Task.Run(async () =>
         {
             try
             {
-                await Task.Delay(400, token);
-                if (token.IsCancellationRequested)
-                {
-                    return;
-                }
-
-                _previewDispatcher.TryEnqueue(() => _ = LoadPreviewInternalAsync(silent: true));
+                await Task.Delay(350, token);
+                _previewDispatcher.TryEnqueue(() => _ = LoadPreviewCoreAsync(silent: true, token));
             }
             catch (OperationCanceledException)
             {
-                // ignore
+                // superseded
             }
         }, token);
     }
 
     [RelayCommand]
-    private async Task PickPreviewPathAAsync()
+    private async Task LoadPreviewAsync() => await LoadPreviewCoreAsync(silent: false, CancellationToken.None);
+
+    private async Task LoadPreviewCoreAsync(bool silent, CancellationToken token)
     {
-        var path = await FilePickerHelper.PickVideoAsync(PreviewPathA);
-        if (!string.IsNullOrWhiteSpace(path))
+        var pathA = SourcePath.Trim();
+        var pathB = DeepfakePath.Trim();
+        if (string.IsNullOrWhiteSpace(pathA) || !File.Exists(pathA))
         {
-            PreviewPathA = path;
-            if (PreviewAutoLoad)
+            if (!silent)
             {
-                await LoadPreviewInternalAsync(silent: true);
+                Status = Loc.T("oxco.preview.sourceMissing");
             }
+
+            StopPreviewPlayback();
+            PreviewIsLoaded = false;
+            PreviewImage = null;
+            PreviewInfoText = Loc.T("oxco.noVideoLoaded");
+            return;
+        }
+
+        if (!File.Exists(pathB))
+        {
+            pathB = string.Empty;
+        }
+
+        if (PreviewIsLoaded && _previewWorker.IsOpen(pathA, pathB))
+        {
+            await RenderPreviewFrameAsync((int)PreviewFrameIndex);
+            return;
+        }
+
+        StopPreviewPlayback();
+        PreviewIsBusy = true;
+        try
+        {
+            var open = await _previewWorker.OpenAsync(pathA, pathB);
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            if (open is null || open.FrameCount <= 0)
+            {
+                if (!silent)
+                {
+                    Status = Loc.T("oxco.preview.metadataUnreadable");
+                }
+
+                PreviewIsLoaded = false;
+                PreviewImage = null;
+                return;
+            }
+
+            _previewFps = open.Fps > 0 ? open.Fps : 25;
+            PreviewFrameTotal = open.FrameCount;
+            PreviewIsLoaded = true;
+            PreviewInfoText = Loc.F("oxco.preview.fileInfoDetailed", open.NameA, open.FrameCount, open.Width, open.Height);
+            if (PreviewFrameIndex >= open.FrameCount)
+            {
+                PreviewFrameIndex = 0;
+            }
+
+            UpdatePreviewTimeText();
+            await RenderPreviewFrameAsync((int)PreviewFrameIndex);
+        }
+        finally
+        {
+            PreviewIsBusy = false;
         }
     }
-
-    [RelayCommand]
-    private async Task PickPreviewPathBAsync()
-    {
-        var path = await FilePickerHelper.PickVideoAsync(PreviewPathB);
-        if (!string.IsNullOrWhiteSpace(path))
-        {
-            PreviewPathB = path;
-            PreviewSideBySide = true;
-            if (PreviewAutoLoad)
-            {
-                await LoadPreviewInternalAsync(silent: true);
-            }
-        }
-    }
-
-    [RelayCommand]
-    private async Task LoadPreviewAsync() => await LoadPreviewInternalAsync(silent: false);
 
     [RelayCommand]
     private void TogglePreviewPlay()
@@ -308,123 +253,15 @@ public partial class OxcoCompareViewModel
     private void PreviewStepForward() => StepPreviewFrame(1);
 
     [RelayCommand]
-    private void ApplyPreviewToFilters()
-    {
-        FilterNoise = ((int)Math.Round(PreviewNoise)).ToString();
-        FilterPixel = ((int)Math.Round(PreviewPixel)).ToString();
-        Status = Loc.T("oxco.thresholdsApplied");
-    }
+    private void PreviewJumpPrevCut() => JumpToCut(forward: false);
 
     [RelayCommand]
-    private async Task SavePreviewThresholdsAsync()
+    private void PreviewJumpNextCut() => JumpToCut(forward: true);
+
+    private TimeSpan PlaybackInterval()
     {
-        FilterNoise = ((int)Math.Round(PreviewNoise)).ToString();
-        FilterPixel = ((int)Math.Round(PreviewPixel)).ToString();
-        PersistSettings();
-        Status = Loc.T("oxco.status.thresholdsSaved");
-        await Task.CompletedTask;
-    }
-
-    [RelayCommand]
-    private void SyncPreviewFromWorkflowNow()
-    {
-        PreviewLinkPaths = true;
-        SyncPreviewPathsFromWorkflow();
-        SchedulePreviewAutoLoad();
-    }
-
-    internal void InitializePreviewFromFilters()
-    {
-        if (int.TryParse(FilterNoise, out var n))
-        {
-            PreviewNoise = n;
-        }
-
-        if (int.TryParse(FilterPixel, out var p))
-        {
-            PreviewPixel = p;
-        }
-
-        SyncPreviewPathsFromWorkflow();
-        if (PreviewAutoLoad && HasPreviewableWorkflowPaths())
-        {
-            SchedulePreviewAutoLoad();
-        }
-    }
-
-    private bool HasPreviewableWorkflowPaths()
-    {
-        if (string.IsNullOrWhiteSpace(SourcePath) || !File.Exists(SourcePath))
-        {
-            return false;
-        }
-
-        if (!PreviewSideBySide)
-        {
-            return true;
-        }
-
-        return !string.IsNullOrWhiteSpace(DeepfakePath) && File.Exists(DeepfakePath);
-    }
-
-    private async Task LoadPreviewInternalAsync(bool silent)
-    {
-        var pathA = PreviewPathA.Trim();
-        if (string.IsNullOrWhiteSpace(pathA) || !File.Exists(pathA))
-        {
-            if (!silent)
-            {
-                Status = Loc.T("oxco.preview.sourceMissing");
-            }
-
-            PreviewIsLoaded = false;
-            PreviewImage = null;
-            return;
-        }
-
-        if (PreviewSideBySide)
-        {
-            var pathB = PreviewPathB.Trim();
-            if (string.IsNullOrWhiteSpace(pathB) || !File.Exists(pathB))
-            {
-                if (!silent)
-                {
-                    Status = Loc.T("oxco.preview.deepfakeMissing");
-                }
-
-                return;
-            }
-        }
-
-        StopPreviewPlayback();
-        PreviewIsBusy = true;
-        try
-        {
-            var probe = await OxcoPreviewBridge.ProbeAsync(pathA, PreviewPathB.Trim());
-            if (probe is null || probe.FrameCount <= 0)
-            {
-                if (!silent)
-                {
-                    Status = Loc.T("oxco.preview.metadataUnreadable");
-                }
-
-                PreviewIsLoaded = false;
-                return;
-            }
-
-            _previewFrameCount = probe.FrameCount;
-            PreviewFrameMax = Math.Max(1, probe.FrameCount - 1);
-            PreviewFrameIndex = 0;
-            PreviewIsLoaded = true;
-            PreviewDurationSeconds = probe.FrameCount / Math.Max(1.0, PreviewMaxFps);
-            PreviewInfoText = Loc.F("oxco.preview.fileInfoDetailed", probe.NameA, probe.FrameCount, probe.Width, probe.Height);
-            _ = LoadPreviewWaveformAsync(pathA);
-            await RenderPreviewFrameAsync((int)PreviewFrameIndex);
-        }
-        finally
-        {
-            PreviewIsBusy = false;
-        }
+        var fps = Math.Clamp(Math.Min(PreviewMaxFps, _previewFps), 1, 60);
+        return TimeSpan.FromMilliseconds(1000.0 / fps);
     }
 
     private void StartPreviewPlayback()
@@ -435,7 +272,8 @@ public partial class OxcoCompareViewModel
         }
 
         PreviewIsPlaying = true;
-        _previewPlayTimer ??= new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(Math.Max(16, 1000 / Math.Max(1, (int)PreviewMaxFps))) };
+        _previewPlayTimer ??= new DispatcherTimer();
+        _previewPlayTimer.Interval = PlaybackInterval();
         _previewPlayTimer.Tick -= PreviewPlayTimer_Tick;
         _previewPlayTimer.Tick += PreviewPlayTimer_Tick;
         _previewPlayTimer.Start();
@@ -449,26 +287,32 @@ public partial class OxcoCompareViewModel
 
     private void PreviewPlayTimer_Tick(object? sender, object e)
     {
-        if (!PreviewIsLoaded || _previewFrameCount <= 0)
+        if (!PreviewIsLoaded || PreviewFrameTotal <= 0)
         {
             StopPreviewPlayback();
             return;
         }
 
-        var next = ((int)PreviewFrameIndex + 1) % _previewFrameCount;
+        // Advance only when the previous frame is on screen, so the worker keeps reading sequentially.
+        if (_previewRenderInFlight)
+        {
+            return;
+        }
+
+        var next = ((int)PreviewFrameIndex + 1) % PreviewFrameTotal;
         PreviewFrameIndex = next;
         _ = RenderPreviewFrameAsync(next);
     }
 
     private void StepPreviewFrame(int delta)
     {
-        if (!PreviewIsLoaded || _previewFrameCount <= 0)
+        if (!PreviewIsLoaded || PreviewFrameTotal <= 0)
         {
             return;
         }
 
-        var idx = (int)Math.Clamp(PreviewFrameIndex + delta, 0, _previewFrameCount - 1);
-        PreviewFrameIndex = idx;
+        StopPreviewPlayback();
+        PreviewFrameIndex = Math.Clamp(PreviewFrameIndex + delta, 0, PreviewFrameTotal - 1);
     }
 
     private async Task RenderPreviewFrameDebouncedAsync()
@@ -478,24 +322,18 @@ public partial class OxcoCompareViewModel
         var token = _previewRenderCts.Token;
         try
         {
-            await Task.Delay(120, token);
+            await Task.Delay(90, token);
             await RenderPreviewFrameAsync((int)PreviewFrameIndex, token);
         }
         catch (OperationCanceledException)
         {
-            // ignore
+            // superseded
         }
     }
 
     private async Task RenderPreviewFrameAsync(int frameIndex, CancellationToken cancellationToken = default)
     {
         if (!PreviewIsLoaded)
-        {
-            return;
-        }
-
-        var pathA = PreviewPathA.Trim();
-        if (string.IsNullOrWhiteSpace(pathA) || !File.Exists(pathA))
         {
             return;
         }
@@ -509,16 +347,21 @@ public partial class OxcoCompareViewModel
         _previewRenderInFlight = true;
         try
         {
-            var frame = await OxcoPreviewBridge.RenderFrameAsync(
-                pathA,
-                PreviewPathB.Trim(),
-                frameIndex,
-                (int)Math.Round(PreviewNoise),
-                (int)Math.Round(PreviewPixel),
-                PreviewSideBySide,
-                PreviewOverlay,
-                cancellationToken: cancellationToken);
-            if (frame is null)
+            var request = new JsonObject
+            {
+                ["index"] = frameIndex,
+                ["b_offset"] = PreviewBOffset,
+                ["noise"] = ParseFilterInt(FilterNoise, 15),
+                ["pixel_threshold"] = ParseFilterInt(FilterPixel, 200),
+                ["pixel_max"] = ParseFilterInt(FilterPixelMax, 0),
+                ["side_by_side"] = PreviewSideBySide,
+                ["overlay"] = PreviewOverlay,
+                ["max_width"] = 1280,
+                ["analysis_mode"] = _analysisMode,
+                ["analysis_width"] = ParseFilterInt(FilterAnalysisWidth, 640),
+            };
+            var frame = await _previewWorker.RenderAsync(request, cancellationToken);
+            if (frame is null || frame.ImageBytes.Length == 0)
             {
                 return;
             }
@@ -528,28 +371,42 @@ public partial class OxcoCompareViewModel
             stream.Seek(0);
             var bitmap = new BitmapImage();
             await bitmap.SetSourceAsync(stream);
-            UiDispatcher.Run(() =>
-            {
-                PreviewDiffText = string.IsNullOrWhiteSpace(PreviewPathB)
-                    ? Loc.T("oxco.noDeepfake")
-                    : $"{frame.DiffCount:N0} abweichende Pixel";
-                PreviewSwapText = string.IsNullOrWhiteSpace(PreviewPathB)
-                    ? string.Empty
-                    : frame.DiffOverThreshold
-                        ? Loc.T("oxco.aboveThreshold")
-                        : Loc.T("oxco.belowThreshold");
-                PreviewInfoText = Loc.F("oxco.preview.frameInfo", frame.FrameIndex, Math.Max(0, frame.FrameCount - 1));
-                PreviewImage = bitmap;
-            });
+            var hasB = !string.IsNullOrWhiteSpace(DeepfakePath) && File.Exists(DeepfakePath);
+            PreviewDiffText = hasB
+                ? Loc.F(IsBlobMode ? "oxco.preview.blobArea" : "oxco.preview.diffPixels", frame.DiffCount)
+                : Loc.T("oxco.noDeepfake");
+            PreviewSwapText = !hasB
+                ? string.Empty
+                : frame.DiffOverThreshold
+                    ? Loc.T("oxco.aboveThreshold")
+                    : Loc.T("oxco.belowThreshold");
+            PreviewImage = bitmap;
         }
         finally
         {
             _previewRenderInFlight = false;
-            if (_pendingPreviewFrame is int pending && pending != frameIndex)
+            if (_pendingPreviewFrame is int pending)
             {
                 _pendingPreviewFrame = null;
-                _ = RenderPreviewFrameAsync(pending, cancellationToken);
+                if (pending != frameIndex)
+                {
+                    _ = RenderPreviewFrameAsync(pending, cancellationToken);
+                }
             }
         }
+    }
+
+    private void UpdatePreviewTimeText()
+    {
+        if (PreviewFrameTotal <= 0)
+        {
+            PreviewTimeText = string.Empty;
+            return;
+        }
+
+        var fps = _previewFps > 0 ? _previewFps : 25;
+        var now = TimeSpan.FromSeconds(PreviewFrameIndex / fps);
+        var total = TimeSpan.FromSeconds(PreviewFrameTotal / fps);
+        PreviewTimeText = $"{now:mm\\:ss\\.ff} / {total:mm\\:ss}  ·  {Loc.F("oxco.preview.frameShort", (int)PreviewFrameIndex, PreviewFrameTotal - 1)}";
     }
 }
