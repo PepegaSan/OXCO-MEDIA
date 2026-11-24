@@ -25,7 +25,15 @@ void Assert(string area, string test, bool condition, string passDetail = "", st
 }
 
 // --- Bootstrap (mirrors app startup) ---
-AppServices.Initialize();
+try
+{
+    AppServices.Initialize();
+}
+catch (Exception ex)
+{
+    Console.Error.WriteLine($"[FAIL] App startup: {ex}");
+    return 1;
+}
 
 // --- StashPathMapper ---
 {
@@ -203,11 +211,25 @@ AppServices.Initialize();
 {
     const string area = "ToolRegistry";
     Assert(area, "Tools loaded", AppServices.Tools.Tools.Count >= 10, $"{AppServices.Tools.Tools.Count} tools");
-    var hybridIds = new[] { "cutter", "intro_cutter", "text_to_video", "bitratechanger", "audiocleaner", "marker_autocut", "dl_sort", "autotagger", "stash_pathfinder", "stash_cutter", "marker_updater", "oxco", "daten_sync" };
-    foreach (var id in hybridIds)
+    var manifestOptions = new JsonSerializerOptions
     {
-        var tool = AppServices.Tools.Tools.FirstOrDefault(t => t.Id == id);
-        Assert(area, $"Hybrid tool '{id}' registered", tool is not null && tool.Type.Equals("hybrid", StringComparison.OrdinalIgnoreCase));
+        PropertyNameCaseInsensitive = true,
+        ReadCommentHandling = JsonCommentHandling.Skip,
+        AllowTrailingCommas = true,
+    };
+    var manifest = JsonSerializer.Deserialize<List<ToolDefinition>>(File.ReadAllText(AppPaths.ToolsJsonPath), manifestOptions) ?? [];
+    foreach (var entry in manifest)
+    {
+        var tool = AppServices.Tools.Tools.FirstOrDefault(t => t.Id == entry.Id);
+        if (entry.Enabled)
+        {
+            Assert(area, $"Enabled tool '{entry.Id}' registered as {entry.Type}",
+                string.Equals(tool?.Type, entry.Type, StringComparison.OrdinalIgnoreCase));
+        }
+        else
+        {
+            Assert(area, $"Disabled tool '{entry.Id}' hidden", tool is null);
+        }
     }
 }
 

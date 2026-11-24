@@ -39,6 +39,7 @@ public static class FilePickerHelper
         picker.FileTypeFilter.Add(".wmv");
         picker.FileTypeFilter.Add(".mpg");
         picker.FileTypeFilter.Add(".mpeg");
+        picker.FileTypeFilter.Add(".ts");
         picker.FileTypeFilter.Add(".mts");
         picker.FileTypeFilter.Add(".m2ts");
         picker.FileTypeFilter.Add(".flv");

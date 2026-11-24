@@ -24,8 +24,9 @@ def main() -> int:
 
     config = json.loads(Path(args.config_json).read_text(encoding="utf-8"))
     input_folder = config.get("input_folder", "").strip()
-    if not input_folder:
-        emit("FEHLER: input_folder fehlt")
+    input_file = (config.get("input_file") or "").strip()
+    if not input_file and (not input_folder or not Path(input_folder).is_dir()):
+        emit("FEHLER: Eingabeordner fehlt")
         return 1
 
     rows = scan_folder(
@@ -35,6 +36,7 @@ def main() -> int:
         config.get("rule_values") or {},
         progress_cb=lambda cur, total: emit_progress_fraction(cur, total, "Scan"),
         scan_mode=str(config.get("scan_mode") or "bitrate"),
+        input_file=input_file,
     )
     out = {"rows": rows_to_dicts(rows), "input_folder": input_folder}
     Path(args.output_json).write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")

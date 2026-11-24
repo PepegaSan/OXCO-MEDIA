@@ -160,7 +160,9 @@ public sealed partial class ToolShellPage : UserControl
             return;
         }
 
-        if (FocusManager.GetFocusedElement(XamlRoot) is TextBox or PasswordBox or AutoSuggestBox)
+        // Focused controls handle Enter themselves (pickers, rows, settings, etc.).
+        // Only treat it as the shell shortcut when focus is on the shell.
+        if (!ReferenceEquals(FocusManager.GetFocusedElement(XamlRoot), this))
         {
             return;
         }

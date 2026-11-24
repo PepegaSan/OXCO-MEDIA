@@ -26,7 +26,7 @@ def main() -> int:
 
     config = json.loads(Path(args.config_json).read_text(encoding="utf-8"))
     payload = json.loads(Path(args.rows_json).read_text(encoding="utf-8"))
-    rows = payload.get("rows") or payload
+    rows = payload.get("rows") if isinstance(payload, dict) else payload
     if not isinstance(rows, list):
         emit("FEHLER: rows ungueltig")
         return 1
@@ -58,11 +58,15 @@ def main() -> int:
     if done < 0 or stop_event.is_set():
         emit("Konvertierung abgebrochen")
         return 130
+    expected = sum(row.get("action") == "convert" for row in rows)
+    if done != expected:
+        emit(f"Konvertierung fehlgeschlagen: {done} von {expected} Dateien fertig")
+        return 1
     emit(f"Konvertierung abgeschlossen: {done} Dateien")
     out_dir = config.get("output_folder", "")
     if out_dir:
         emit(f"OUTPUT:{out_dir}")
-    return 0 if done >= 0 else 1
+    return 0
 
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ public static class VideoPathDropHelper
     private static readonly HashSet<string> VideoExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".mp4", ".mkv", ".avi", ".mov", ".webm", ".m4v", ".mpg", ".mpeg", ".wmv",
-        ".mts", ".m2ts", ".flv",
+        ".ts", ".mts", ".m2ts", ".flv",
     };
 
     private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase)

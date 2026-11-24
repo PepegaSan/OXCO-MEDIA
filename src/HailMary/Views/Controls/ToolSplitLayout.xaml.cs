@@ -53,7 +53,17 @@ public sealed partial class ToolSplitLayout : UserControl
     {
         if (d is ToolSplitLayout layout)
         {
-            layout.MainPresenter.Content = e.NewValue;
+            // Forms need a scrollable viewport. Preview grids and panels with their own
+            // scroll viewers need the finite height supplied by the shell.
+            layout.MainPresenter.Content = e.NewValue is StackPanel { Orientation: Orientation.Vertical } form
+                ? new ScrollViewer
+                {
+                    HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    Content = form,
+                }
+                : e.NewValue;
         }
     }
 
@@ -67,9 +77,21 @@ public sealed partial class ToolSplitLayout : UserControl
 
     private static void OnSettingsWidthChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is ToolSplitLayout layout && e.NewValue is double width && width > 0)
-        {
-            layout.SettingsColumn.Width = new GridLength(width);
-        }
+        ((ToolSplitLayout)d).UpdatePanes();
+    }
+
+    private void Layout_SizeChanged(object sender, SizeChangedEventArgs e) => UpdatePanes();
+
+    private void PaneButton_Click(object sender, RoutedEventArgs e) => UpdatePanes();
+
+    private void UpdatePanes()
+    {
+        var compact = ActualWidth > 0 && ActualWidth < SettingsWidth + 640;
+        var showSettings = SettingsPaneButton.IsChecked == true;
+        PaneSelector.Visibility = compact ? Visibility.Visible : Visibility.Collapsed;
+        SettingsColumn.Width = new GridLength(compact ? 0 : SettingsWidth);
+        Grid.SetColumn(SettingsPane, compact ? 0 : 1);
+        MainPresenter.Visibility = compact && showSettings ? Visibility.Collapsed : Visibility.Visible;
+        SettingsPane.Visibility = compact && !showSettings ? Visibility.Collapsed : Visibility.Visible;
     }
 }

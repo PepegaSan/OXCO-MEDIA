@@ -17,17 +17,14 @@ public sealed class StashSettingsService
             Current.PathMap.UseBackup = false;
         }
 
-        settings.Current.Stash = Current.Clone();
-        settings.Save();
-
         if (!Current.IsConfigured())
         {
             MigrateFromToolConfigs(settings.ProjectsRoot);
-            if (Current.IsConfigured())
-            {
-                Persist(settings);
-            }
         }
+
+        // Keep migrated values for the next settings save. Startup also runs in
+        // the verifier, which only needs to read the user's configuration.
+        settings.Current.Stash = Current.Clone();
     }
 
     public void Update(
@@ -48,7 +45,8 @@ public sealed class StashSettingsService
             ApiKey = apiKey,
             PathMap = normalized,
         };
-        Persist(settings);
+        settings.Current.Stash = Current.Clone();
+        settings.Save();
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
@@ -75,12 +73,6 @@ public sealed class StashSettingsService
         PathPrefixBackup = Current.PathMap.PathPrefixBackup,
         UseBackup = useBackupOverride,
     };
-
-    private void Persist(SettingsService settings)
-    {
-        settings.Current.Stash = Current.Clone();
-        settings.Save();
-    }
 
     private void MigrateFromToolConfigs(string projectsRoot)
     {

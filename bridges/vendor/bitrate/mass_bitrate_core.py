@@ -9,14 +9,17 @@ import shutil
 import subprocess
 import tempfile
 import time
+from collections import Counter
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, as_completed, wait
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from threading import Event, Lock
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from uuid import uuid4
 
 VIDEO_EXTENSIONS = {
     ".mp4", ".mkv", ".mov", ".avi", ".wmv", ".webm", ".m4v", ".ts", ".flv",
+    ".mpg", ".mpeg", ".mts", ".m2ts",
 }
 
 # Stash/Browser ohne NAS-HW: nur H.264 gilt als OK (HEVC/AV1/VP9 → Problemfall).
@@ -153,7 +156,8 @@ def pick_rule_for_short_side(width: int, height: int, rules: Dict[int, int]) -> 
 
 def iter_video_files(folder: Path, recursive: bool) -> List[Path]:
     pattern = "**/*" if recursive else "*"
-    files = [p for p in folder.glob(pattern) if p.is_file() and p.suffix.lower() in VIDEO_EXTENSIONS]
+    files = [p for p in folder.glob(pattern) if p.is_file() and p.suffix.lower() in VIDEO_EXTENSIONS
+             and not p.name.startswith(".hm-bitrate-")]
     files.sort()
     return files
 
@@ -262,11 +266,19 @@ def scan_folder(
     rule_values: Dict[str, str],
     progress_cb: Optional[Callable[[int, int], None]] = None,
     scan_mode: str = SCAN_MODE_BITRATE,
+    *,
+    input_file: str = "",
 ) -> List[VideoInfo]:
     in_path = Path(input_folder)
     rules = parse_rules(rule_values)
     mode = (scan_mode or SCAN_MODE_BITRATE).strip().lower()
-    files = iter_video_files(in_path, recursive)
+    if input_file:
+        video = Path(input_file)
+        if not video.is_file() or video.suffix.lower() not in VIDEO_EXTENSIONS:
+            raise ValueError(f"Keine unterstützte Videodatei: {video}")
+        files = [video]
+    else:
+        files = iter_video_files(in_path, recursive)
     total = len(files)
     if total == 0:
         return []
@@ -454,9 +466,10 @@ def _try_strip_autobitrate_suffix(
     source_path: Path,
     emit_fn,
     *,
+    replace_source: bool = False,
     marker: str = "_bitrate",
 ) -> Path:
-    """Entfernt _bitrate vom Ausgabedateinamen; ersetzt das Original wenn noetig."""
+    """Entfernt das Suffix, sofern der Zielname frei ist oder das Original ersetzt werden soll."""
     stem = output_path.stem
     if not stem.endswith(marker):
         return output_path
@@ -467,30 +480,13 @@ def _try_strip_autobitrate_suffix(
     if _paths_conflict(output_path, target):
         return output_path
     try:
-        output_res = output_path.resolve()
-        target_res = target.resolve()
-        source_res = source_path.resolve()
-    except Exception:
-        output_res = output_path
-        target_res = target
-        source_res = source_path
-    if target.exists():
-        if target_res == source_res:
-            try:
-                source_path.unlink()
-                emit_fn(f"Original entfernt fuer Suffix-Rename: {source_path.name}")
-            except OSError as exc:
-                emit_fn(f"WARN: _bitrate nicht entfernt ({output_path.name}): {exc}")
-                return output_path
-        elif target_res != output_res:
-            try:
-                target.unlink()
-                emit_fn(f"Bestehende Datei ersetzt: {target.name}")
-            except OSError as exc:
-                emit_fn(f"WARN: _bitrate nicht entfernt — Ziel blockiert ({target.name}): {exc}")
-                return output_path
-    try:
-        output_path.rename(target)
+        if replace_source and _paths_conflict(target, source_path):
+            output_path.replace(target)
+        elif target.exists():
+            emit_fn(f"Suffix bleibt erhalten: {target.name} existiert bereits")
+            return output_path
+        else:
+            output_path.rename(target)
         emit_fn(f"Suffix entfernt: {output_path.name} -> {target.name}")
         return target
     except OSError as exc:
@@ -540,6 +536,9 @@ def convert_rows(
 ) -> int:
     input_root = Path(config["input_folder"])
     output_root = Path(config["output_folder"])
+    input_file = config.get("input_file")
+    if input_file and any(not _paths_conflict(Path(r["path"]), Path(input_file)) for r in rows):
+        raise ValueError("Scan-Auswahl passt nicht zur gewählten Datei")
     output_root.mkdir(parents=True, exist_ok=True)
     codec = config.get("codec", "libx264")
     audio_mode = config.get("audio_mode", "copy")
@@ -581,6 +580,14 @@ def convert_rows(
     if total_jobs == 0:
         return 0
 
+    def output_path(src: Path) -> Path:
+        rel = src.relative_to(input_root) if src.is_relative_to(input_root) else Path(src.name)
+        planned = (output_root / rel).with_suffix(".mp4" if output_mp4 else rel.suffix)
+        marker = effective_suffix(input_root, output_root, src, planned, suffix)
+        return planned.with_name(f"{rel.stem}{marker}{planned.suffix}")
+
+    destinations = Counter(output_path(Path(row["path"])).resolve() for row in jobs)
+    sources = {Path(row["path"]).resolve() for row in rows}
     emit_lock = Lock()
     done_lock = Lock()
     proc_lock = Lock()
@@ -606,16 +613,17 @@ def convert_rows(
             return False
 
         src = Path(row["path"])
-        rel = src.relative_to(input_root) if src.is_relative_to(input_root) else Path(src.name)
-        out_file = output_root / rel
-        out_file.parent.mkdir(parents=True, exist_ok=True)
-        planned_ext = ".mp4" if output_mp4 else rel.suffix
-        planned_out = (out_file.parent / rel.name).with_suffix(planned_ext)
-        eff_suffix = effective_suffix(input_root, output_root, src, planned_out, suffix)
-        final_out = out_file.parent / f"{rel.stem}{eff_suffix}{planned_ext}"
-        work_out = final_out
-        if _paths_conflict(src, final_out):
-            work_out = final_out.with_name(f"{final_out.stem}.partial{final_out.suffix}")
+        final_out = output_path(src)
+        destination = final_out.resolve()
+        if destinations[destination] > 1 or destination in sources:
+            safe_emit(f"FEHLER: {src.name} (mehrere Dateien verwenden {final_out})")
+            return False
+        if (not suffix and _same_folder(src.parent, final_out.parent)
+                and src.suffix.lower() != final_out.suffix.lower() and final_out.exists()):
+            safe_emit(f"FEHLER: Zieldatei existiert bereits: {final_out}")
+            return False
+        final_out.parent.mkdir(parents=True, exist_ok=True)
+        work_out = final_out.with_name(f".hm-bitrate-{uuid4().hex}{final_out.suffix}")
 
         use_crf = row_uses_crf(row)
         kbps = int(row["effective_target_kbps"]) if row.get("effective_target_kbps") else 0
@@ -657,9 +665,6 @@ def convert_rows(
                 if stop.is_set():
                     cancelled = True
                     _kill_process_tree(proc)
-                    _safe_unlink(work_out)
-                    if not _paths_conflict(work_out, final_out):
-                        _safe_unlink(final_out)
                     return False
                 time.sleep(0.2)
 
@@ -673,39 +678,38 @@ def convert_rows(
             if proc.returncode != 0 or not is_valid_output(work_out, src):
                 if stop.is_set():
                     cancelled = True
-                    _safe_unlink(work_out)
                     return False
                 safe_emit(f"FEHLER: {src.name}" + ("" if proc.returncode != 0 else " (Ausgabe unvollständig — Original bleibt)"))
                 if stderr_text.strip():
                     safe_emit(stderr_text.strip()[-400:])
-                _safe_unlink(work_out)
                 return False
+            if stop.is_set():
+                cancelled = True
+                return False
+            work_out.replace(final_out)
         finally:
+            _safe_unlink(work_out)
             err_file.close()
             if proc is not None:
                 with proc_lock:
                     active_procs.discard(proc)
 
-        if stop.is_set():
-            cancelled = True
-            _safe_unlink(work_out)
-            return False
-
-        if not _paths_conflict(work_out, final_out):
-            if final_out.exists():
-                final_out.unlink()
-            shutil.move(str(work_out), str(final_out))
-        if strip_suffix and (not suffix or suffix == "_bitrate"):
-            final_out = _try_strip_autobitrate_suffix(final_out, src, safe_emit)
         if post_action == "move_to_backup":
             backup_root = output_root / "_original_backup"
             brel = src.relative_to(input_root) if src.is_relative_to(input_root) else Path(src.name)
             btarget = backup_root / brel
             btarget.parent.mkdir(parents=True, exist_ok=True)
-            if btarget.exists():
-                btarget = btarget.with_name(f"{btarget.stem}_dup{btarget.suffix}")
+            duplicate = 0
+            while btarget.exists():
+                duplicate += 1
+                marker = "_dup" if duplicate == 1 else f"_dup{duplicate}"
+                btarget = (backup_root / brel).with_name(f"{brel.stem}{marker}{brel.suffix}")
             shutil.move(str(src), str(btarget))
-        elif post_action == "delete_original":
+        if strip_suffix and (not suffix or suffix == "_bitrate"):
+            final_out = _try_strip_autobitrate_suffix(
+                final_out, src, safe_emit, replace_source=post_action == "delete_original",
+            )
+        if post_action == "delete_original":
             _try_delete_source(src, final_out, safe_emit)
         safe_emit(f"Fertig: {final_out}")
         return True

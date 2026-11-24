@@ -29,13 +29,11 @@
 
                 <StackPanel Spacing="8">
 
-                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="autotagger.foldersHeader" />
+                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="bitrate.foldersHeader" />
 
                     <Grid ColumnSpacing="8" RowSpacing="8">
 
                         <Grid.ColumnDefinitions>
-
-                            <ColumnDefinition Width="120" />
 
                             <ColumnDefinition Width="*" />
 
@@ -51,109 +49,29 @@
 
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="audiocleaner.inputHeader" />
+                        <TextBox loc:Loc.HeaderKey="bitrate.inputLabel"
+                                 IsEnabled="{x:Bind ViewModel.IsIdle, Mode=OneWay}"
+                                 Text="{x:Bind ViewModel.InputPath, Mode=TwoWay}" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Bottom" Orientation="Horizontal" Spacing="4">
+                            <Button Command="{x:Bind ViewModel.PickInputFileCommand}" loc:Loc.Key="common.file" />
+                            <Button Command="{x:Bind ViewModel.PickInputFolderCommand}" loc:Loc.Key="common.folder" />
+                        </StackPanel>
 
-                        <TextBox Grid.Row="0" Grid.Column="1" Text="{x:Bind ViewModel.InputFolder, Mode=TwoWay}" />
+                        <TextBox Grid.Row="1" loc:Loc.HeaderKey="bitrate.outputLabel" IsEnabled="{x:Bind ViewModel.CanEditOutput, Mode=OneWay}"
+                                 Text="{x:Bind ViewModel.DisplayOutputFolder, Mode=TwoWay}" />
 
-                        <Button Grid.Row="0" Grid.Column="2" Command="{x:Bind ViewModel.PickInputFolderCommand}" loc:Loc.Key="common.addDots" />
+                        <StackPanel Grid.Row="1" Grid.Column="1" VerticalAlignment="Bottom" Orientation="Horizontal" Spacing="4">
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" loc:Loc.Key="bitrate.outputLabel" />
+                            <Button IsEnabled="{x:Bind ViewModel.CanEditOutput, Mode=OneWay}" Command="{x:Bind ViewModel.PickOutputFolderCommand}" loc:Loc.Key="common.folder" />
 
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{x:Bind ViewModel.OutputFolder, Mode=TwoWay}" />
-
-                        <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal" Spacing="4">
-
-                            <Button Command="{x:Bind ViewModel.PickOutputFolderCommand}" loc:Loc.Key="common.addDots" />
-
-                            <Button Command="{x:Bind ViewModel.AutoOutputCommand}" loc:Loc.Key="common.auto" />
+                            <Button IsEnabled="{x:Bind ViewModel.CanEditOutput, Mode=OneWay}" Command="{x:Bind ViewModel.AutoOutputCommand}" loc:Loc.Key="common.auto" />
 
                         </StackPanel>
 
                     </Grid>
 
-                    <CheckBox loc:Loc.Key="bitrate.outputBesideSource" IsChecked="{x:Bind ViewModel.OutputBesideSource, Mode=TwoWay}" />
-
-                </StackPanel>
-
-            </Border>
-
-
-
-            <Border Style="{StaticResource ToolShellCard}">
-
-                <StackPanel Spacing="8">
-
-                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="bitrate.renameHeader" />
-
-                    <TextBlock
-                        Style="{StaticResource CaptionTextBlockStyle}"
-                        loc:Loc.Key="bitrate.renameHint"
-                        TextWrapping="WrapWholeWords" />
-
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-
-                        <Button Command="{x:Bind ViewModel.PreviewRenamesCommand}" loc:Loc.Key="common.preview" />
-
-                        <Button Command="{x:Bind ViewModel.StripSuffixNowCommand}" loc:Loc.Key="bitrate.stripSuffixNow" />
-
-                    </StackPanel>
-
-                </StackPanel>
-
-            </Border>
-
-
-
-            <Border Style="{StaticResource ToolShellCard}">
-
-                <StackPanel Spacing="8">
-
-                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="bitrate.rulesHeader" />
-
-                    <Grid ColumnSpacing="8" RowSpacing="4">
-
-                        <Grid.ColumnDefinitions>
-
-                            <ColumnDefinition Width="*" />
-
-                            <ColumnDefinition Width="*" />
-
-                            <ColumnDefinition Width="*" />
-
-                            <ColumnDefinition Width="*" />
-
-                        </Grid.ColumnDefinitions>
-
-                        <Grid.RowDefinitions>
-                            <RowDefinition />
-                            <RowDefinition />
-                            <RowDefinition />
-                            <RowDefinition />
-                        </Grid.RowDefinitions>
-
-                        <TextBox Grid.Row="0" Grid.Column="0" Header="2160p" Text="{x:Bind ViewModel.Rule2160, Mode=TwoWay}" />
-
-                        <TextBox Grid.Row="0" Grid.Column="1" Header="1440p" Text="{x:Bind ViewModel.Rule1440, Mode=TwoWay}" />
-
-                        <TextBox Grid.Row="1" Grid.Column="0" Header="1080p" Text="{x:Bind ViewModel.Rule1080, Mode=TwoWay}" />
-
-                        <TextBox Grid.Row="1" Grid.Column="1" Header="720p" Text="{x:Bind ViewModel.Rule720, Mode=TwoWay}" />
-
-                        <TextBox Grid.Row="2" Grid.Column="0" Header="480p" Text="{x:Bind ViewModel.Rule480, Mode=TwoWay}" />
-
-                        <TextBox Grid.Row="2" Grid.Column="1" Header="360p" Text="{x:Bind ViewModel.Rule360, Mode=TwoWay}" />
-
-                        <TextBox Grid.Row="3" Grid.Column="0" Header="&lt;360p" Text="{x:Bind ViewModel.Rule0, Mode=TwoWay}" />
-
-                    </Grid>
-
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-
-                        <ComboBox MinWidth="180" ItemsSource="{x:Bind ViewModel.PresetOptions, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedPreset, Mode=TwoWay}" />
-
-                        <Button Command="{x:Bind ViewModel.LoadPresetCommand}" loc:Loc.Key="bitrate.loadPreset" />
-
-                    </StackPanel>
+                    <CheckBox loc:Loc.Key="bitrate.outputBesideSource" IsEnabled="{x:Bind ViewModel.IsIdle, Mode=OneWay}"
+                              IsChecked="{x:Bind ViewModel.OutputBesideSource, Mode=TwoWay}" />
 
                 </StackPanel>
 
@@ -167,7 +85,7 @@
 
                     <StackPanel Orientation="Horizontal" Spacing="6">
 
-                        <Button Command="{x:Bind ViewModel.ScanCommand}" loc:Loc.Key="bitrate.scanFolder" />
+                        <Button Command="{x:Bind ViewModel.ScanCommand}" loc:Loc.Key="bitrate.scan" />
 
                         <Button Command="{x:Bind ViewModel.MarkAllRowsCommand}" loc:Loc.Key="common.markAll" />
 
@@ -179,9 +97,11 @@
 
                         Style="{StaticResource CaptionTextBlockStyle}"
 
-                        loc:Loc.Key="bitrate.scanHintFull" />
+                        TextWrapping="Wrap" loc:Loc.Key="bitrate.scanHintFull" />
 
-                    <ListView MinHeight="220" MaxHeight="420" ItemsSource="{x:Bind ViewModel.Rows, Mode=OneWay}" SelectionMode="Extended" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" HorizontalScrollMode="Enabled" HorizontalContentAlignment="Stretch"
+                                  VerticalScrollBarVisibility="Disabled" VerticalScrollMode="Disabled">
+                    <ListView MinWidth="820" MaxHeight="420" ItemsSource="{x:Bind ViewModel.Rows, Mode=OneWay}" SelectionMode="None" ScrollViewer.VerticalScrollBarVisibility="Auto">
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -194,12 +114,12 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="36" />
                                     <ColumnDefinition Width="2*" />
-                                    <ColumnDefinition Width="68" />
+                                    <ColumnDefinition Width="82" />
                                     <ColumnDefinition Width="60" />
                                     <ColumnDefinition Width="56" />
-                                    <ColumnDefinition Width="48" />
-                                    <ColumnDefinition Width="56" />
-                                    <ColumnDefinition Width="72" />
+                                    <ColumnDefinition Width="54" />
+                                    <ColumnDefinition Width="84" />
+                                    <ColumnDefinition Width="92" />
                                     <ColumnDefinition Width="1.2*" />
                                 </Grid.ColumnDefinitions>
 
@@ -244,23 +164,24 @@
 
                                         <ColumnDefinition Width="2*" />
 
-                                        <ColumnDefinition Width="68" />
+                                        <ColumnDefinition Width="82" />
 
                                         <ColumnDefinition Width="60" />
 
                                         <ColumnDefinition Width="56" />
 
-                                        <ColumnDefinition Width="48" />
+                                        <ColumnDefinition Width="54" />
 
-                                        <ColumnDefinition Width="56" />
+                                        <ColumnDefinition Width="84" />
 
-                                        <ColumnDefinition Width="72" />
+                                        <ColumnDefinition Width="92" />
 
                                         <ColumnDefinition Width="1.2*" />
 
                                     </Grid.ColumnDefinitions>
 
-                                    <CheckBox Grid.Column="0" IsChecked="{x:Bind IsIncluded, Mode=TwoWay}" />
+                                    <CheckBox Grid.Column="0" MinWidth="0" AutomationProperties.Name="{x:Bind FileName}"
+                                              IsEnabled="{x:Bind CanConvert}" IsChecked="{x:Bind IsIncluded, Mode=TwoWay}" />
 
                                     <TextBlock
                                         Grid.Column="1"
@@ -295,6 +216,87 @@
                         </ListView.ItemTemplate>
 
                     </ListView>
+                    </ScrollViewer>
+
+                </StackPanel>
+
+            </Border>
+
+
+
+            <Border Style="{StaticResource ToolShellCard}">
+
+                <StackPanel Spacing="8">
+
+                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="bitrate.rulesHeader" />
+
+                    <Grid ColumnSpacing="8" RowSpacing="4">
+
+                        <Grid.ColumnDefinitions>
+
+                            <ColumnDefinition Width="*" />
+
+                            <ColumnDefinition Width="*" />
+
+                            <ColumnDefinition Width="*" />
+
+                            <ColumnDefinition Width="*" />
+
+                        </Grid.ColumnDefinitions>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+
+                        <TextBox Grid.Row="0" Grid.Column="0" Header="2160p" Text="{x:Bind ViewModel.Rule2160, Mode=TwoWay}" />
+
+                        <TextBox Grid.Row="0" Grid.Column="1" Header="1440p" Text="{x:Bind ViewModel.Rule1440, Mode=TwoWay}" />
+
+                        <TextBox Grid.Row="0" Grid.Column="2" Header="1080p" Text="{x:Bind ViewModel.Rule1080, Mode=TwoWay}" />
+
+                        <TextBox Grid.Row="0" Grid.Column="3" Header="720p" Text="{x:Bind ViewModel.Rule720, Mode=TwoWay}" />
+
+                        <TextBox Grid.Row="1" Grid.Column="0" Header="480p" Text="{x:Bind ViewModel.Rule480, Mode=TwoWay}" />
+
+                        <TextBox Grid.Row="1" Grid.Column="1" Header="360p" Text="{x:Bind ViewModel.Rule360, Mode=TwoWay}" />
+
+                        <TextBox Grid.Row="1" Grid.Column="2" Header="&lt;360p" Text="{x:Bind ViewModel.Rule0, Mode=TwoWay}" />
+
+                    </Grid>
+
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+
+                        <ComboBox MinWidth="180" ItemsSource="{x:Bind ViewModel.PresetOptions, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.SelectedPreset, Mode=TwoWay}" />
+
+                        <Button Command="{x:Bind ViewModel.LoadPresetCommand}" loc:Loc.Key="bitrate.loadPreset" />
+
+                    </StackPanel>
+
+                </StackPanel>
+
+            </Border>
+
+
+
+            <Border Style="{StaticResource ToolShellCard}" Visibility="{x:Bind ViewModel.FolderOptionsAvailable, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+
+                <StackPanel Spacing="8">
+
+                    <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="bitrate.renameHeader" />
+
+                    <TextBlock
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        loc:Loc.Key="bitrate.renameHint"
+                        TextWrapping="WrapWholeWords" />
+
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+
+                        <Button IsEnabled="{x:Bind ViewModel.IsIdle, Mode=OneWay}" Command="{x:Bind ViewModel.PreviewRenamesCommand}" loc:Loc.Key="common.preview" />
+
+                        <Button IsEnabled="{x:Bind ViewModel.IsIdle, Mode=OneWay}" Command="{x:Bind ViewModel.StripSuffixNowCommand}" loc:Loc.Key="bitrate.stripSuffixNow" />
+
+                    </StackPanel>
 
                 </StackPanel>
 
@@ -350,7 +352,8 @@
                             Style="{StaticResource CaptionTextBlockStyle}"
                             loc:Loc.Key="bitrate.scanModeHint"
                             TextWrapping="WrapWholeWords" />
-                        <CheckBox loc:Loc.Key="bitrate.scanSubfolders" IsChecked="{x:Bind ViewModel.Recursive, Mode=TwoWay}" />
+                        <CheckBox loc:Loc.Key="bitrate.scanSubfolders" IsEnabled="{x:Bind ViewModel.FolderOptionsAvailable, Mode=OneWay}"
+                                  IsChecked="{x:Bind ViewModel.Recursive, Mode=TwoWay}" />
                         <CheckBox loc:Loc.Key="bitrate.onlyLower" IsChecked="{x:Bind ViewModel.OnlyLower, Mode=TwoWay}" />
                     </StackPanel>
                 </Expander>

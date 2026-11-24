@@ -9,6 +9,21 @@
     mc:Ignorable="d">
 
     <Grid RowSpacing="0">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="CompactNavigation">
+                    <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="0" /></VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="NavColumn.Width" Value="0" />
+                        <Setter Target="NavBorder.Visibility" Value="Collapsed" />
+                        <Setter Target="ToolPicker.Visibility" Value="Visible" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="WideNavigation">
+                    <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="960" /></VisualState.StateTriggers>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -25,12 +40,20 @@
             SelectionChanged="GroupTabView_OnSelectionChanged" />
 
         <Grid Grid.Row="1" ColumnSpacing="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="{StaticResource ToolShellNavWidth}" />
+                <ColumnDefinition x:Name="NavColumn" Width="{StaticResource ToolShellNavWidth}" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Border
+            <ComboBox x:Name="ToolPicker" Grid.ColumnSpan="2" Margin="4" HorizontalAlignment="Stretch"
+                      ItemsSource="{Binding ItemsSource, ElementName=ToolNavList}"
+                      SelectedItem="{Binding SelectedItem, ElementName=ToolNavList, Mode=TwoWay}"
+                      DisplayMemberPath="Label" Visibility="Collapsed" />
+            <Border x:Name="NavBorder" Grid.Row="1"
                 Grid.Column="0"
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="0,0,1,0">
@@ -48,14 +71,14 @@
                     <ListView.ItemTemplate>
                         <DataTemplate x:DataType="viewModels:ToolNavItemViewModel" xmlns:viewModels="using:HailMary.ViewModels">
                             <Grid Padding="12,10">
-                                <TextBlock VerticalAlignment="Center" Text="{x:Bind Label}" />
+                                <TextBlock VerticalAlignment="Center" Text="{x:Bind Label, Mode=OneWay}" />
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
             </Border>
 
-            <Grid Grid.Column="1" RowSpacing="0">
+            <Grid Grid.Row="1" Grid.Column="1" RowSpacing="0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />

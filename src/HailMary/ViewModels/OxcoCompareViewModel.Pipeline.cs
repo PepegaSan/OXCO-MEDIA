@@ -102,7 +102,7 @@ public partial class OxcoCompareViewModel
             await File.WriteAllTextAsync(configPath, BitrateConfigReader.ToJobJson(settings));
             var result = await AppServices.JobRunner.RunBridgeAsync(
                 "bitrate_scan_job.py",
-                ["--config-json", configPath, "--output-json", outPath]);
+                ["--config-json", configPath, "--output-json", outPath], updateLastOutput: false);
             if (result.Success && File.Exists(outPath))
             {
                 _lastBitrateScanJsonPath = outPath;

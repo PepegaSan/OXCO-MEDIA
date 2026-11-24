@@ -10,6 +10,10 @@ namespace HailMary.ViewModels;
 
 public sealed partial class BitrateRowViewModel : ObservableObject
 {
+    public JsonElement ScanData { get; init; }
+
+    public bool CanConvert => string.Equals(ActionCode, "convert", StringComparison.OrdinalIgnoreCase);
+
     public string Path { get; init; } = string.Empty;
 
     public string FileName { get; init; } = string.Empty;
@@ -49,15 +53,16 @@ public sealed partial class BitrateRowViewModel : ObservableObject
 public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost, ISplitPaneToolHost, ILocalizable
 {
     private readonly ToolDefinition _tool;
-    private BitrateChangerSettings _settings;
-    private string? _lastScanJsonPath;
+    private readonly BitrateChangerSettings _settings;
+    private int _scanRevision;
+    private bool _updatingSelection;
     private CancellationTokenSource? _jobCts;
 
     public BitrateChangerViewModel(ToolDefinition tool)
     {
         _tool = tool;
         _settings = BitrateConfigReader.Load();
-        InputFolder = _settings.InputFolder;
+        InputPath = string.IsNullOrWhiteSpace(_settings.InputFile) ? _settings.InputFolder ?? "" : _settings.InputFile;
         OutputFolder = _settings.OutputFolder;
         Recursive = _settings.Recursive;
         OnlyLower = _settings.OnlyLower;
@@ -70,7 +75,7 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
         SelectedAudioMode = _settings.AudioMode;
         SelectedRateControl = NormalizeRateControl(_settings.RateControl);
         SelectedCrfPreset = NormalizeCrfPreset(_settings.CrfPreset);
-        CrfValue = ClampCrf(_settings.Crf > 0 ? _settings.Crf : CrfFromPreset(SelectedCrfPreset));
+        CrfValue = ClampCrf(_settings.Crf);
         ParallelJobs = Math.Clamp(_settings.ParallelJobs <= 0 ? 1 : _settings.ParallelJobs, 1, 8);
         FfmpegThreads = Math.Clamp(_settings.FfmpegThreads, 0, 64);
         LowPriority = _settings.LowPriority;
@@ -90,6 +95,26 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
     public string Description => ToolText.Description(_tool);
 
     public ObservableCollection<BitrateRowViewModel> Rows { get; } = [];
+
+    protected override void OnPropertyChanged(PropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+        if (e.PropertyName is nameof(Recursive) or nameof(OnlyLower) or nameof(SelectedScanMode)
+            or nameof(Rule2160) or nameof(Rule1440) or nameof(Rule1080) or nameof(Rule720)
+            or nameof(Rule480) or nameof(Rule360) or nameof(Rule0))
+        {
+            _scanRevision++;
+            if (Rows.Count > 0)
+            {
+                Rows.Clear();
+                OnPropertyChanged(nameof(IsPrimaryActionEnabled));
+                if (!IsBusy)
+                {
+                    Status = Loc.T("bitrate.scanFirst");
+                }
+            }
+        }
+    }
 
     public IReadOnlyList<string> CodecOptions { get; } =
         FfmpegEncoderCatalog.Labels(FfmpegEncoderCatalog.LibNvencVp9);
@@ -138,12 +163,43 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
     public IReadOnlyList<string> X264PresetOptions { get; } =
         ["ultrafast", "superfast", "veryfast", "faster", "fast", "medium"];
 
-    [ObservableProperty] private string _inputFolder = string.Empty;
+    [ObservableProperty] private string _inputPath = string.Empty;
+    public bool FolderOptionsAvailable => string.IsNullOrWhiteSpace(InputPath) || Directory.Exists(InputPath.Trim());
+    public bool IsIdle => !IsBusy;
+    public bool CanEditOutput => IsIdle && !OutputBesideSource;
+    public string DisplayOutputFolder
+    {
+        get => OutputBesideSource ? SourceFolder : OutputFolder;
+        set
+        {
+            if (!OutputBesideSource)
+            {
+                OutputFolder = value;
+            }
+        }
+    }
+
+    partial void OnInputPathChanged(string value)
+    {
+        _scanRevision++;
+        Rows.Clear();
+        Status = Loc.T("common.ready");
+        OnPropertyChanged(nameof(FolderOptionsAvailable));
+        OnPropertyChanged(nameof(DisplayOutputFolder));
+        OnPropertyChanged(nameof(IsPrimaryActionEnabled));
+    }
+
     [ObservableProperty] private string _outputFolder = string.Empty;
+    partial void OnOutputFolderChanged(string value) => OnPropertyChanged(nameof(DisplayOutputFolder));
     [ObservableProperty] private bool _recursive = true;
     [ObservableProperty] private bool _onlyLower = true;
     [ObservableProperty] private string _selectedScanMode = "bitrate";
     [ObservableProperty] private bool _outputBesideSource;
+    partial void OnOutputBesideSourceChanged(bool value)
+    {
+        OnPropertyChanged(nameof(DisplayOutputFolder));
+        OnPropertyChanged(nameof(CanEditOutput));
+    }
 
     public bool ScanModeIsBitrate
     {
@@ -405,14 +461,25 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
     [ObservableProperty] private string _status = Loc.T("common.ready");
     [ObservableProperty] private bool _isBusy;
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(IsIdle))]
     private async Task PickInputFolderAsync()
     {
-        var path = await FolderPickerHelper.PickFolderAsync(InputFolder);
+        var path = await FolderPickerHelper.PickFolderAsync(InputPath);
         if (!string.IsNullOrWhiteSpace(path))
         {
-            InputFolder = path;
+            InputPath = path;
             SyncSettings();
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(IsIdle))]
+    private async Task PickInputFileAsync()
+    {
+        var path = await FilePickerHelper.PickVideoAsync(InputPath);
+        if (!string.IsNullOrWhiteSpace(path))
+        {
+            InputPath = path;
+            await ScanAsync();
         }
     }
 
@@ -430,15 +497,21 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
     [RelayCommand]
     private void AutoOutput()
     {
-        if (!string.IsNullOrWhiteSpace(InputFolder))
+        var folder = SourceFolder;
+        if (Directory.Exists(folder))
         {
-            OutputFolder = Path.Combine(InputFolder, "_bitrate_output");
+            OutputFolder = Path.Combine(folder, "_bitrate_output");
         }
     }
 
+    private string SourceFolder => File.Exists(InputPath.Trim())
+        ? Path.GetDirectoryName(Path.GetFullPath(InputPath.Trim()))!
+        : InputPath.Trim();
+
     private void SyncSettings()
     {
-        _settings.InputFolder = InputFolder;
+        _settings.InputFolder = SourceFolder;
+        _settings.InputFile = File.Exists(InputPath.Trim()) ? Path.GetFullPath(InputPath.Trim()) : "";
         _settings.OutputFolder = OutputFolder;
         _settings.Recursive = Recursive;
         _settings.OnlyLower = OnlyLower;
@@ -485,7 +558,7 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
         Rule720 = rules["720"]; Rule480 = rules["480"]; Rule360 = rules["360"]; Rule0 = rules["0"];
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(IsIdle))]
     private async Task ScanAsync()
     {
         if (IsBusy)
@@ -493,37 +566,36 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(InputFolder) || !Directory.Exists(InputFolder))
+        Rows.Clear();
+        OnPropertyChanged(nameof(IsPrimaryActionEnabled));
+        var source = InputPath.Trim();
+        if (!Directory.Exists(source) && !VideoPathDropHelper.IsVideoFile(source))
         {
             Status = Loc.T("bitrate.inputMissing");
             return;
         }
 
-        if (OutputBesideSource)
+        SyncSettings();
+        if (_settings.RuleValues.Values.Any(rule => !int.TryParse(rule, out var kbps) || kbps <= 0))
         {
-            OutputFolder = InputFolder;
-        }
-        else if (string.IsNullOrWhiteSpace(OutputFolder))
-        {
-            Status = Loc.T("bitrate.outputMissing");
+            Status = Loc.T("bitrate.invalidRules");
             return;
         }
 
-        SyncSettings();
         BeginJobToken();
         IsBusy = true;
         Status = Loc.T("bitrate.scanRunning");
-        Rows.Clear();
+        var revision = _scanRevision;
 
+        var configPath = Path.Combine(Path.GetTempPath(), $"hm_bitrate_cfg_{Guid.NewGuid():N}.json");
+        var outPath = Path.Combine(Path.GetTempPath(), $"hm_bitrate_scan_{Guid.NewGuid():N}.json");
         try
         {
-            var configPath = Path.Combine(Path.GetTempPath(), $"hm_bitrate_cfg_{Guid.NewGuid():N}.json");
-            var outPath = Path.Combine(Path.GetTempPath(), $"hm_bitrate_scan_{Guid.NewGuid():N}.json");
             await File.WriteAllTextAsync(configPath, BitrateConfigReader.ToJobJson(_settings));
 
             var result = await AppServices.JobRunner.RunBridgeAsync("bitrate_scan_job.py",
                 ["--config-json", configPath, "--output-json", outPath],
-                _jobCts!.Token);
+                _jobCts!.Token, updateLastOutput: false);
 
             if (result.ExitCode == -2)
             {
@@ -531,16 +603,18 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
                 return;
             }
 
-            TryDelete(configPath);
             if (!result.Success || !File.Exists(outPath))
             {
                 Status = result.Message;
                 return;
             }
 
-            TryDelete(_lastScanJsonPath);
-            _lastScanJsonPath = outPath;
             var json = await File.ReadAllTextAsync(outPath);
+            if (revision != _scanRevision)
+            {
+                Status = Loc.T("bitrate.scanFirst");
+                return;
+            }
             using var doc = JsonDocument.Parse(json);
             foreach (var row in doc.RootElement.GetProperty("rows").EnumerateArray())
             {
@@ -560,6 +634,7 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
                 var reasonRaw = row.GetProperty("reason").GetString() ?? "";
                 var scanRow = new BitrateRowViewModel
                 {
+                    ScanData = row.Clone(),
                     Path = path,
                     FileName = System.IO.Path.GetFileName(path),
                     Resolution = $"{w}x{h}",
@@ -577,8 +652,16 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
             }
 
         }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        {
+            Rows.Clear();
+            Status = ex.Message;
+            return;
+        }
         finally
         {
+            TryDelete(configPath);
+            TryDelete(outPath);
             EndJobToken();
             IsBusy = false;
         }
@@ -595,71 +678,66 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(_lastScanJsonPath) || !File.Exists(_lastScanJsonPath))
+        var selected = Rows.Where(row => row.IsIncluded && row.CanConvert).Select(row => row.ScanData).ToList();
+        if (selected.Count == 0)
         {
-            Status = Loc.T("bitrate.scanFirst");
+            Status = Loc.T(Rows.Count == 0 ? "bitrate.scanFirst" : "bitrate.noRowsSelected");
             return;
         }
 
-        if (OutputBesideSource)
+        if (!Directory.Exists(InputPath.Trim()) && !File.Exists(InputPath.Trim()))
         {
-            OutputFolder = InputFolder;
+            Status = Loc.T("bitrate.inputMissing");
+            return;
+        }
+
+        if (!OutputBesideSource && string.IsNullOrWhiteSpace(OutputFolder))
+        {
+            Status = Loc.T("bitrate.outputMissing");
+            return;
         }
 
         SyncSettings();
+        var configJson = BitrateConfigReader.ToJobJson(_settings);
+        var postAction = SelectedPostAction;
         BeginJobToken();
         IsBusy = true;
         Status = Loc.T("bitrate.convertRunning");
 
+        var rowsPath = Path.Combine(Path.GetTempPath(), $"hm_bitrate_rows_{Guid.NewGuid():N}.json");
+        var configPath = Path.Combine(Path.GetTempPath(), $"hm_bitrate_cfg_{Guid.NewGuid():N}.json");
         try
         {
-            var includedPaths = Rows
-                .Where(r => r.IsIncluded && string.Equals(r.ActionCode, "convert", StringComparison.OrdinalIgnoreCase))
-                .Select(r => r.Path)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            if (includedPaths.Count == 0)
-            {
-                Status = Loc.T("bitrate.noRowsSelected");
-                return;
-            }
-
-            if (SelectedPostAction == "delete_original" && ConfirmAsync is not null
-                && !await ConfirmAsync(
+            if (postAction == "delete_original" && (ConfirmAsync is null
+                || !await ConfirmAsync(
                     Loc.T("bitrate.confirmDeleteTitle"),
-                    Loc.F("bitrate.confirmDeleteBody", includedPaths.Count)))
+                    Loc.F("bitrate.confirmDeleteBody", selected.Count))))
             {
                 Status = Loc.T("bitrate.convertCancelled");
                 return;
             }
 
-            var scanJson = await File.ReadAllTextAsync(_lastScanJsonPath);
-            using var scanDoc = JsonDocument.Parse(scanJson);
-            var filteredRowJson = scanDoc.RootElement.GetProperty("rows")
-                .EnumerateArray()
-                .Where(row =>
-                {
-                    var path = row.GetProperty("path").GetString();
-                    return path is not null && includedPaths.Contains(path);
-                })
-                .Select(row => row.GetRawText())
-                .ToList();
-
-            var rowsPath = Path.Combine(Path.GetTempPath(), $"hm_bitrate_rows_{Guid.NewGuid():N}.json");
-            await File.WriteAllTextAsync(rowsPath, $"{{\"rows\":[{string.Join(',', filteredRowJson)}]}}");
-
-            var configPath = Path.Combine(Path.GetTempPath(), $"hm_bitrate_cfg_{Guid.NewGuid():N}.json");
-            await File.WriteAllTextAsync(configPath, BitrateConfigReader.ToJobJson(_settings));
+            await File.WriteAllTextAsync(rowsPath, JsonSerializer.Serialize(new { rows = selected }));
+            await File.WriteAllTextAsync(configPath, configJson);
             var result = await AppServices.JobRunner.RunBridgeAsync("bitrate_convert_job.py",
                 ["--config-json", configPath, "--rows-json", rowsPath],
                 _jobCts!.Token);
-            TryDelete(configPath);
-            TryDelete(rowsPath);
+            if (postAction is "delete_original" or "move_to_backup")
+            {
+                Rows.Clear();
+            }
             Status = result.ExitCode == -2
                 ? Loc.T("bitrate.convertCancelled")
                 : result.Message;
         }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Status = ex.Message;
+        }
         finally
         {
+            TryDelete(configPath);
+            TryDelete(rowsPath);
             EndJobToken();
             IsBusy = false;
         }
@@ -717,13 +795,15 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
 
     private async Task RunRenameJobAsync(bool previewOnly)
     {
-        if (OutputBesideSource && !string.IsNullOrWhiteSpace(InputFolder))
+        if (IsBusy || !FolderOptionsAvailable)
         {
-            OutputFolder = InputFolder;
+            return;
         }
 
-        var hasInput = !string.IsNullOrWhiteSpace(InputFolder) && Directory.Exists(InputFolder);
-        var hasOutput = !string.IsNullOrWhiteSpace(OutputFolder) && Directory.Exists(OutputFolder);
+        var inputFolder = InputPath.Trim();
+        var outputFolder = OutputBesideSource ? inputFolder : OutputFolder;
+        var hasInput = Directory.Exists(inputFolder);
+        var hasOutput = Directory.Exists(outputFolder);
         if (!hasInput && !hasOutput)
         {
             Status = Loc.T("bitrate.foldersMissing");
@@ -731,14 +811,15 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
         }
 
         SyncSettings();
+        BeginJobToken();
         IsBusy = true;
+        var configPath = Path.Combine(Path.GetTempPath(), $"hm_bitrate_rename_{Guid.NewGuid():N}.json");
         try
         {
-            var configPath = Path.Combine(Path.GetTempPath(), $"hm_bitrate_rename_{Guid.NewGuid():N}.json");
             var json = System.Text.Json.JsonSerializer.Serialize(new
             {
-                input_folder = InputFolder,
-                output_folder = OutputFolder,
+                input_folder = inputFolder,
+                output_folder = outputFolder,
                 recursive = Recursive,
                 rename_only_video = true,
             });
@@ -749,15 +830,25 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
                 args.Add("--preview-only");
             }
 
-            var result = await AppServices.JobRunner.RunBridgeAsync("bitrate_rename_job.py", args);
+            var result = await AppServices.JobRunner.RunBridgeAsync("bitrate_rename_job.py", args, _jobCts!.Token);
+            if (!previewOnly)
+            {
+                Rows.Clear();
+            }
             Status = previewOnly
                 ? result.Message
                 : string.IsNullOrWhiteSpace(result.Message)
                     ? Loc.T("bitrate.suffixRemoved")
                     : result.Message;
         }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Status = ex.Message;
+        }
         finally
         {
+            TryDelete(configPath);
+            EndJobToken();
             IsBusy = false;
         }
     }
@@ -770,18 +861,13 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
 
     private void SetAllRowsIncluded(bool included)
     {
+        _updatingSelection = true;
         foreach (var row in Rows)
         {
-            if (string.Equals(row.ActionCode, "convert", StringComparison.OrdinalIgnoreCase))
-            {
-                row.IsIncluded = included;
-            }
-            else if (!included)
-            {
-                row.IsIncluded = false;
-            }
+            row.IsIncluded = included && row.CanConvert;
         }
 
+        _updatingSelection = false;
         UpdateSelectionStatus();
     }
 
@@ -809,7 +895,7 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
 
     private void OnRowPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(BitrateRowViewModel.IsIncluded))
+        if (!_updatingSelection && e.PropertyName == nameof(BitrateRowViewModel.IsIncluded))
         {
             UpdateSelectionStatus();
         }
@@ -817,16 +903,18 @@ public partial class BitrateChangerViewModel : ObservableObject, IToolShellHost,
 
     private void UpdateSelectionStatus()
     {
-        if (Rows.Count == 0 || IsBusy)
+        OnPropertyChanged(nameof(IsPrimaryActionEnabled));
+        if (IsBusy)
         {
             return;
         }
 
         var included = Rows.Where(r => r.IsIncluded).ToList();
         var savedMb = included.Sum(r => r.EstSaveMbValue);
+        var key = Rows.Count == 1 ? "bitrate.rowSelectionSingle" : "bitrate.rowSelection";
         Status = savedMb >= 1
-            ? Loc.F("bitrate.rowSelectionSavings", Rows.Count, included.Count, FormatSize(savedMb))
-            : Loc.F("bitrate.rowSelection", Rows.Count, included.Count);
+            ? Loc.F(key + "Savings", Rows.Count, included.Count, FormatSize(savedMb))
+            : Loc.F(key, Rows.Count, included.Count);
     }
 
     private static string FormatSize(double mb) =>

@@ -15,24 +15,21 @@
 
     <controls:ToolSplitLayout SettingsWidth="380">
         <controls:ToolSplitLayout.Main>
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-                <Border Grid.Row="0" Padding="16,12,12,8">
+            <StackPanel>
+                <Border Padding="16,12,12,8">
                     <ContentControl
                         x:Name="PreviewHost"
                         HorizontalAlignment="Stretch"
                         HorizontalContentAlignment="Stretch" />
                 </Border>
-                <Border Grid.Row="1" Margin="16,0,12,12" Style="{StaticResource ToolShellCard}">
+                <Border Margin="16,0,12,12" Style="{StaticResource ToolShellCard}">
                     <StackPanel Spacing="8">
                         <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="common.batch" />
                         <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.BatchSummary, Mode=OneWay}" />
                         <ListView
                             x:Name="BatchList"
                             MinHeight="120"
+                            MaxHeight="420"
                             IsItemClickEnabled="True"
                             ItemClick="BatchList_OnItemClick"
                             ItemsSource="{x:Bind ViewModel.BatchFiles, Mode=OneWay}"
@@ -64,7 +61,7 @@
                         </StackPanel>
                     </StackPanel>
                 </Border>
-            </Grid>
+            </StackPanel>
         </controls:ToolSplitLayout.Main>
         <controls:ToolSplitLayout.Settings>
             <StackPanel Padding="16,12" Spacing="12">

@@ -8,7 +8,7 @@
     xmlns:shell="using:HailMary.Views.Shell"
     mc:Ignorable="d">
 
-    <Grid Padding="12" RowSpacing="8">
+    <Grid Padding="12" RowSpacing="8" SizeChanged="PageLayout_SizeChanged">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -25,21 +25,23 @@
 
         <shell:ToolShellPage x:Name="ToolShell" Grid.Row="1" />
 
-        <Expander Grid.Row="2" Header="{x:Bind Shell.LogHeader, Mode=OneWay}" IsExpanded="False">
-            <Grid RowSpacing="6">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="160" />
-                </Grid.RowDefinitions>
+        <Expander Grid.Row="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Expanding="Log_Expanding"
+                  Header="{x:Bind Shell.LogHeader, Mode=OneWay}" IsExpanded="False">
+            <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
                 <Button
-                    Grid.Row="0"
-                    HorizontalAlignment="Left"
+                    Grid.Column="1"
+                    VerticalAlignment="Top"
                     Command="{x:Bind ViewModel.ClearLogCommand}"
                     Content="{x:Bind Shell.LogClear, Mode=OneWay}" />
 
                 <Border
-                    Grid.Row="1"
+                    x:Name="LogOutput"
+                    Height="160"
                     Padding="8"
                     Background="{ThemeResource HmLogBackgroundBrush}"
                     BorderBrush="{ThemeResource HmCardBorderBrush}"

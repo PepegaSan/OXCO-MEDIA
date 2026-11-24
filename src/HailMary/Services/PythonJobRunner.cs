@@ -22,7 +22,8 @@ public sealed class PythonJobRunner
         IReadOnlyList<string> bridgeArgs,
         CancellationToken cancellationToken = default,
         bool quiet = false,
-        Action<string>? onOutputLine = null)
+        Action<string>? onOutputLine = null,
+        bool updateLastOutput = true)
     {
         var scriptPath = Path.Combine(AppPaths.BridgesDirectory, bridgeFileName);
         if (!File.Exists(scriptPath))
@@ -33,13 +34,6 @@ public sealed class PythonJobRunner
         }
 
         var python = _settings.ResolvePythonExecutable();
-        var argsBuilder = new StringBuilder();
-        argsBuilder.Append('"').Append(scriptPath).Append('"');
-        foreach (var arg in bridgeArgs)
-        {
-            argsBuilder.Append(' ').Append('"').Append(arg.Replace("\"", "\\\"")).Append('"');
-        }
-
         if (!quiet)
         {
             _log.Info($"Job startet: {bridgeFileName}{FormatArgsSummary(bridgeArgs)}");
@@ -54,7 +48,11 @@ public sealed class PythonJobRunner
 
         try
         {
-            var psi = CreateStartInfo(python, argsBuilder.ToString());
+            var psi = CreateStartInfo(python, scriptPath);
+            foreach (var arg in bridgeArgs)
+            {
+                psi.ArgumentList.Add(arg);
+            }
 
             using var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
             var stdout = new StringBuilder();
@@ -127,7 +125,10 @@ public sealed class PythonJobRunner
 
             if (exitCode == 0 && !string.IsNullOrWhiteSpace(outputPath))
             {
-                _session.SetLastOutput(outputPath);
+                if (updateLastOutput)
+                {
+                    _session.SetLastOutput(outputPath);
+                }
                 var ok = $"Fertig: {Path.GetFileName(outputPath)}";
                 if (!quiet)
                 {
@@ -184,18 +185,17 @@ public sealed class PythonJobRunner
     public ProcessStartInfo CreateBridgeServerStartInfo(string bridgeFileName)
     {
         var scriptPath = Path.Combine(AppPaths.BridgesDirectory, bridgeFileName);
-        var psi = CreateStartInfo(_settings.ResolvePythonExecutable(), $"\"{scriptPath}\"");
+        var psi = CreateStartInfo(_settings.ResolvePythonExecutable(), scriptPath);
         psi.RedirectStandardInput = true;
         psi.StandardInputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
         return psi;
     }
 
-    private ProcessStartInfo CreateStartInfo(string python, string arguments)
+    private ProcessStartInfo CreateStartInfo(string python, string scriptPath)
     {
         var psi = new ProcessStartInfo
         {
             FileName = python,
-            Arguments = arguments,
             WorkingDirectory = AppPaths.BridgesDirectory,
             UseShellExecute = false,
             CreateNoWindow = true,
@@ -205,6 +205,7 @@ public sealed class PythonJobRunner
             StandardErrorEncoding = Encoding.UTF8,
         };
 
+        psi.ArgumentList.Add(scriptPath);
         ApplyPath(psi);
 
         psi.Environment["HAIL_MARY_PROJECTS_ROOT"] = _settings.ProjectsRoot;

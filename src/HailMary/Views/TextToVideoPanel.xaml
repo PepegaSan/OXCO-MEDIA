@@ -16,13 +16,8 @@
         IsEnabled="{x:Bind ViewModel.CanInteract, Mode=OneWay}"
         SettingsWidth="400">
             <controls:ToolSplitLayout.Main>
-                <Grid Padding="16,12,12,12" RowSpacing="8">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-
-                    <StackPanel Grid.Row="0" Spacing="8">
+                <StackPanel Padding="16,12,12,12" Spacing="8">
+                    <StackPanel Spacing="8">
                         <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.Status, Mode=OneWay}" TextWrapping="WrapWholeWords" />
                         <Grid ColumnSpacing="8" drop:VideoDrop.IsEnabled="True" drop:VideoDrop.PathPropertyName="VideoPath">
                             <Grid.ColumnDefinitions>
@@ -63,7 +58,7 @@
                         <controls:TextToVideoPreviewHost ViewModel="{x:Bind ViewModel, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasVideo, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
                     </StackPanel>
 
-                    <Border Grid.Row="1" Style="{StaticResource ToolShellCard}" VerticalAlignment="Stretch">
+                    <Border Style="{StaticResource ToolShellCard}">
                         <Grid RowSpacing="8">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -73,6 +68,7 @@
                             <TextBlock Style="{StaticResource ToolShellSectionHeader}" loc:Loc.Key="texttovideo.segmentsHeader" />
                             <ScrollViewer
                                 Grid.Row="1"
+                                MaxHeight="420"
                                 HorizontalScrollBarVisibility="Disabled"
                                 VerticalScrollBarVisibility="Auto">
                                 <ItemsControl x:Name="SegmentList" ItemsSource="{x:Bind ViewModel.Segments, Mode=OneWay}">
@@ -107,7 +103,7 @@
                             </StackPanel>
                         </Grid>
                     </Border>
-                </Grid>
+                </StackPanel>
             </controls:ToolSplitLayout.Main>
             <controls:ToolSplitLayout.Settings>
                 <StackPanel Padding="16,12" Spacing="12">

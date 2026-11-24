@@ -28,7 +28,6 @@ public sealed partial class MediaOverlayPreviewHost : UserControl
 
     private DragMode _dragMode;
     private Pointer? _pointer;
-    private bool _sliderDragging;
     private Windows.Foundation.Point _grabOffsetNorm;
 
     public MediaOverlayPreviewHost()
@@ -41,13 +40,7 @@ public sealed partial class MediaOverlayPreviewHost : UserControl
                 ViewModel.SliderValue = seconds;
             }
         };
-        TimelineSlider.PointerPressed += (_, _) => _sliderDragging = true;
-        TimelineSlider.PointerReleased += (_, _) =>
-        {
-            _sliderDragging = false;
-            ViewModel?.SchedulePreviewRefresh(immediate: true);
-        };
-        TimelineSlider.PointerCanceled += (_, _) => _sliderDragging = false;
+        TimelineSlider.PointerReleased += (_, _) => ViewModel?.SchedulePreviewRefresh(immediate: true);
         SizeChanged += (_, _) => UpdateGhost();
         PreviewPresenter.SizeChanged += (_, _) => UpdateGhost();
     }

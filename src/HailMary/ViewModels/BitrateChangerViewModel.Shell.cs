@@ -10,7 +10,7 @@ public partial class BitrateChangerViewModel
 
     public IAsyncRelayCommand PrimaryActionCommand => ConvertCommand;
 
-    public bool IsPrimaryActionEnabled => !IsBusy;
+    public bool IsPrimaryActionEnabled => !IsBusy && Rows.Any(row => row.CanConvert && row.IsIncluded);
 
     public string StatusText => Status;
 
@@ -38,12 +38,17 @@ public partial class BitrateChangerViewModel
 
     public IRelayCommand? StopActionCommand => StopConversionCommand;
 
-    public bool IsStopActionEnabled => IsBusy;
+    public bool IsStopActionEnabled => CanStopConversion();
 
     partial void OnStatusChanged(string value) => OnPropertyChanged(nameof(StatusText));
 
     partial void OnIsBusyChanged(bool value)
     {
+        OnPropertyChanged(nameof(IsIdle));
+        OnPropertyChanged(nameof(CanEditOutput));
+        PickInputFileCommand.NotifyCanExecuteChanged();
+        PickInputFolderCommand.NotifyCanExecuteChanged();
+        ScanCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(IToolShellHost.IsBusy));
         OnPropertyChanged(nameof(IsPrimaryActionEnabled));
         OnPropertyChanged(nameof(IsStopActionEnabled));

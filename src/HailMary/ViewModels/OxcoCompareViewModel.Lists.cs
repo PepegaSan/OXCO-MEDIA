@@ -383,7 +383,7 @@ public partial class OxcoCompareViewModel
         return analysisResult.ExitCode is 0 or 3;
     }
 
-    private static void TryDeleteFile(string path)
+    private static void TryDeleteFile(string? path)
     {
         try
         {

@@ -7,6 +7,8 @@ public sealed class BitrateChangerSettings
 {
     public string InputFolder { get; set; } = string.Empty;
 
+    public string InputFile { get; set; } = string.Empty;
+
     public string OutputFolder { get; set; } = string.Empty;
 
     public bool Recursive { get; set; } = true;
@@ -120,7 +122,8 @@ public static class BitrateConfigReader
         JsonSerializer.Serialize(new
         {
             input_folder = s.InputFolder,
-            output_folder = s.OutputFolder,
+            input_file = s.InputFile,
+            output_folder = s.OutputBesideSource ? s.InputFolder : s.OutputFolder,
             recursive = s.Recursive,
             only_lower = s.OnlyLower,
             scan_mode = s.ScanMode,

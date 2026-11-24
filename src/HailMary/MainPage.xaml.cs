@@ -17,6 +17,17 @@ public sealed partial class MainPage : Page
         InitializeComponent();
     }
 
+    private void PageLayout_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        LogOutput.Height = Math.Clamp(e.NewSize.Height * 0.18, 48, 160);
+    }
+
+    private void Log_Expanding(Expander sender, ExpanderExpandingEventArgs args) =>
+        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, ScrollToLogEnd);
+
+    private void ScrollToLogEnd() =>
+        LogScrollViewer.ChangeView(null, LogScrollViewer.ScrollableHeight, null, disableAnimation: true);
+
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
@@ -25,7 +36,7 @@ public sealed partial class MainPage : Page
         {
             if (args.PropertyName == nameof(MainPageViewModel.LogText))
             {
-                LogScrollViewer.ChangeView(null, LogScrollViewer.ScrollableHeight, null);
+                DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, ScrollToLogEnd);
             }
         };
     }
